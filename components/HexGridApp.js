@@ -1,9 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import './App.css';
 import HexGrid from './HexGrid';
 import { GRID_CONFIG, UI_CONFIG, COLORS, DEFAULT_COLORS, ASSET_FOLDERS } from './config';
 
-function App() {
+function HexGridApp() {
   const [gridWidth, setGridWidth] = useState(GRID_CONFIG.DEFAULT_WIDTH);
   const [gridHeight, setGridHeight] = useState(GRID_CONFIG.DEFAULT_HEIGHT);
   const [selectedColor, setSelectedColor] = useState(DEFAULT_COLORS.SELECTED);
@@ -368,4 +367,4 @@ function App() {
   );
 }
 
-export default App;
+export default HexGridApp; 
