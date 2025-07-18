@@ -9,10 +9,9 @@
  * - Add to COLORS array with name, hex value, and RGB values (0-1 range for WebGL)
  * - RGB values: divide hex RGB by 255 (e.g., #FF0000 = [1.0, 0.0, 0.0])
  * 
- * ADDING NEW TEXTURE FOLDERS:
- * - Add new folder to ASSET_FOLDERS with type: 'textures'
- * - Include items array with name, displayName, type, and path
- * - Add corresponding folder to public/assets/
+ * ADDING NEW TEXTURES:
+ * - Add new texture item to PAINT_OPTIONS array with name, displayName, type, and path
+ * - Place texture files in public/assets/terrain/ folder
  * 
  * ASSET PATHS:
  * - All paths should start with /assets/ (relative to public folder)
@@ -47,31 +46,17 @@ export interface TextureItem {
   readonly path: string;
 }
 
-export interface AssetFolder {
-  readonly type: 'colors' | 'textures';
-  readonly items: readonly (ColorItem | TextureItem)[];
-}
-
-export type AssetFolders = {
-  readonly [key: string]: AssetFolder;
-};
+export type AssetItem = ColorItem | TextureItem;
 
 export interface DefaultColors {
   readonly SELECTED: string;
   readonly GREY_RGB: RGB; // Default grey color RGB values
 }
 
-export interface AssetFoldersConfig {
-  readonly HILLS: string;
-  readonly FOREST: string;
-  readonly PLAINS: string;
-  readonly MOUNTAINS: string;
-}
-
 export interface AssetPaths {
   readonly BASE_PATH: string;
+  readonly TERRAIN_PATH: string;
   readonly IMAGE_FORMAT: string;
-  readonly FOLDERS: AssetFoldersConfig;
 }
 
 // Assets and content configuration
@@ -89,60 +74,32 @@ export const DEFAULT_COLORS: DefaultColors = {
   GREY_RGB: [0.42, 0.45, 0.50], // Default grey color RGB values
 };
 
-// Asset folder structure and paths
-export const ASSET_FOLDERS: AssetFolders = {
-  'Colors': {
-    type: 'colors',
-    items: COLORS.map((color): ColorItem => ({
-      name: color.name,
-      displayName: color.name.charAt(0).toUpperCase() + color.name.slice(1),
-      type: 'color',
-      value: color.value,
-      rgb: color.rgb
-    }))
-  },
-  'Hills': {
-    type: 'textures',
-    items: [
-      { name: 'hills1', displayName: 'Hills 1', type: 'texture', path: '/assets/hills/hills1.webp' }
-    ]
-  },
-  'Forest': {
-    type: 'textures', 
-    items: [
-      { name: 'forest1', displayName: 'Forest 1', type: 'texture', path: '/assets/forest/forest1.webp' },
-      { name: 'forest2', displayName: 'Forest 2', type: 'texture', path: '/assets/forest/forest2.webp' },
-      { name: 'forest3', displayName: 'Forest 3', type: 'texture', path: '/assets/forest/forest3.webp' }
-    ]
-  },
-  'Plains': {
-    type: 'textures',
-    items: [
-      { name: 'plains1', displayName: 'Plains 1', type: 'texture', path: '/assets/plains/plains1.webp' },
-      { name: 'plains2', displayName: 'Plains 2', type: 'texture', path: '/assets/plains/plains2.webp' },
-      { name: 'plains3', displayName: 'Plains 3', type: 'texture', path: '/assets/plains/plains3.webp' }
-    ]
-  },
-  'Mountains': {
-    type: 'textures',
-    items: [
-      { name: 'mountain1', displayName: 'Mountain 1', type: 'texture', path: '/assets/mountains/mountain1.webp' },
-      { name: 'mountain2', displayName: 'Mountain 2', type: 'texture', path: '/assets/mountains/mountain2.webp' },
-      { name: 'mountain3', displayName: 'Mountain 3', type: 'texture', path: '/assets/mountains/mountain3.webp' }
-    ]
-  }
-};
+// All available paint options - colors and terrain textures in a flat array
+export const PAINT_OPTIONS: readonly AssetItem[] = [
+  // Color options
+  ...COLORS.map((color): ColorItem => ({
+    name: color.name,
+    displayName: color.name.charAt(0).toUpperCase() + color.name.slice(1),
+    type: 'color',
+    value: color.value,
+    rgb: color.rgb
+  })),
+  // Terrain textures (all in single terrain folder)
+  { name: 'hills1', displayName: 'Hills', type: 'texture', path: '/assets/terrain/hills1.webp' },
+  { name: 'forest1', displayName: 'Forest 1', type: 'texture', path: '/assets/terrain/forest1.webp' },
+  { name: 'forest2', displayName: 'Forest 2', type: 'texture', path: '/assets/terrain/forest2.webp' },
+  { name: 'forest3', displayName: 'Forest 3', type: 'texture', path: '/assets/terrain/forest3.webp' },
+  { name: 'plains1', displayName: 'Plains 1', type: 'texture', path: '/assets/terrain/plains1.webp' },
+  { name: 'plains2', displayName: 'Plains 2', type: 'texture', path: '/assets/terrain/plains2.webp' },
+  { name: 'plains3', displayName: 'Plains 3', type: 'texture', path: '/assets/terrain/plains3.webp' },
+  { name: 'mountain1', displayName: 'Mountain 1', type: 'texture', path: '/assets/terrain/mountain1.webp' },
+  { name: 'mountain2', displayName: 'Mountain 2', type: 'texture', path: '/assets/terrain/mountain2.webp' },
+  { name: 'mountain3', displayName: 'Mountain 3', type: 'texture', path: '/assets/terrain/mountain3.webp' }
+];
 
 // Asset paths configuration
 export const ASSET_PATHS: AssetPaths = {
   BASE_PATH: '/assets',
-  IMAGE_FORMAT: '.webp',
-  
-  // Folder names
-  FOLDERS: {
-    HILLS: 'hills',
-    FOREST: 'forest',
-    PLAINS: 'plains',
-    MOUNTAINS: 'mountains',
-  }
+  TERRAIN_PATH: '/assets/terrain',
+  IMAGE_FORMAT: '.webp'
 }; 

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, MouseEvent, useRef } from 'react';
 import HexGrid, { HexGridRef } from './HexGrid';
-import { GRID_CONFIG, UI_CONFIG, COLORS, DEFAULT_COLORS, ASSET_FOLDERS } from './config';
-import type { Color, ColorItem, TextureItem } from './config';
+import { GRID_CONFIG, UI_CONFIG, COLORS, DEFAULT_COLORS, PAINT_OPTIONS } from './config';
+import type { Color, AssetItem, ColorItem, TextureItem } from './config';
 
 // Type definitions for hex colors and textures
 type HexColor = string;
@@ -23,7 +23,7 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
   const [gridHeight, setGridHeight] = useState<number>(GRID_CONFIG.DEFAULT_HEIGHT);
   const [selectedColor, setSelectedColor] = useState<string>(DEFAULT_COLORS.SELECTED);
   const [hexColors, setHexColors] = useState<HexColorsMap>({});
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+
   const [selectedTexture, setSelectedTexture] = useState<HexTexture | null>(null);
   const [hexColorsVersion, setHexColorsVersion] = useState<number>(0);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
@@ -81,10 +81,7 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
     return hexColors[hexKey];
   }, [hexColors]);
 
-  const handleFolderSelect = useCallback((folderName: string): void => {
-    setSelectedFolder(folderName);
-    setSelectedTexture(null); // Clear texture selection when changing folders
-  }, []);
+
 
   const handleTextureSelect = useCallback((texture: ColorItem | TextureItem): void => {
     const hexTexture: HexTexture = {
@@ -250,107 +247,87 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
             marginBottom: UI_CONFIG.SPACING.LARGE,
             fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM
           }}>
-            Paint Tools
+            Paint Options
           </h3>
           
-          <div style={{ marginBottom: UI_CONFIG.SPACING.LARGE }}>
-            <label style={{ 
-              display: 'block',
-              marginBottom: UI_CONFIG.SPACING.MEDIUM, 
-              color: UI_CONFIG.COLORS.TEXT_TERTIARY,
-              fontSize: UI_CONFIG.FONT_SIZE.NORMAL
-            }}>
-              Categories:
-            </label>
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column',
-              gap: UI_CONFIG.SPACING.SMALL
-            }}>
-              {Object.keys(ASSET_FOLDERS).map((folderName: string) => (
+          {/* All Assets - Compact Icon Grid */}
+          <div style={{ 
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: UI_CONFIG.SPACING.MEDIUM,
+            maxHeight: '400px',
+            overflowY: 'auto',
+            padding: UI_CONFIG.SPACING.SMALL,
+            border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
+            borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
+            background: UI_CONFIG.COLORS.OVERLAY_BACKGROUND
+          }}>
+            {PAINT_OPTIONS.map((item: AssetItem) => (
+              item.type === 'color' ? (
                 <button
-                  key={folderName}
-                  onClick={() => handleFolderSelect(folderName)}
+                  key={item.name}
+                  onClick={() => handleTextureSelect(item)}
                   style={{
-                    padding: `${UI_CONFIG.SPACING.MEDIUM} ${UI_CONFIG.SPACING.LARGE}`,
-                    background: selectedFolder === folderName ? UI_CONFIG.COLORS.SELECTED_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-                    border: selectedFolder === folderName ? `2px solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` : `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
+                    width: '48px',
+                    height: '48px',
+                    padding: '4px',
+                    background: selectedTexture?.name === item.name ? UI_CONFIG.COLORS.SELECTED_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
+                    border: selectedTexture?.name === item.name ? `3px solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` : `2px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
                     borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                    color: UI_CONFIG.COLORS.TEXT_PRIMARY,
-                    fontSize: UI_CONFIG.FONT_SIZE.NORMAL,
                     cursor: 'pointer',
                     transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                    textAlign: 'left',
-                    fontWeight: selectedFolder === folderName ? UI_CONFIG.FONT_WEIGHT.MEDIUM : UI_CONFIG.FONT_WEIGHT.NORMAL
+                    boxShadow: selectedTexture?.name === item.name ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
                   }}
+                  title={item.displayName}
                 >
-                  📁 {folderName}
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
+                    background: (item as ColorItem).value,
+                    border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`
+                  }} />
                 </button>
-              ))}
-            </div>
+              ) : (
+                <button
+                  key={item.name}
+                  onClick={() => handleTextureSelect(item)}
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    padding: '4px',
+                    background: selectedTexture?.name === item.name ? UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
+                    border: selectedTexture?.name === item.name ? `3px solid ${UI_CONFIG.COLORS.SELECTED_ALT_BORDER}` : `2px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
+                    borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
+                    cursor: 'pointer',
+                    transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+                    boxShadow: selectedTexture?.name === item.name ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
+                  }}
+                  title={item.displayName}
+                >
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
+                    border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+                    overflow: 'hidden',
+                    position: 'relative'
+                  }}>
+                    <div style={{
+                      width: '130%',
+                      height: '130%',
+                      position: 'absolute',
+                      top: '-15%',
+                      left: '-15%',
+                      backgroundImage: `url(${(item as TextureItem).path})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }} />
+                  </div>
+                </button>
+              )
+            ))}
           </div>
-
-          {/* Texture Selection */}
-          {selectedFolder && (
-            <div>
-              <label style={{ 
-                display: 'block',
-                marginBottom: UI_CONFIG.SPACING.MEDIUM, 
-                color: UI_CONFIG.COLORS.TEXT_TERTIARY,
-                fontSize: UI_CONFIG.FONT_SIZE.NORMAL
-              }}>
-                {selectedFolder}:
-              </label>
-              <div style={{ 
-                display: selectedFolder === 'Colors' ? 'grid' : 'flex',
-                gridTemplateColumns: selectedFolder === 'Colors' ? 'repeat(5, 1fr)' : undefined,
-                flexDirection: selectedFolder === 'Colors' ? undefined : 'column',
-                gap: UI_CONFIG.SPACING.MEDIUM,
-                maxHeight: '250px',
-                overflowY: 'auto',
-                padding: '5px'
-              }}>
-                {ASSET_FOLDERS[selectedFolder].items.map((item: ColorItem | TextureItem) => (
-                  selectedFolder === 'Colors' ? (
-                    <button
-                      key={item.name}
-                      onClick={() => handleTextureSelect(item)}
-                      style={{
-                        width: UI_CONFIG.GRID_CONTROLS.COLOR_SWATCH_SIZE,
-                        height: UI_CONFIG.GRID_CONTROLS.COLOR_SWATCH_SIZE,
-                        borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                        border: selectedTexture?.name === item.name ? UI_CONFIG.GRID_CONTROLS.COLOR_SWATCH_BORDER_SELECTED : UI_CONFIG.GRID_CONTROLS.COLOR_SWATCH_BORDER_NORMAL,
-                        background: (item as ColorItem).value,
-                        cursor: 'pointer',
-                        transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                        boxShadow: selectedTexture?.name === item.name ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
-                      }}
-                      title={item.displayName}
-                    />
-                  ) : (
-                    <button
-                      key={item.name}
-                      onClick={() => handleTextureSelect(item)}
-                      style={{
-                        padding: `${UI_CONFIG.SPACING.MEDIUM} ${UI_CONFIG.SPACING.LARGE}`,
-                        background: selectedTexture?.name === item.name ? UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-                        border: selectedTexture?.name === item.name ? `2px solid ${UI_CONFIG.COLORS.SELECTED_ALT_BORDER}` : `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
-                        borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                        color: UI_CONFIG.COLORS.TEXT_PRIMARY,
-                        fontSize: UI_CONFIG.FONT_SIZE.NORMAL,
-                        cursor: 'pointer',
-                        transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                        textAlign: 'left',
-                        fontWeight: selectedTexture?.name === item.name ? UI_CONFIG.FONT_WEIGHT.MEDIUM : UI_CONFIG.FONT_WEIGHT.NORMAL
-                      }}
-                    >
-                      🖼️ {item.displayName}
-                    </button>
-                  )
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Actions */}

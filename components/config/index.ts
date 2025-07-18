@@ -15,7 +15,7 @@
  * 
  * 🖼️ assetsConfig.ts - Colors, textures, and asset paths
  *    - COLORS: Paint color definitions with WebGL RGB values
- *    - ASSET_FOLDERS: Texture categories and file organization
+ *    - PAINT_OPTIONS: All available paint options (colors and textures) in a flat array
  *    - DEFAULT_COLORS: Fallback and initial states
  * 
  * USAGE EXAMPLES:
@@ -60,15 +60,13 @@ export type {
   ZIndexConfig 
 } from './uiConfig';
 
-export { COLORS, DEFAULT_COLORS, ASSET_FOLDERS, ASSET_PATHS } from './assetsConfig';
+export { COLORS, DEFAULT_COLORS, PAINT_OPTIONS, ASSET_PATHS } from './assetsConfig';
 export type { 
   RGB, 
   Color, 
   ColorItem, 
   TextureItem, 
-  AssetFolder, 
-  AssetFolders, 
+  AssetItem,
   DefaultColors, 
-  AssetFoldersConfig, 
   AssetPaths 
 } from './assetsConfig'; 
