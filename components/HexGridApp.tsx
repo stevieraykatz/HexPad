@@ -1,26 +1,44 @@
-import React, { useState, useCallback } from 'react';
-import HexGrid from './HexGrid';
+import React, { useState, useCallback, MouseEvent, useRef } from 'react';
+import HexGrid, { HexGridRef } from './HexGrid';
 import { GRID_CONFIG, UI_CONFIG, COLORS, DEFAULT_COLORS, ASSET_FOLDERS } from './config';
+import type { Color, ColorItem, TextureItem } from './config';
 
-function HexGridApp() {
-  const [gridWidth, setGridWidth] = useState(GRID_CONFIG.DEFAULT_WIDTH);
-  const [gridHeight, setGridHeight] = useState(GRID_CONFIG.DEFAULT_HEIGHT);
-  const [selectedColor, setSelectedColor] = useState(DEFAULT_COLORS.SELECTED);
-  const [hexColors, setHexColors] = useState({});
-  const [selectedFolder, setSelectedFolder] = useState(null);
-  const [selectedTexture, setSelectedTexture] = useState(null);
-  const [hexColorsVersion, setHexColorsVersion] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(false);
+// Type definitions for hex colors and textures
+type HexColor = string;
 
-  const paintHex = (row, col) => {
+interface HexTexture {
+  type: 'color' | 'texture';
+  name: string;
+  displayName: string;
+  rgb?: [number, number, number];
+  path?: string;
+}
+
+type HexColorsMap = Record<string, HexColor | HexTexture>;
+
+interface HexGridAppProps {}
+
+const HexGridApp: React.FC<HexGridAppProps> = () => {
+  const [gridWidth, setGridWidth] = useState<number>(GRID_CONFIG.DEFAULT_WIDTH);
+  const [gridHeight, setGridHeight] = useState<number>(GRID_CONFIG.DEFAULT_HEIGHT);
+  const [selectedColor, setSelectedColor] = useState<string>(DEFAULT_COLORS.SELECTED);
+  const [hexColors, setHexColors] = useState<HexColorsMap>({});
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [selectedTexture, setSelectedTexture] = useState<HexTexture | null>(null);
+  const [hexColorsVersion, setHexColorsVersion] = useState<number>(0);
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const hexGridRef = useRef<HexGridRef>(null);
+
+  const paintHex = useCallback((row: number, col: number): void => {
     const hexKey = `${row}-${col}`;
     
     // Use selectedTexture if available, otherwise fall back to selectedColor
-    let textureToUse = selectedTexture;
+    let textureToUse: HexTexture | null = selectedTexture;
     
     if (!textureToUse) {
       // Create a color texture from selectedColor
-      const colorData = COLORS.find(c => c.name === selectedColor);
+      const colorData: Color | undefined = COLORS.find(c => c.name === selectedColor);
       if (colorData) {
         textureToUse = { 
           type: 'color', 
@@ -41,14 +59,14 @@ function HexGridApp() {
     
     setHexColors(prev => ({
       ...prev,
-      [hexKey]: textureToUse
+      [hexKey]: textureToUse!
     }));
     setHexColorsVersion(prev => prev + 1);
-  };
+  }, [selectedColor, selectedTexture]);
 
-  const clearGrid = () => {
+  const clearGrid = useCallback((): void => {
     // Set all hexes to default grey instead of clearing them
-    const greyColors = {};
+    const greyColors: HexColorsMap = {};
     for (let row = 0; row < gridHeight; row++) {
       for (let col = 0; col < gridWidth; col++) {
         greyColors[`${row}-${col}`] = DEFAULT_COLORS.SELECTED; // Keep as string since getHexagonStyle handles this special case
@@ -56,24 +74,55 @@ function HexGridApp() {
     }
     setHexColors(greyColors);
     setHexColorsVersion(prev => prev + 1);
-  };
+  }, [gridWidth, gridHeight]);
 
-  const getHexColor = useCallback((row, col) => {
+  const getHexColor = useCallback((row: number, col: number): HexColor | HexTexture | undefined => {
     const hexKey = `${row}-${col}`;
     return hexColors[hexKey];
   }, [hexColors]);
 
-  const handleFolderSelect = (folderName) => {
+  const handleFolderSelect = useCallback((folderName: string): void => {
     setSelectedFolder(folderName);
     setSelectedTexture(null); // Clear texture selection when changing folders
-  };
+  }, []);
 
-  const handleTextureSelect = (texture) => {
-    setSelectedTexture(texture);
+  const handleTextureSelect = useCallback((texture: ColorItem | TextureItem): void => {
+    const hexTexture: HexTexture = {
+      type: texture.type,
+      name: texture.name,
+      displayName: texture.displayName,
+      ...(texture.type === 'color' && { rgb: (texture as ColorItem).rgb }),
+      ...(texture.type === 'texture' && { path: (texture as TextureItem).path })
+    };
+    
+    setSelectedTexture(hexTexture);
     if (texture.type === 'color') {
       setSelectedColor(texture.name);
     }
-  };
+  }, []);
+
+  const handleMouseOver = useCallback((e: MouseEvent<HTMLButtonElement>): void => {
+    (e.target as HTMLButtonElement).style.background = UI_CONFIG.HOVER.DANGER_BACKGROUND;
+  }, []);
+
+  const handleMouseOut = useCallback((e: MouseEvent<HTMLButtonElement>): void => {
+    (e.target as HTMLButtonElement).style.background = UI_CONFIG.COLORS.DANGER_BACKGROUND;
+  }, []);
+
+  const handleExportPNG = useCallback(async (): Promise<void> => {
+    if (hexGridRef.current && !isExporting) {
+      try {
+        setIsExporting(true);
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+        const filename = `hex-grid-${gridWidth}x${gridHeight}-${timestamp}`;
+        await hexGridRef.current.exportAsPNG(filename, 4); // 4x resolution for high quality
+      } catch (error) {
+        console.error('Failed to export PNG:', error);
+      } finally {
+        setIsExporting(false);
+      }
+    }
+  }, [gridWidth, gridHeight, isExporting]);
 
   return (
     <div className="App" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -155,12 +204,12 @@ function HexGridApp() {
               max={GRID_CONFIG.MAX_SIZE}
               value={gridWidth}
               onChange={(e) => setGridWidth(parseInt(e.target.value))}
-              style={{ 
+              style={{
                 width: '100%',
                 height: UI_CONFIG.GRID_CONTROLS.SLIDER_HEIGHT,
-                background: UI_CONFIG.COLORS.BORDER_COLOR_LIGHT,
-                borderRadius: '3px',
+                borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
                 outline: 'none',
+                background: UI_CONFIG.COLORS.BUTTON_BACKGROUND,
                 cursor: 'pointer'
               }}
             />
@@ -181,12 +230,12 @@ function HexGridApp() {
               max={GRID_CONFIG.MAX_SIZE}
               value={gridHeight}
               onChange={(e) => setGridHeight(parseInt(e.target.value))}
-              style={{ 
+              style={{
                 width: '100%',
                 height: UI_CONFIG.GRID_CONTROLS.SLIDER_HEIGHT,
-                background: UI_CONFIG.COLORS.BORDER_COLOR_LIGHT,
-                borderRadius: '3px',
+                borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
                 outline: 'none',
+                background: UI_CONFIG.COLORS.BUTTON_BACKGROUND,
                 cursor: 'pointer'
               }}
             />
@@ -218,7 +267,7 @@ function HexGridApp() {
               flexDirection: 'column',
               gap: UI_CONFIG.SPACING.SMALL
             }}>
-              {Object.keys(ASSET_FOLDERS).map((folderName) => (
+              {Object.keys(ASSET_FOLDERS).map((folderName: string) => (
                 <button
                   key={folderName}
                   onClick={() => handleFolderSelect(folderName)}
@@ -254,14 +303,14 @@ function HexGridApp() {
               </label>
               <div style={{ 
                 display: selectedFolder === 'Colors' ? 'grid' : 'flex',
-                gridTemplateColumns: selectedFolder === 'Colors' ? 'repeat(5, 1fr)' : 'none',
-                flexDirection: selectedFolder === 'Colors' ? 'none' : 'column',
+                gridTemplateColumns: selectedFolder === 'Colors' ? 'repeat(5, 1fr)' : undefined,
+                flexDirection: selectedFolder === 'Colors' ? undefined : 'column',
                 gap: UI_CONFIG.SPACING.MEDIUM,
                 maxHeight: '250px',
                 overflowY: 'auto',
                 padding: '5px'
               }}>
-                {ASSET_FOLDERS[selectedFolder].items.map((item) => (
+                {ASSET_FOLDERS[selectedFolder].items.map((item: ColorItem | TextureItem) => (
                   selectedFolder === 'Colors' ? (
                     <button
                       key={item.name}
@@ -271,7 +320,7 @@ function HexGridApp() {
                         height: UI_CONFIG.GRID_CONTROLS.COLOR_SWATCH_SIZE,
                         borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
                         border: selectedTexture?.name === item.name ? UI_CONFIG.GRID_CONTROLS.COLOR_SWATCH_BORDER_SELECTED : UI_CONFIG.GRID_CONTROLS.COLOR_SWATCH_BORDER_NORMAL,
-                        background: item.value,
+                        background: (item as ColorItem).value,
                         cursor: 'pointer',
                         transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
                         boxShadow: selectedTexture?.name === item.name ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
@@ -307,6 +356,27 @@ function HexGridApp() {
         {/* Actions */}
         <div style={{ marginTop: 'auto', paddingTop: UI_CONFIG.SPACING.XLARGE }}>
           <button
+            onClick={handleExportPNG}
+            disabled={isExporting}
+            style={{
+              width: '100%',
+              padding: UI_CONFIG.SPACING.LARGE,
+              background: isExporting ? UI_CONFIG.COLORS.BUTTON_BACKGROUND : UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND,
+              border: `2px solid ${isExporting ? UI_CONFIG.COLORS.BORDER_COLOR : UI_CONFIG.COLORS.SELECTED_ALT_BORDER}`,
+              borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
+              color: isExporting ? UI_CONFIG.COLORS.TEXT_MUTED : UI_CONFIG.COLORS.TEXT_PRIMARY,
+              fontSize: UI_CONFIG.FONT_SIZE.NORMAL,
+              cursor: isExporting ? 'wait' : 'pointer',
+              transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+              fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
+              marginBottom: UI_CONFIG.SPACING.LARGE,
+              opacity: isExporting ? 0.7 : 1
+            }}
+          >
+            {isExporting ? '⏳ Exporting...' : '📥 Export as PNG'}
+          </button>
+          
+          <button
             onClick={clearGrid}
             style={{
               width: '100%',
@@ -321,12 +391,8 @@ function HexGridApp() {
               fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
               marginBottom: UI_CONFIG.SPACING.LARGE
             }}
-            onMouseOver={(e) => {
-              e.target.style.background = UI_CONFIG.HOVER.DANGER_BACKGROUND;
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = UI_CONFIG.COLORS.DANGER_BACKGROUND;
-            }}
+            onMouseOver={handleMouseOver}
+            onMouseOut={handleMouseOut}
           >
             🗑️ Clear Grid
           </button>
@@ -353,6 +419,7 @@ function HexGridApp() {
         height: '100vh'
       }}>
         <HexGrid 
+          ref={hexGridRef}
           gridWidth={gridWidth} 
           gridHeight={gridHeight}
           selectedColor={selectedColor}
@@ -365,6 +432,6 @@ function HexGridApp() {
       </div>
     </div>
   );
-}
+};
 
 export default HexGridApp; 

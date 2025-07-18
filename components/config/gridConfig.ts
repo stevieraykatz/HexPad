@@ -11,8 +11,38 @@
  * - Canvas margins: CANVAS_MARGIN_FACTOR controls how much border space around the grid (0.95 = 5% margin)
  */
 
+export interface GridConfig {
+  // Default grid dimensions
+  readonly DEFAULT_WIDTH: number;
+  readonly DEFAULT_HEIGHT: number;
+  
+  // Grid size limits
+  readonly MIN_SIZE: number;
+  readonly MAX_SIZE: number;
+  
+  // Hex geometry constants
+  readonly HEX_HORIZONTAL_SPACING_RATIO: number; // Distance between hex centers horizontally (as ratio of hex width)
+  readonly HEX_ROW_VERTICAL_OFFSET: number; // Vertical offset for alternating columns (as ratio of hex height)
+  
+  // Canvas sizing
+  readonly CANVAS_MARGIN_FACTOR: number; // Leave 5% margin around the grid
+  
+  // Zoom configuration
+  readonly BASE_ZOOM_LEVEL: number;
+  readonly ZOOM_SPEED: number;
+  readonly TARGET_TILES_AT_MAX_ZOOM: number; // Number of tiles to show across screen when fully zoomed in
+  
+  // Hex sizing constraints
+  readonly MIN_HEX_RADIUS: number; // Minimum radius in pixels to prevent distortion
+  readonly WIDTH_CONSTRAINT_THRESHOLD: number; // When to switch to height-based sizing (as ratio of min radius)
+  readonly FALLBACK_HEX_RADIUS: number; // Fallback value when radius calculation fails
+  
+  // Pan limits
+  readonly PAN_EXTRA_MARGIN_FACTOR: number; // Extra margin beyond grid bounds for panning
+}
+
 // Grid geometry and behavior configuration
-export const GRID_CONFIG = {
+export const GRID_CONFIG: GridConfig = {
   // Default grid dimensions
   DEFAULT_WIDTH: 12,
   DEFAULT_HEIGHT: 12,
@@ -48,18 +78,34 @@ export const GRID_CONFIG = {
  * These functions calculate hexagon dimensions and spacing based on radius.
  * Generally you shouldn't need to modify these unless changing hexagon shape.
  */
-export const HEX_GEOMETRY = {
+export interface HexGeometry {
+  readonly SQRT_3: number; // Square root of 3 for hex height calculations
+  
+  // Calculate hex width from radius
+  getHexWidth: (radius: number) => number;
+  
+  // Calculate hex height from radius  
+  getHexHeight: (radius: number) => number;
+  
+  // Calculate horizontal spacing between hex centers
+  getHorizontalSpacing: (radius: number) => number;
+  
+  // Calculate vertical spacing between hex centers
+  getVerticalSpacing: (radius: number) => number;
+}
+
+export const HEX_GEOMETRY: HexGeometry = {
   SQRT_3: Math.sqrt(3), // Square root of 3 for hex height calculations
   
   // Calculate hex width from radius
-  getHexWidth: (radius) => radius * 2,
+  getHexWidth: (radius: number): number => radius * 2,
   
   // Calculate hex height from radius  
-  getHexHeight: (radius) => radius * HEX_GEOMETRY.SQRT_3,
+  getHexHeight: (radius: number): number => radius * HEX_GEOMETRY.SQRT_3,
   
   // Calculate horizontal spacing between hex centers
-  getHorizontalSpacing: (radius) => HEX_GEOMETRY.getHexWidth(radius) * GRID_CONFIG.HEX_HORIZONTAL_SPACING_RATIO,
+  getHorizontalSpacing: (radius: number): number => HEX_GEOMETRY.getHexWidth(radius) * GRID_CONFIG.HEX_HORIZONTAL_SPACING_RATIO,
   
   // Calculate vertical spacing between hex centers
-  getVerticalSpacing: (radius) => HEX_GEOMETRY.getHexHeight(radius),
+  getVerticalSpacing: (radius: number): number => HEX_GEOMETRY.getHexHeight(radius),
 }; 

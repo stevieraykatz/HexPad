@@ -24,8 +24,58 @@
  * - SELECTED defines the default selection state (typically 'grey')
  */
 
+export type RGB = [number, number, number];
+
+export interface Color {
+  readonly name: string;
+  readonly value: string; // Hex color value
+  readonly rgb: RGB; // RGB values in 0-1 range for WebGL
+}
+
+export interface ColorItem {
+  readonly name: string;
+  readonly displayName: string;
+  readonly type: 'color';
+  readonly value: string;
+  readonly rgb: RGB;
+}
+
+export interface TextureItem {
+  readonly name: string;
+  readonly displayName: string;
+  readonly type: 'texture';
+  readonly path: string;
+}
+
+export interface AssetFolder {
+  readonly type: 'colors' | 'textures';
+  readonly items: readonly (ColorItem | TextureItem)[];
+}
+
+export type AssetFolders = {
+  readonly [key: string]: AssetFolder;
+};
+
+export interface DefaultColors {
+  readonly SELECTED: string;
+  readonly GREY_RGB: RGB; // Default grey color RGB values
+}
+
+export interface AssetFoldersConfig {
+  readonly HILLS: string;
+  readonly FOREST: string;
+  readonly PLAINS: string;
+  readonly MOUNTAINS: string;
+}
+
+export interface AssetPaths {
+  readonly BASE_PATH: string;
+  readonly IMAGE_FORMAT: string;
+  readonly FOLDERS: AssetFoldersConfig;
+}
+
 // Assets and content configuration
-export const COLORS = [
+export const COLORS: readonly Color[] = [
   { name: 'blue', value: '#3B82F6', rgb: [0.23, 0.51, 0.96] },
   { name: 'white', value: '#FFFFFF', rgb: [1.0, 1.0, 1.0] },
   { name: 'green', value: '#10B981', rgb: [0.06, 0.73, 0.51] },
@@ -34,16 +84,16 @@ export const COLORS = [
 ];
 
 // Default colors
-export const DEFAULT_COLORS = {
+export const DEFAULT_COLORS: DefaultColors = {
   SELECTED: 'grey',
   GREY_RGB: [0.42, 0.45, 0.50], // Default grey color RGB values
 };
 
 // Asset folder structure and paths
-export const ASSET_FOLDERS = {
+export const ASSET_FOLDERS: AssetFolders = {
   'Colors': {
     type: 'colors',
-    items: COLORS.map(color => ({
+    items: COLORS.map((color): ColorItem => ({
       name: color.name,
       displayName: color.name.charAt(0).toUpperCase() + color.name.slice(1),
       type: 'color',
@@ -84,7 +134,7 @@ export const ASSET_FOLDERS = {
 };
 
 // Asset paths configuration
-export const ASSET_PATHS = {
+export const ASSET_PATHS: AssetPaths = {
   BASE_PATH: '/assets',
   IMAGE_FORMAT: '.webp',
   

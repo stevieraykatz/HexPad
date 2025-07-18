@@ -19,8 +19,125 @@
  * - Danger actions use red theme for clear visual warning
  */
 
+export interface SpacingConfig {
+  readonly SMALL: string;
+  readonly MEDIUM: string;
+  readonly LARGE: string;
+  readonly XLARGE: string;
+  readonly XXLARGE: string;
+}
+
+export interface BorderRadiusConfig {
+  readonly SMALL: string;
+  readonly MEDIUM: string;
+  readonly LARGE: string;
+  readonly XLARGE: string;
+}
+
+export interface FontSizeConfig {
+  readonly SMALL: string;
+  readonly MEDIUM: string;
+  readonly NORMAL: string;
+  readonly LARGE: string;
+  readonly XLARGE: string;
+}
+
+export interface FontWeightConfig {
+  readonly NORMAL: string;
+  readonly MEDIUM: string;
+  readonly SEMIBOLD: string;
+}
+
+export interface ColorsConfig {
+  // Background colors
+  readonly MENU_BACKGROUND: string;
+  readonly OVERLAY_BACKGROUND: string;
+  readonly BUTTON_BACKGROUND: string;
+  readonly SELECTED_BACKGROUND: string;
+  readonly SELECTED_ALT_BACKGROUND: string;
+  readonly INFO_BACKGROUND: string;
+  readonly DANGER_BACKGROUND: string;
+  
+  // Border colors
+  readonly BORDER_COLOR: string;
+  readonly BORDER_COLOR_LIGHT: string;
+  readonly SELECTED_BORDER: string;
+  readonly SELECTED_ALT_BORDER: string;
+  readonly DANGER_BORDER: string;
+  
+  // Text colors
+  readonly TEXT_PRIMARY: string;
+  readonly TEXT_SECONDARY: string;
+  readonly TEXT_TERTIARY: string;
+  readonly TEXT_MUTED: string;
+  readonly TEXT_SUBTLE: string;
+  readonly TEXT_DANGER: string;
+}
+
+export interface BlurConfig {
+  readonly LIGHT: string;
+  readonly MEDIUM: string;
+}
+
+export interface BoxShadowConfig {
+  readonly LIGHT: string;
+  readonly MEDIUM: string;
+  readonly SELECTED: string;
+}
+
+export interface GridControlsConfig {
+  readonly SLIDER_HEIGHT: string;
+  readonly COLOR_SWATCH_SIZE: string;
+  readonly COLOR_SWATCH_BORDER_SELECTED: string;
+  readonly COLOR_SWATCH_BORDER_NORMAL: string;
+}
+
+export interface HoverConfig {
+  readonly DANGER_BACKGROUND: string;
+}
+
+export interface ZIndexConfig {
+  readonly MENU: number;
+  readonly MENU_TOGGLE: number;
+}
+
+export interface UIConfig {
+  // Side menu dimensions
+  readonly MENU_WIDTH: number;
+  
+  // Animation and transitions
+  readonly TRANSITION_DURATION: string;
+  readonly TRANSITION_EASING: string;
+  
+  // Z-index layering
+  readonly Z_INDEX: ZIndexConfig;
+  
+  // Spacing and sizing
+  readonly SPACING: SpacingConfig;
+  
+  // Border radius values
+  readonly BORDER_RADIUS: BorderRadiusConfig;
+  
+  // Typography
+  readonly FONT_SIZE: FontSizeConfig;
+  readonly FONT_WEIGHT: FontWeightConfig;
+  
+  // Colors and opacity
+  readonly COLORS: ColorsConfig;
+  
+  // Effects
+  readonly BLUR: BlurConfig;
+  readonly BOX_SHADOW: BoxShadowConfig;
+  
+  // Grid controls
+  readonly GRID_CONTROLS: GridControlsConfig;
+  
+  // Hover effects
+  readonly HOVER: HoverConfig;
+}
+
 // UI styling and layout configuration
-export const UI_CONFIG = {
+export const UI_CONFIG: UIConfig = {
   // Side menu dimensions
   MENU_WIDTH: 320,
   

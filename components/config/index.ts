@@ -6,14 +6,14 @@
  * 
  * ORGANIZATION:
  * 
- * 📐 gridConfig.js - Grid geometry, zoom behavior, hex sizing, and interaction
+ * 📐 gridConfig.ts - Grid geometry, zoom behavior, hex sizing, and interaction
  *    - GRID_CONFIG: Core grid behavior and constraints
  *    - HEX_GEOMETRY: Hexagon mathematical calculations
  * 
- * 🎨 uiConfig.js - UI styling, layout, colors, and visual design
+ * 🎨 uiConfig.ts - UI styling, layout, colors, and visual design
  *    - UI_CONFIG: Complete UI design system with colors, spacing, typography
  * 
- * 🖼️ assetsConfig.js - Colors, textures, and asset paths
+ * 🖼️ assetsConfig.ts - Colors, textures, and asset paths
  *    - COLORS: Paint color definitions with WebGL RGB values
  *    - ASSET_FOLDERS: Texture categories and file organization
  *    - DEFAULT_COLORS: Fallback and initial states
@@ -43,5 +43,32 @@
 
 // Central export for all configuration files
 export { GRID_CONFIG, HEX_GEOMETRY } from './gridConfig';
+export type { GridConfig, HexGeometry } from './gridConfig';
+
 export { UI_CONFIG } from './uiConfig';
-export { COLORS, DEFAULT_COLORS, ASSET_FOLDERS, ASSET_PATHS } from './assetsConfig'; 
+export type { 
+  UIConfig, 
+  SpacingConfig, 
+  BorderRadiusConfig, 
+  FontSizeConfig, 
+  FontWeightConfig, 
+  ColorsConfig, 
+  BlurConfig, 
+  BoxShadowConfig, 
+  GridControlsConfig, 
+  HoverConfig, 
+  ZIndexConfig 
+} from './uiConfig';
+
+export { COLORS, DEFAULT_COLORS, ASSET_FOLDERS, ASSET_PATHS } from './assetsConfig';
+export type { 
+  RGB, 
+  Color, 
+  ColorItem, 
+  TextureItem, 
+  AssetFolder, 
+  AssetFolders, 
+  DefaultColors, 
+  AssetFoldersConfig, 
+  AssetPaths 
+} from './assetsConfig'; 
