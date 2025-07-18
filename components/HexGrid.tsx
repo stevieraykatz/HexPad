@@ -149,9 +149,34 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       const verticalSpacing = HEX_GEOMETRY.getVerticalSpacing(exportHexRadius);
 
       const totalGridWidth = (gridWidth - 1) * horizontalSpacing + hexWidth;
-      const totalGridHeight = gridHeight * verticalSpacing;
+      
+      // Calculate the actual visual height by finding the topmost and bottommost hexagon positions
+      let minY = 0; // This will be the topmost hexagon center
+      let maxY = 0; // This will be the bottommost hexagon center
+      
+      for (let row = 0; row < gridHeight; row++) {
+        for (let col = 0; col < gridWidth; col++) {
+          const y = row * verticalSpacing + (col % 2) * (verticalSpacing * GRID_CONFIG.HEX_ROW_VERTICAL_OFFSET);
+          minY = Math.min(minY, y);
+          maxY = Math.max(maxY, y);
+        }
+      }
+      
+      // Total visual height includes the radius of the topmost and bottommost hexagons
+      // Note: hexagons are rendered at configurable size, so we use the actual rendered size for bounds
+      const actualHexHeight = hexHeight * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO;
+      const totalGridHeight = maxY - minY + actualHexHeight;
+      
+      // Add padding to provide breathing room around the grid edges (scaled for export)
+      const verticalPadding = 35 * scale; // pixels of padding at top and bottom, scaled for export resolution
+      
+      // Adjust available height by padding and center the grid in the remaining space
+      const availableHeight = exportSize.height - 2 * verticalPadding;
       const startX = (exportSize.width - totalGridWidth) / 2 + exportHexRadius;
-      const startY = (exportSize.height - totalGridHeight) / 2 + exportHexRadius;
+      // Add static offsets to ensure proper padding on both top and bottom (scaled for export)
+      const topPaddingOffset = 20 * scale; // Static offset to ensure top padding, scaled for export
+      const bottomPaddingOffset = 20 * scale; // Static offset to ensure bottom padding, scaled for export
+      const startY = verticalPadding + (availableHeight - totalGridHeight) / 2 + exportHexRadius - minY + topPaddingOffset - bottomPaddingOffset;
 
       for (let row = 0; row < gridHeight; row++) {
         for (let col = 0; col < gridWidth; col++) {
@@ -231,8 +256,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         console.warn('Some textures failed to load for export:', error);
       }
 
-      // Clear export canvas
-      exportGL.clearColor(0.1, 0.1, 0.1, 1.0);
+      // Clear export canvas with white background for PNG export
+      exportGL.clearColor(1.0, 1.0, 1.0, 1.0); // White background for PNG export
       exportGL.clear(exportGL.COLOR_BUFFER_BIT);
 
       // Render each hexagon for export
@@ -250,7 +275,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           
           exportGL.uniform2f(resolutionUniformLocation, exportSize.width, exportSize.height);
           
-          const { vertices } = createHexagonVertices(0, 0, exportHexRadius * 0.9);
+          const { vertices } = createHexagonVertices(0, 0, exportHexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO);
           
           const positionBuffer = exportGL.createBuffer();
           exportGL.bindBuffer(exportGL.ARRAY_BUFFER, positionBuffer);
@@ -280,7 +305,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
             
             exportGL.uniform2f(resolutionUniformLocation, exportSize.width, exportSize.height);
             
-            const { vertices, texCoords } = createHexagonVertices(0, 0, exportHexRadius * 0.9, true);
+            const { vertices, texCoords } = createHexagonVertices(0, 0, exportHexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, true);
             
             // Position buffer
             const positionBuffer = exportGL.createBuffer();
@@ -317,7 +342,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
             
             exportGL.uniform2f(resolutionUniformLocation, exportSize.width, exportSize.height);
             
-            const { vertices } = createHexagonVertices(0, 0, exportHexRadius * 0.9);
+            const { vertices } = createHexagonVertices(0, 0, exportHexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO);
             
             const positionBuffer = exportGL.createBuffer();
             exportGL.bindBuffer(exportGL.ARRAY_BUFFER, positionBuffer);
@@ -656,13 +681,37 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     const horizontalSpacing = HEX_GEOMETRY.getHorizontalSpacing(hexRadius);
     const verticalSpacing = HEX_GEOMETRY.getVerticalSpacing(hexRadius);
 
-    // Calculate the total dimensions of the grid
+    // Calculate the visual bounds of the entire grid
     const totalGridWidth = (gridWidth - 1) * horizontalSpacing + hexWidth;
-    const totalGridHeight = gridHeight * verticalSpacing;
+    
+    // Calculate the actual visual height by finding the topmost and bottommost hexagon positions
+    let minY = 0; // This will be the topmost hexagon center
+    let maxY = 0; // This will be the bottommost hexagon center
+    
+    for (let row = 0; row < gridHeight; row++) {
+      for (let col = 0; col < gridWidth; col++) {
+        const y = row * verticalSpacing + (col % 2) * (verticalSpacing * GRID_CONFIG.HEX_ROW_VERTICAL_OFFSET);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
+    }
+    
+    // Total visual height includes the radius of the topmost and bottommost hexagons
+    // Note: hexagons are rendered at configurable size, so we use the actual rendered size for bounds
+    const actualHexHeight = hexHeight * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO;
+    const totalGridHeight = maxY - minY + actualHexHeight;
 
+    // Add padding to provide breathing room around the grid edges
+    const verticalPadding = 35; // pixels of padding at top and bottom
+    
     // Center the grid in the canvas, then apply pan offset
+    // Adjust available height by padding and center the grid in the remaining space
+    const availableHeight = canvasSize.height - 2 * verticalPadding;
     const startX = (canvasSize.width - totalGridWidth) / 2 + hexRadius + panOffset.x;
-    const startY = (canvasSize.height - totalGridHeight) / 2 + hexRadius + panOffset.y;
+    // Add static offsets to ensure proper padding on both top and bottom
+    const topPaddingOffset = 20; // Static offset to ensure top padding
+    const bottomPaddingOffset = 20; // Static offset to ensure bottom padding
+    const startY = verticalPadding + (availableHeight - totalGridHeight) / 2 + hexRadius + panOffset.y - minY + topPaddingOffset - bottomPaddingOffset;
 
     for (let row = 0; row < gridHeight; row++) {
       for (let col = 0; col < gridWidth; col++) {
@@ -880,7 +929,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         
         gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
         
-        const { vertices } = createHexagonVertices(0, 0, hexRadius * 0.9);
+        const { vertices } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO);
         
         const positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -916,7 +965,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         
         gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
         
-        const { vertices, texCoords } = createHexagonVertices(0, 0, hexRadius * 0.9, true);
+        const { vertices, texCoords } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, true);
         
         // Position buffer
         const positionBuffer = gl.createBuffer();

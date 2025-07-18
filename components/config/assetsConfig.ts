@@ -84,17 +84,14 @@ export const PAINT_OPTIONS: readonly AssetItem[] = [
     value: color.value,
     rgb: color.rgb
   })),
-  // Terrain textures (all in single terrain folder)
-  { name: 'hills1', displayName: 'Hills', type: 'texture', path: '/assets/terrain/hills1.webp' },
-  { name: 'forest1', displayName: 'Forest 1', type: 'texture', path: '/assets/terrain/forest1.webp' },
-  { name: 'forest2', displayName: 'Forest 2', type: 'texture', path: '/assets/terrain/forest2.webp' },
-  { name: 'forest3', displayName: 'Forest 3', type: 'texture', path: '/assets/terrain/forest3.webp' },
-  { name: 'plains1', displayName: 'Plains 1', type: 'texture', path: '/assets/terrain/plains1.webp' },
-  { name: 'plains2', displayName: 'Plains 2', type: 'texture', path: '/assets/terrain/plains2.webp' },
-  { name: 'plains3', displayName: 'Plains 3', type: 'texture', path: '/assets/terrain/plains3.webp' },
-  { name: 'mountain1', displayName: 'Mountain 1', type: 'texture', path: '/assets/terrain/mountain1.webp' },
-  { name: 'mountain2', displayName: 'Mountain 2', type: 'texture', path: '/assets/terrain/mountain2.webp' },
-  { name: 'mountain3', displayName: 'Mountain 3', type: 'texture', path: '/assets/terrain/mountain3.webp' }
+        // Terrain textures (all in single terrain folder)
+      { name: 'coast', displayName: 'Coast', type: 'texture', path: '/assets/terrain/coast.png' },
+      { name: 'forest', displayName: 'Forest', type: 'texture', path: '/assets/terrain/forest.png' },
+      { name: 'mountain', displayName: 'Mountain', type: 'texture', path: '/assets/terrain/mountain.png' },
+      { name: 'ocean', displayName: 'Ocean', type: 'texture', path: '/assets/terrain/ocean.png' },
+      { name: 'plains', displayName: 'Plains', type: 'texture', path: '/assets/terrain/plains.png' },
+      { name: 'shrubland', displayName: 'Shrubland', type: 'texture', path: '/assets/terrain/shrubland.png' },
+      { name: 'swamp', displayName: 'Swamp', type: 'texture', path: '/assets/terrain/swamp.png' }
 ];
 
 // Asset paths configuration

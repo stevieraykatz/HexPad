@@ -23,6 +23,7 @@ export interface GridConfig {
   // Hex geometry constants
   readonly HEX_HORIZONTAL_SPACING_RATIO: number; // Distance between hex centers horizontally (as ratio of hex width)
   readonly HEX_ROW_VERTICAL_OFFSET: number; // Vertical offset for alternating columns (as ratio of hex height)
+  readonly HEX_VISUAL_SIZE_RATIO: number; // Visual size of hexagons relative to their radius (0.9 = 90% size, creates spacing)
   
   // Canvas sizing
   readonly CANVAS_MARGIN_FACTOR: number; // Leave 5% margin around the grid
@@ -54,6 +55,7 @@ export const GRID_CONFIG: GridConfig = {
   // Hex geometry constants
   HEX_HORIZONTAL_SPACING_RATIO: 0.75, // Distance between hex centers horizontally (as ratio of hex width)
   HEX_ROW_VERTICAL_OFFSET: 0.5, // Vertical offset for alternating columns (as ratio of hex height)
+  HEX_VISUAL_SIZE_RATIO: 0.95, // Visual size of hexagons relative to their radius (0.95 = 95% size, higher value creates less spacing)
   
   // Canvas sizing
   CANVAS_MARGIN_FACTOR: 0.95, // Leave 5% margin around the grid

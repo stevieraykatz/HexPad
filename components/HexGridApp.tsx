@@ -241,26 +241,13 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
 
         {/* Paint Tools */}
         <div style={{ marginBottom: UI_CONFIG.SPACING.XXLARGE }}>
-          <h3 style={{ 
-            color: UI_CONFIG.COLORS.TEXT_SECONDARY, 
-            fontSize: UI_CONFIG.FONT_SIZE.LARGE,
-            marginBottom: UI_CONFIG.SPACING.LARGE,
-            fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM
-          }}>
-            Paint Options
-          </h3>
-          
           {/* All Assets - Compact Icon Grid */}
           <div style={{ 
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: UI_CONFIG.SPACING.MEDIUM,
+            gap: '4px', // Minimal gap between tiles
             maxHeight: '400px',
-            overflowY: 'auto',
-            padding: UI_CONFIG.SPACING.SMALL,
-            border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
-            borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-            background: UI_CONFIG.COLORS.OVERLAY_BACKGROUND
+            overflowY: 'auto'
           }}>
             {PAINT_OPTIONS.map((item: AssetItem) => (
               item.type === 'color' ? (
@@ -268,9 +255,9 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
                   key={item.name}
                   onClick={() => handleTextureSelect(item)}
                   style={{
-                    width: '48px',
-                    height: '48px',
-                    padding: '4px',
+                    width: '80px',
+                    height: '80px',
+                    padding: '2px',
                     background: selectedTexture?.name === item.name ? UI_CONFIG.COLORS.SELECTED_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
                     border: selectedTexture?.name === item.name ? `3px solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` : `2px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
                     borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
@@ -293,9 +280,9 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
                   key={item.name}
                   onClick={() => handleTextureSelect(item)}
                   style={{
-                    width: '48px',
-                    height: '48px',
-                    padding: '4px',
+                    width: '80px',
+                    height: '80px',
+                    padding: '2px',
                     background: selectedTexture?.name === item.name ? UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
                     border: selectedTexture?.name === item.name ? `3px solid ${UI_CONFIG.COLORS.SELECTED_ALT_BORDER}` : `2px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
                     borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
