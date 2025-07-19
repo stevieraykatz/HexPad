@@ -49,7 +49,7 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
     setEncodingMap(map);
   }, []);
 
-  // Load grid from URL on mount and when encoding map is ready
+  // Load grid from URL on mount (only once) when encoding map is ready
   useEffect(() => {
     if (!encodingMap) return;
     
@@ -74,33 +74,11 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
       
       setHexColors(hexTextureColors);
       setHexColorsVersion(prev => prev + 1);
+      
+      // Clear the URL after loading the grid (go back to clean URL)
+      window.history.replaceState({}, '', '/');
     }
-  }, [encodingMap, gridWidth, gridHeight]);
-
-  // Update URL when grid changes
-  useEffect(() => {
-    if (!encodingMap) return;
-    
-    // Convert HexColorsMap to the format expected by the encoder
-    const assetItemColors: Record<string, AssetItem> = {};
-    Object.entries(hexColors).forEach(([key, value]) => {
-      if (typeof value === 'object' && 'name' in value) {
-        // Find matching AssetItem from PAINT_OPTIONS
-        const matchingAsset = PAINT_OPTIONS.find(option => option.name === value.name);
-        if (matchingAsset) {
-          assetItemColors[key] = matchingAsset;
-        }
-      }
-    });
-    
-    const gridState = { gridWidth, gridHeight, hexColors: assetItemColors };
-    const newUrl = generateGridUrl(gridState, encodingMap);
-    
-    // Update URL without causing page reload
-    if (window.location.pathname !== newUrl) {
-      window.history.pushState({}, '', newUrl);
-    }
-  }, [hexColors, gridWidth, gridHeight, encodingMap]);
+  }, [encodingMap]); // Only run when encodingMap is first available
 
   const paintHex = useCallback((row: number, col: number): void => {
     const hexKey = `${row}-${col}`;
@@ -194,15 +172,31 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
   }, [gridWidth, gridHeight, isExporting]);
 
   const handleCopyUrl = useCallback(async (): Promise<void> => {
+    if (!encodingMap) return;
+    
     try {
-      const currentUrl = window.location.href;
-      await navigator.clipboard.writeText(currentUrl);
-      // Could add a toast notification here
-      console.log('URL copied to clipboard:', currentUrl);
+      // Convert HexColorsMap to the format expected by the encoder
+      const assetItemColors: Record<string, AssetItem> = {};
+      Object.entries(hexColors).forEach(([key, value]) => {
+        if (typeof value === 'object' && 'name' in value) {
+          // Find matching AssetItem from PAINT_OPTIONS
+          const matchingAsset = PAINT_OPTIONS.find(option => option.name === value.name);
+          if (matchingAsset) {
+            assetItemColors[key] = matchingAsset;
+          }
+        }
+      });
+      
+      const gridState = { gridWidth, gridHeight, hexColors: assetItemColors };
+      const encodedPath = generateGridUrl(gridState, encodingMap);
+      const shareUrl = `${window.location.origin}${encodedPath}`;
+      
+      await navigator.clipboard.writeText(shareUrl);
+      console.log('Share URL copied to clipboard:', shareUrl);
     } catch (error) {
       console.error('Failed to copy URL:', error);
     }
-  }, []);
+  }, [encodingMap, hexColors, gridWidth, gridHeight]);
 
   return (
     <div className="App" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
