@@ -63,6 +63,7 @@ interface HexGridProps {
   onHexClick?: (row: number, col: number) => void;
   getHexColor?: (row: number, col: number) => HexColor | HexTexture | undefined;
   hexColorsVersion?: number;
+  backgroundColor?: { rgb: RGB };
 }
 
 export interface HexGridRef {
@@ -77,7 +78,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   colors, 
   onHexClick, 
   getHexColor, 
-  hexColorsVersion = 0 
+  hexColorsVersion = 0,
+  backgroundColor 
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
@@ -256,8 +258,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         console.warn('Some textures failed to load for export:', error);
       }
 
-      // Clear export canvas with white background for PNG export
-      exportGL.clearColor(1.0, 1.0, 1.0, 1.0); // White background for PNG export
+      // Clear export canvas with selected background color
+      const exportBgColor = backgroundColor?.rgb || [0.1, 0.1, 0.1];
+      exportGL.clearColor(exportBgColor[0], exportBgColor[1], exportBgColor[2], 1.0);
       exportGL.clear(exportGL.COLOR_BUFFER_BIT);
 
       // Render each hexagon for export
@@ -907,8 +910,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     
     if (!gl || !canvas || !colorProgram || !textureProgram) return;
 
-    // Clear canvas
-    gl.clearColor(0.1, 0.1, 0.1, 1.0);
+    // Clear canvas with selected background color
+    const bgColor = backgroundColor?.rgb || [0.1, 0.1, 0.1];
+    gl.clearColor(bgColor[0], bgColor[1], bgColor[2], 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     const hexRadius = hexRadiusRef.current;

@@ -74,6 +74,19 @@ export const DEFAULT_COLORS: DefaultColors = {
   GREY_RGB: [0.42, 0.45, 0.50], // Default grey color RGB values
 };
 
+// Background color options for app and export
+export interface BackgroundColor {
+  readonly name: string;
+  readonly displayName: string;
+  readonly rgb: RGB; // RGB values in 0-1 range for WebGL
+  readonly cssColor: string; // CSS color value for UI
+}
+
+export const BACKGROUND_COLORS: readonly BackgroundColor[] = [
+  { name: 'grey', displayName: 'Dark Grey', rgb: [0.1, 0.1, 0.1], cssColor: '#1a1a1a' },
+  { name: 'white', displayName: 'White', rgb: [1.0, 1.0, 1.0], cssColor: '#ffffff' }
+];
+
 // All available paint options - colors and terrain textures in a flat array
 export const PAINT_OPTIONS: readonly AssetItem[] = [
   // Color options

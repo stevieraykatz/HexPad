@@ -1,7 +1,16 @@
-import React, { useState, useCallback, MouseEvent, useRef } from 'react';
+import React, { useState, useCallback, MouseEvent, useRef, useEffect } from 'react';
 import HexGrid, { HexGridRef } from './HexGrid';
-import { GRID_CONFIG, UI_CONFIG, COLORS, DEFAULT_COLORS, PAINT_OPTIONS } from './config';
-import type { Color, AssetItem, ColorItem, TextureItem } from './config';
+import { GRID_CONFIG, UI_CONFIG, COLORS, DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS } from './config';
+import type { Color, AssetItem, ColorItem, TextureItem, BackgroundColor } from './config';
+import { 
+  createEncodingMap, 
+  encodeGridToUrl, 
+  decodeUrlToGrid, 
+  generateGridUrl, 
+  parseGridUrl, 
+  isValidGridEncoding 
+} from '../utils/gridEncoding';
+import type { EncodingMap } from '../utils/gridEncoding';
 
 // Type definitions for hex colors and textures
 type HexColor = string;
@@ -28,7 +37,70 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
   const [hexColorsVersion, setHexColorsVersion] = useState<number>(0);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [selectedBackgroundColor, setSelectedBackgroundColor] = useState<BackgroundColor>(BACKGROUND_COLORS[0]); // Default to grey
   const hexGridRef = useRef<HexGridRef>(null);
+  
+  // URL encoding state
+  const [encodingMap, setEncodingMap] = useState<EncodingMap | null>(null);
+
+  // Initialize encoding map
+  useEffect(() => {
+    const map = createEncodingMap(PAINT_OPTIONS);
+    setEncodingMap(map);
+  }, []);
+
+  // Load grid from URL on mount and when encoding map is ready
+  useEffect(() => {
+    if (!encodingMap) return;
+    
+    const currentPath = window.location.pathname;
+    const encoded = parseGridUrl(currentPath);
+    
+    if (encoded && isValidGridEncoding(encoded)) {
+      const decodedAssetItems = decodeUrlToGrid(encoded, gridWidth, gridHeight, encodingMap);
+      
+      // Convert AssetItems to HexTexture format
+      const hexTextureColors: HexColorsMap = {};
+      Object.entries(decodedAssetItems).forEach(([key, assetItem]) => {
+        const hexTexture: HexTexture = {
+          type: assetItem.type,
+          name: assetItem.name,
+          displayName: assetItem.displayName,
+          ...(assetItem.type === 'color' && { rgb: (assetItem as ColorItem).rgb }),
+          ...(assetItem.type === 'texture' && { path: (assetItem as TextureItem).path })
+        };
+        hexTextureColors[key] = hexTexture;
+      });
+      
+      setHexColors(hexTextureColors);
+      setHexColorsVersion(prev => prev + 1);
+    }
+  }, [encodingMap, gridWidth, gridHeight]);
+
+  // Update URL when grid changes
+  useEffect(() => {
+    if (!encodingMap) return;
+    
+    // Convert HexColorsMap to the format expected by the encoder
+    const assetItemColors: Record<string, AssetItem> = {};
+    Object.entries(hexColors).forEach(([key, value]) => {
+      if (typeof value === 'object' && 'name' in value) {
+        // Find matching AssetItem from PAINT_OPTIONS
+        const matchingAsset = PAINT_OPTIONS.find(option => option.name === value.name);
+        if (matchingAsset) {
+          assetItemColors[key] = matchingAsset;
+        }
+      }
+    });
+    
+    const gridState = { gridWidth, gridHeight, hexColors: assetItemColors };
+    const newUrl = generateGridUrl(gridState, encodingMap);
+    
+    // Update URL without causing page reload
+    if (window.location.pathname !== newUrl) {
+      window.history.pushState({}, '', newUrl);
+    }
+  }, [hexColors, gridWidth, gridHeight, encodingMap]);
 
   const paintHex = useCallback((row: number, col: number): void => {
     const hexKey = `${row}-${col}`;
@@ -120,6 +192,17 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
       }
     }
   }, [gridWidth, gridHeight, isExporting]);
+
+  const handleCopyUrl = useCallback(async (): Promise<void> => {
+    try {
+      const currentUrl = window.location.href;
+      await navigator.clipboard.writeText(currentUrl);
+      // Could add a toast notification here
+      console.log('URL copied to clipboard:', currentUrl);
+    } catch (error) {
+      console.error('Failed to copy URL:', error);
+    }
+  }, []);
 
   return (
     <div className="App" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -239,6 +322,56 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
           </div>
         </div>
 
+        {/* Background Color */}
+        <div style={{ marginBottom: UI_CONFIG.SPACING.XXLARGE }}>
+          <h3 style={{ 
+            color: UI_CONFIG.COLORS.TEXT_SECONDARY, 
+            fontSize: UI_CONFIG.FONT_SIZE.LARGE,
+            marginBottom: UI_CONFIG.SPACING.LARGE,
+            fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM
+          }}>
+            Background
+          </h3>
+          
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: UI_CONFIG.SPACING.SMALL
+          }}>
+            {BACKGROUND_COLORS.map((bgColor: BackgroundColor) => (
+              <button
+                key={bgColor.name}
+                onClick={() => setSelectedBackgroundColor(bgColor)}
+                style={{
+                  padding: `${UI_CONFIG.SPACING.MEDIUM} ${UI_CONFIG.SPACING.LARGE}`,
+                  background: selectedBackgroundColor.name === bgColor.name ? UI_CONFIG.COLORS.SELECTED_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
+                  border: selectedBackgroundColor.name === bgColor.name ? `2px solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` : `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
+                  borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
+                  color: UI_CONFIG.COLORS.TEXT_PRIMARY,
+                  fontSize: UI_CONFIG.FONT_SIZE.NORMAL,
+                  cursor: 'pointer',
+                  transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+                  textAlign: 'left',
+                  fontWeight: selectedBackgroundColor.name === bgColor.name ? UI_CONFIG.FONT_WEIGHT.MEDIUM : UI_CONFIG.FONT_WEIGHT.NORMAL,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: UI_CONFIG.SPACING.MEDIUM
+                }}
+              >
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '4px',
+                  background: bgColor.cssColor,
+                  border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+                  flexShrink: 0
+                }} />
+                {bgColor.displayName}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Paint Tools */}
         <div style={{ marginBottom: UI_CONFIG.SPACING.XXLARGE }}>
           {/* All Assets - Compact Icon Grid */}
@@ -320,6 +453,25 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
         {/* Actions */}
         <div style={{ marginTop: 'auto', paddingTop: UI_CONFIG.SPACING.XLARGE }}>
           <button
+            onClick={handleCopyUrl}
+            style={{
+              width: '100%',
+              padding: UI_CONFIG.SPACING.LARGE,
+              background: UI_CONFIG.COLORS.SELECTED_BACKGROUND,
+              border: `2px solid ${UI_CONFIG.COLORS.SELECTED_BORDER}`,
+              borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
+              color: UI_CONFIG.COLORS.TEXT_PRIMARY,
+              fontSize: UI_CONFIG.FONT_SIZE.NORMAL,
+              cursor: 'pointer',
+              transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+              fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
+              marginBottom: UI_CONFIG.SPACING.LARGE
+            }}
+          >
+            🔗 Copy Share URL
+          </button>
+          
+          <button
             onClick={handleExportPNG}
             disabled={isExporting}
             style={{
@@ -392,6 +544,7 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
           onHexClick={paintHex}
           getHexColor={getHexColor}
           hexColorsVersion={hexColorsVersion}
+          backgroundColor={selectedBackgroundColor}
         />
       </div>
     </div>

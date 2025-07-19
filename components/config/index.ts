@@ -60,7 +60,7 @@ export type {
   ZIndexConfig 
 } from './uiConfig';
 
-export { COLORS, DEFAULT_COLORS, PAINT_OPTIONS, ASSET_PATHS } from './assetsConfig';
+export { COLORS, DEFAULT_COLORS, PAINT_OPTIONS, ASSET_PATHS, BACKGROUND_COLORS } from './assetsConfig';
 export type { 
   RGB, 
   Color, 
@@ -68,5 +68,6 @@ export type {
   TextureItem, 
   AssetItem,
   DefaultColors, 
-  AssetPaths 
+  AssetPaths,
+  BackgroundColor 
 } from './assetsConfig'; 
