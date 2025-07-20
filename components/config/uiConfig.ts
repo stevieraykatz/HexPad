@@ -40,6 +40,7 @@ export interface FontSizeConfig {
   readonly NORMAL: string;
   readonly LARGE: string;
   readonly XLARGE: string;
+  readonly XXLARGE: string;
 }
 
 export interface FontWeightConfig {
@@ -92,6 +93,30 @@ export interface GridControlsConfig {
   readonly COLOR_SWATCH_BORDER_NORMAL: string;
 }
 
+export interface PaintOptionsConfig {
+  readonly GRID_COLUMNS: number; // Number of columns in paint options grid
+  readonly TILE_SIZE: string; // Size of each paint option tile
+  readonly TILE_GAP: string; // Gap between paint option tiles
+  readonly TILE_PADDING: string; // Padding inside each tile
+  readonly TILE_BORDER_WIDTH_NORMAL: string; // Border width for normal tiles
+  readonly TILE_BORDER_WIDTH_SELECTED: string; // Border width for selected tiles
+  readonly ZOOM_SCALE_PERCENTAGE: string; // Scale percentage for zooming texture images
+  readonly ZOOM_OFFSET_PERCENTAGE: string; // Offset percentage for zoomed texture positioning
+  readonly MAX_HEIGHT: string; // Maximum height for scrollable paint options
+}
+
+export interface MenuConfig {
+  readonly TOGGLE_BUTTON_OFFSET: number; // Offset for menu toggle button when menu is open
+  readonly TOP_MARGIN: string; // Top margin for menu content
+  readonly MENU_ITEM_SPACING: string; // Spacing between major menu sections
+}
+
+export interface AppLayoutConfig {
+  readonly FULL_WIDTH_PERCENTAGE: string; // 100% width value
+  readonly FULL_HEIGHT_PERCENTAGE: string; // 100% height value
+  readonly EXPORT_OPACITY_DISABLED: number; // Opacity when export button is disabled
+}
+
 export interface HoverConfig {
   readonly DANGER_BACKGROUND: string;
 }
@@ -131,6 +156,15 @@ export interface UIConfig {
   
   // Grid controls
   readonly GRID_CONTROLS: GridControlsConfig;
+  
+  // Paint options
+  readonly PAINT_OPTIONS: PaintOptionsConfig;
+  
+  // Menu configuration
+  readonly MENU: MenuConfig;
+  
+  // App layout
+  readonly APP_LAYOUT: AppLayoutConfig;
   
   // Hover effects
   readonly HOVER: HoverConfig;
@@ -175,6 +209,7 @@ export const UI_CONFIG: UIConfig = {
     NORMAL: '14px',
     LARGE: '16px',
     XLARGE: '20px',
+    XXLARGE: '30px',
   },
   
   FONT_WEIGHT: {
@@ -228,6 +263,33 @@ export const UI_CONFIG: UIConfig = {
     COLOR_SWATCH_SIZE: '40px',
     COLOR_SWATCH_BORDER_SELECTED: '3px solid white',
     COLOR_SWATCH_BORDER_NORMAL: '2px solid rgba(255, 255, 255, 0.3)',
+  },
+  
+  // Paint options
+  PAINT_OPTIONS: {
+    GRID_COLUMNS: 3, // Number of columns in paint options grid
+    TILE_SIZE: '80px', // Size of each paint option tile
+    TILE_GAP: '4px', // Gap between paint option tiles
+    TILE_PADDING: '2px', // Padding inside each tile
+    TILE_BORDER_WIDTH_NORMAL: '2px', // Border width for normal tiles
+    TILE_BORDER_WIDTH_SELECTED: '3px', // Border width for selected tiles
+    ZOOM_SCALE_PERCENTAGE: '130%', // Scale percentage for zooming texture images
+    ZOOM_OFFSET_PERCENTAGE: '-15%', // Offset percentage for zoomed texture positioning
+    MAX_HEIGHT: '400px', // Maximum height for scrollable paint options
+  },
+  
+  // Menu configuration
+  MENU: {
+    TOGGLE_BUTTON_OFFSET: 10, // Offset for menu toggle button when menu is open
+    TOP_MARGIN: '40px', // Top margin for menu content
+    MENU_ITEM_SPACING: '0', // Spacing between major menu sections (using SPACING.XXLARGE instead)
+  },
+  
+  // App layout
+  APP_LAYOUT: {
+    FULL_WIDTH_PERCENTAGE: '100%', // 100% width value
+    FULL_HEIGHT_PERCENTAGE: '100%', // 100% height value
+    EXPORT_OPACITY_DISABLED: 0.7, // Opacity when export button is disabled
   },
   
   // Hover effects
