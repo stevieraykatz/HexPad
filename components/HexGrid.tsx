@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { GRID_CONFIG, DEFAULT_COLORS } from './config';
-import type { Color, RGB } from './config';
+import type { Color, RGB, IconItem } from './config';
 
 // Import utility modules
 import { initializeWebGLContext, createShaderPrograms, loadTexture } from '../utils/webglUtils';
@@ -33,7 +33,9 @@ interface HexGridProps {
   colors?: readonly Color[];
   onHexClick?: (row: number, col: number) => void;
   getHexColor?: (row: number, col: number) => HexColor | HexTexture | undefined;
+  getHexIcon?: (row: number, col: number) => IconItem | undefined;
   hexColorsVersion?: number;
+  hexIconsVersion?: number;
   backgroundColor?: { rgb: RGB };
 }
 
@@ -47,7 +49,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   colors, 
   onHexClick, 
   getHexColor, 
+  getHexIcon,
   hexColorsVersion = 0,
+  hexIconsVersion = 0,
   backgroundColor 
 }, ref) => {
   // Canvas and WebGL refs
@@ -401,12 +405,12 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     initWebGL();
   }, [initWebGL]);
 
-  // Re-render when hex colors change
+  // Re-render when hex colors or icons change
   useEffect(() => {
     if (glRef.current && colorProgramRef.current && textureProgramRef.current) {
       renderGrid();
     }
-  }, [hexColorsVersion, renderGrid]);
+  }, [hexColorsVersion, hexIconsVersion, renderGrid]);
 
   // Add event listeners
   useEffect(() => {
@@ -437,16 +441,57 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   }, [handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave, handleWheel, isDragging]);
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      style={{ 
-        display: 'block',
-        width: '100%',
-        height: '100%'
-      }} 
-      width={canvasSize.width}
-      height={canvasSize.height}
-    />
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <canvas 
+        ref={canvasRef} 
+        style={{ 
+          display: 'block',
+          width: '100%',
+          height: '100%'
+        }} 
+        width={canvasSize.width}
+        height={canvasSize.height}
+      />
+      
+      {/* Icon Overlays */}
+      {getHexIcon && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none', // Allow clicks to pass through to canvas
+          overflow: 'hidden'
+        }}>
+          {hexPositionsRef.current.map((pos) => {
+            const icon = getHexIcon(pos.row, pos.col);
+            if (!icon) return null;
+            
+            const hexRadius = hexRadiusRef.current;
+            const iconSize = hexRadius * 1.2; // Icon size relative to hex
+            
+            return (
+              <img
+                key={`${pos.row}-${pos.col}`}
+                src={icon.path}
+                alt={icon.displayName}
+                style={{
+                  position: 'absolute',
+                  left: pos.x - iconSize / 2,
+                  top: pos.y - iconSize / 2,
+                  width: iconSize,
+                  height: iconSize,
+                  objectFit: 'contain',
+                  pointerEvents: 'none',
+                  zIndex: 1
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 });
 

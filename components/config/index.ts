@@ -69,4 +69,7 @@ export type {
   AssetItem,
   DefaultColors, 
   BackgroundColor 
-} from './assetsConfig'; 
+} from './assetsConfig';
+
+export { ICON_OPTIONS } from './iconsConfig';
+export type { IconItem } from './iconsConfig'; 

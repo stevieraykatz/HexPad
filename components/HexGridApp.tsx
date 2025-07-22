@@ -1,7 +1,7 @@
 import React, { useState, useCallback, MouseEvent, useRef, useEffect } from 'react';
 import HexGrid, { HexGridRef } from './HexGrid';
-import { GRID_CONFIG, UI_CONFIG, COLORS, DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS } from './config';
-import type { Color, AssetItem, ColorItem, TextureItem, BackgroundColor, RGB } from './config';
+import { GRID_CONFIG, UI_CONFIG, COLORS, DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS, ICON_OPTIONS } from './config';
+import type { Color, AssetItem, ColorItem, TextureItem, BackgroundColor, RGB, IconItem } from './config';
 import { 
   createEncodingMap, 
   decodeUrlToGrid, 
@@ -33,7 +33,10 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
   const [hexColors, setHexColors] = useState<HexColorsMap>({});
 
   const [selectedTexture, setSelectedTexture] = useState<HexTexture | null>(null);
+  const [selectedIcon, setSelectedIcon] = useState<IconItem | null>(null);
+  const [hexIcons, setHexIcons] = useState<Record<string, IconItem>>({});
   const [hexColorsVersion, setHexColorsVersion] = useState<number>(0);
+  const [hexIconsVersion, setHexIconsVersion] = useState<number>(0);
   const [menuOpen, setMenuOpen] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'paint' | 'icons'>('paint');
   const [isExporting, setIsExporting] = useState<boolean>(false);
@@ -83,36 +86,47 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
   const paintHex = useCallback((row: number, col: number): void => {
     const hexKey = `${row}-${col}`;
     
-    // Use selectedTexture if available, otherwise fall back to selectedColor
-    let textureToUse: HexTexture | null = selectedTexture;
-    
-    if (!textureToUse) {
-      // Create a color texture from selectedColor
-      const colorData: Color | undefined = COLORS.find(c => c.name === selectedColor);
-      if (colorData) {
-        textureToUse = { 
-          type: 'color', 
-          name: selectedColor, 
-          displayName: selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1),
-          rgb: colorData.rgb
-        };
-      } else {
-        // Fallback for grey or unknown colors
-        textureToUse = { 
-          type: 'color', 
-          name: selectedColor, 
-          displayName: selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1),
-          rgb: DEFAULT_COLORS.GREY_RGB
-        };
+    if (activeTab === 'icons') {
+      // Place or remove icon
+      if (selectedIcon) {
+        setHexIcons(prev => ({
+          ...prev,
+          [hexKey]: selectedIcon
+        }));
+        setHexIconsVersion(prev => prev + 1);
       }
+    } else {
+      // Paint mode - use selectedTexture if available, otherwise fall back to selectedColor
+      let textureToUse: HexTexture | null = selectedTexture;
+      
+      if (!textureToUse) {
+        // Create a color texture from selectedColor
+        const colorData: Color | undefined = COLORS.find(c => c.name === selectedColor);
+        if (colorData) {
+          textureToUse = { 
+            type: 'color', 
+            name: selectedColor, 
+            displayName: selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1),
+            rgb: colorData.rgb
+          };
+        } else {
+          // Fallback for grey or unknown colors
+          textureToUse = { 
+            type: 'color', 
+            name: selectedColor, 
+            displayName: selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1),
+            rgb: DEFAULT_COLORS.GREY_RGB
+          };
+        }
+      }
+      
+      setHexColors(prev => ({
+        ...prev,
+        [hexKey]: textureToUse!
+      }));
+      setHexColorsVersion(prev => prev + 1);
     }
-    
-    setHexColors(prev => ({
-      ...prev,
-      [hexKey]: textureToUse!
-    }));
-    setHexColorsVersion(prev => prev + 1);
-  }, [selectedColor, selectedTexture]);
+  }, [selectedColor, selectedTexture, selectedIcon, activeTab]);
 
   const clearGrid = useCallback((): void => {
     // Set all hexes to default grey instead of clearing them
@@ -124,12 +138,21 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
     }
     setHexColors(greyColors);
     setHexColorsVersion(prev => prev + 1);
+    
+    // Also clear all icons
+    setHexIcons({});
+    setHexIconsVersion(prev => prev + 1);
   }, [gridWidth, gridHeight]);
 
   const getHexColor = useCallback((row: number, col: number): HexColor | HexTexture | undefined => {
     const hexKey = `${row}-${col}`;
     return hexColors[hexKey];
   }, [hexColors]);
+
+  const getHexIcon = useCallback((row: number, col: number): IconItem | undefined => {
+    const hexKey = `${row}-${col}`;
+    return hexIcons[hexKey];
+  }, [hexIcons]);
 
 
 
@@ -146,6 +169,10 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
     if (texture.type === 'color') {
       setSelectedColor(texture.name);
     }
+  }, []);
+
+  const handleIconSelect = useCallback((icon: IconItem): void => {
+    setSelectedIcon(icon);
   }, []);
 
   const handleMouseOver = useCallback((e: MouseEvent<HTMLButtonElement>): void => {
@@ -587,30 +614,77 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
         
         {/* Icons Tab Content */}
         {activeTab === 'icons' && (
-          <div style={{ 
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '400px',
-            color: UI_CONFIG.COLORS.TEXT_TERTIARY,
-            fontSize: UI_CONFIG.FONT_SIZE.LARGE
-          }}>
-            <div style={{ 
-              fontSize: UI_CONFIG.FONT_SIZE.XLARGE,
-              marginBottom: UI_CONFIG.SPACING.LARGE
+          <div style={{ marginBottom: UI_CONFIG.SPACING.XXLARGE }}>
+            <h3 style={{ 
+              color: UI_CONFIG.COLORS.TEXT_SECONDARY, 
+              fontSize: UI_CONFIG.FONT_SIZE.LARGE,
+              marginBottom: UI_CONFIG.SPACING.LARGE,
+              fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM
             }}>
-              📍
+              Icon Overlays
+            </h3>
+            
+            {/* Icon Options Grid */}
+            <div style={{ 
+              display: 'grid',
+              gridTemplateColumns: `repeat(${UI_CONFIG.PAINT_OPTIONS.GRID_COLUMNS}, 1fr)`,
+              gap: UI_CONFIG.PAINT_OPTIONS.TILE_GAP,
+              maxHeight: UI_CONFIG.PAINT_OPTIONS.MAX_HEIGHT,
+              overflowY: 'auto',
+              justifyContent: 'center',
+              justifyItems: 'center'
+            }}>
+              {ICON_OPTIONS.map((icon: IconItem) => (
+                <button
+                  key={icon.name}
+                  onClick={() => handleIconSelect(icon)}
+                  style={{
+                    width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
+                    height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
+                    padding: UI_CONFIG.PAINT_OPTIONS.TILE_PADDING,
+                    background: selectedIcon?.name === icon.name ? UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
+                    border: selectedIcon?.name === icon.name ? `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_SELECTED} solid ${UI_CONFIG.COLORS.SELECTED_ALT_BORDER}` : `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_NORMAL} solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
+                    borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
+                    cursor: 'pointer',
+                    transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+                    boxShadow: selectedIcon?.name === icon.name ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
+                  }}
+                  title={icon.displayName}
+                >
+                  <div style={{
+                    width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
+                    height: UI_CONFIG.APP_LAYOUT.FULL_HEIGHT_PERCENTAGE,
+                    borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
+                    border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+                    overflow: 'hidden',
+                    position: 'relative',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                  }}>
+                    <img 
+                      src={icon.path}
+                      alt={icon.displayName}
+                      style={{
+                        width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
+                        height: UI_CONFIG.APP_LAYOUT.FULL_HEIGHT_PERCENTAGE,
+                        objectFit: 'contain',
+                        padding: '4px'
+                      }}
+                    />
+                  </div>
+                </button>
+              ))}
             </div>
-            <div>Icons Coming Soon</div>
+            
             <div style={{ 
-              fontSize: UI_CONFIG.FONT_SIZE.MEDIUM,
-              marginTop: UI_CONFIG.SPACING.MEDIUM,
+              fontSize: UI_CONFIG.FONT_SIZE.MEDIUM, 
+              color: UI_CONFIG.COLORS.TEXT_SUBTLE,
               textAlign: 'center',
-              color: UI_CONFIG.COLORS.TEXT_MUTED
+              marginTop: UI_CONFIG.SPACING.LARGE,
+              padding: UI_CONFIG.SPACING.MEDIUM,
+              background: UI_CONFIG.COLORS.INFO_BACKGROUND,
+              borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM
             }}>
-              This tab will contain icon overlays<br/>
-              for placing on the map
+              Select an icon to place as overlay on hex tiles
             </div>
           </div>
         )}
@@ -633,7 +707,9 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
           colors={COLORS}
           onHexClick={paintHex}
           getHexColor={getHexColor}
+          getHexIcon={getHexIcon}
           hexColorsVersion={hexColorsVersion}
+          hexIconsVersion={hexIconsVersion}
           backgroundColor={selectedBackgroundColor}
         />
       </div>
