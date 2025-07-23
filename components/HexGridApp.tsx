@@ -35,6 +35,7 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
   const [selectedTexture, setSelectedTexture] = useState<HexTexture | null>(null);
   const [selectedIcon, setSelectedIcon] = useState<IconItem | null>(null);
   const [hexIcons, setHexIcons] = useState<Record<string, IconItem>>({});
+  const [hexIconsHistory, setHexIconsHistory] = useState<Record<string, IconItem>[]>([]);
   const [hexColorsVersion, setHexColorsVersion] = useState<number>(0);
   const [hexIconsVersion, setHexIconsVersion] = useState<number>(0);
   const [menuOpen, setMenuOpen] = useState<boolean>(true);
@@ -45,12 +46,39 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
   
   // URL encoding state
   const [encodingMap, setEncodingMap] = useState<EncodingMap | null>(null);
+  
+  // Track previous state for undo functionality
+  const prevHexIconsRef = useRef<Record<string, IconItem>>({});
+  const isUndoingRef = useRef<boolean>(false);
 
   // Initialize encoding map
   useEffect(() => {
     const map = createEncodingMap(PAINT_OPTIONS);
     setEncodingMap(map);
   }, []);
+
+  // Save previous state to history when hexIcons changes (but not during undo operations)
+  useEffect(() => {
+    // Skip saving to history if we're currently undoing
+    if (isUndoingRef.current) {
+      isUndoingRef.current = false; // Reset the flag
+      prevHexIconsRef.current = { ...hexIcons }; // Update ref to current state
+      return;
+    }
+    
+    const prevState = prevHexIconsRef.current;
+    const currentState = hexIcons;
+    
+    // Only save to history if this is not the initial empty state and there was actually a change
+    if (Object.keys(prevState).length > 0 || Object.keys(currentState).length > 0) {
+      if (JSON.stringify(prevState) !== JSON.stringify(currentState)) {
+        setHexIconsHistory(prev => [...prev.slice(-9), { ...prevState }]); // Keep last 10 states
+      }
+    }
+    
+    // Update the ref to current state for next comparison
+    prevHexIconsRef.current = { ...currentState };
+  }, [hexIcons]);
 
   // Load grid from URL on mount (only once) when encoding map is ready
   useEffect(() => {
@@ -87,8 +115,20 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
     const hexKey = `${row}-${col}`;
     
     if (activeTab === 'icons') {
-      // Place or remove icon
-      if (selectedIcon) {
+      // Handle icon eraser or placement
+      if (selectedIcon?.name === 'eraser') {
+        // Only process if there's actually an icon to remove
+        if (hexIcons[hexKey]) {
+          // Remove icon from this hex
+          setHexIcons(prev => {
+            const newIcons = { ...prev };
+            delete newIcons[hexKey];
+            return newIcons;
+          });
+          setHexIconsVersion(prev => prev + 1);
+        }
+      } else if (selectedIcon) {
+        // Place icon
         setHexIcons(prev => ({
           ...prev,
           [hexKey]: selectedIcon
@@ -141,6 +181,7 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
     
     // Also clear all icons
     setHexIcons({});
+    setHexIconsHistory([]);
     setHexIconsVersion(prev => prev + 1);
   }, [gridWidth, gridHeight]);
 
@@ -174,6 +215,20 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
   const handleIconSelect = useCallback((icon: IconItem): void => {
     setSelectedIcon(icon);
   }, []);
+
+  const handleIconUndo = useCallback((): void => {
+    if (hexIconsHistory.length > 0) {
+      const previousState = hexIconsHistory[hexIconsHistory.length - 1];
+      const newHistory = hexIconsHistory.slice(0, -1);
+      
+      // Set flag to prevent useEffect from saving this state change to history
+      isUndoingRef.current = true;
+      
+      setHexIcons(previousState);
+      setHexIconsHistory(newHistory);
+      setHexIconsVersion(prev => prev + 1);
+    }
+  }, [hexIconsHistory]);
 
   const handleMouseOver = useCallback((e: MouseEvent<HTMLButtonElement>): void => {
     (e.target as HTMLButtonElement).style.background = UI_CONFIG.HOVER.DANGER_BACKGROUND;
@@ -675,16 +730,76 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
               ))}
             </div>
             
+            {/* Icon Actions */}
+            <div style={{
+              display: 'flex',
+              gap: UI_CONFIG.SPACING.LARGE,
+              marginTop: UI_CONFIG.SPACING.XXLARGE,
+              marginBottom: UI_CONFIG.SPACING.LARGE,
+              justifyContent: 'center'
+            }}>
+              {/* Icon Eraser Button */}
+              <button
+                onClick={() => handleIconSelect({ name: 'eraser', displayName: 'Eraser', type: 'icon', path: '' } as IconItem)}
+                style={{
+                  width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
+                  height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
+                  padding: UI_CONFIG.SPACING.SMALL,
+                  background: selectedIcon?.name === 'eraser' ? UI_CONFIG.COLORS.DANGER_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
+                  border: selectedIcon?.name === 'eraser' ? `2px solid ${UI_CONFIG.COLORS.DANGER_BORDER}` : `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+                  borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
+                  color: selectedIcon?.name === 'eraser' ? UI_CONFIG.COLORS.TEXT_DANGER : UI_CONFIG.COLORS.TEXT_PRIMARY,
+                  fontSize: UI_CONFIG.FONT_SIZE.XLARGE,
+                  cursor: 'pointer',
+                  transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+                  fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
+                  boxShadow: selectedIcon?.name === 'eraser' ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                title="Remove icon overlay"
+              >
+                🧹
+              </button>
+              
+              {/* Icon Undo Button */}
+              <button
+                onClick={handleIconUndo}
+                disabled={hexIconsHistory.length === 0}
+                style={{
+                  width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
+                  height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
+                  padding: UI_CONFIG.SPACING.SMALL,
+                  background: UI_CONFIG.COLORS.BUTTON_BACKGROUND,
+                  border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+                  borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
+                  color: hexIconsHistory.length > 0 ? UI_CONFIG.COLORS.TEXT_PRIMARY : UI_CONFIG.COLORS.TEXT_MUTED,
+                  fontSize: UI_CONFIG.FONT_SIZE.XLARGE,
+                  cursor: hexIconsHistory.length > 0 ? 'pointer' : 'not-allowed',
+                  transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+                  fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
+                  opacity: hexIconsHistory.length > 0 ? 1 : UI_CONFIG.APP_LAYOUT.EXPORT_OPACITY_DISABLED,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                title={hexIconsHistory.length > 0 ? 'Undo last icon action' : 'No actions to undo'}
+              >
+                ↩️
+              </button>
+            </div>
+            
             <div style={{ 
               fontSize: UI_CONFIG.FONT_SIZE.MEDIUM, 
               color: UI_CONFIG.COLORS.TEXT_SUBTLE,
               textAlign: 'center',
-              marginTop: UI_CONFIG.SPACING.LARGE,
               padding: UI_CONFIG.SPACING.MEDIUM,
               background: UI_CONFIG.COLORS.INFO_BACKGROUND,
               borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM
             }}>
-              Select an icon to place as overlay on hex tiles
+              Select an icon to place as overlay on hex tiles<br/>
+              Use the eraser (🧹) to remove overlays or undo (↩️) to revert actions
             </div>
           </div>
         )}
