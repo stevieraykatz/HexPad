@@ -16,6 +16,7 @@ import { calculateZoomToPoint } from '../utils/zoomPanUtils';
 import { exportAsPNG as exportUtility, type HexStyle } from '../utils/exportUtils';
 import { useBorderInteraction } from '../hooks/useBorderInteraction';
 import { useBorderRendering } from '../hooks/useBorderRendering';
+import { useIconPositioning } from '../hooks/useIconPositioning';
 import type { BorderEdge } from '../utils/borderUtils';
 
 interface HexTexture {
@@ -105,6 +106,17 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     hexPositionsRef,
     hexRadiusRef,
     borders
+  });
+
+  // Icon positioning hook
+  const {
+    throttledPositions,
+    throttledRadius,
+    updateIconPositionsThrottled,
+    cancelPendingUpdates: cancelPendingIconUpdates
+  } = useIconPositioning({
+    hexPositionsRef,
+    hexRadiusRef
   });
 
   const exportAsPNG = useCallback(async (
@@ -433,10 +445,14 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   useEffect(() => {
     if (hexPositionsRef.current.length > 0 && hexRadiusRef.current > 0) {
       renderBordersThrottled();
+      updateIconPositionsThrottled();
     }
 
-    return cancelPendingRenders;
-  }, [bordersVersion, borders, renderBordersThrottled, canvasSize, zoomLevel, panOffset, cancelPendingRenders]);
+    return () => {
+      cancelPendingRenders();
+      cancelPendingIconUpdates();
+    };
+  }, [bordersVersion, borders, renderBordersThrottled, canvasSize, zoomLevel, panOffset, cancelPendingRenders, updateIconPositionsThrottled, cancelPendingIconUpdates]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -463,9 +479,10 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           canvas.style.cursor = 'default';
         
         cancelPendingRenders();
+        cancelPendingIconUpdates();
       };
     }
-  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave, handleWheel, isDragging, cancelPendingRenders]);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave, handleWheel, isDragging, cancelPendingRenders, cancelPendingIconUpdates]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -508,12 +525,11 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           pointerEvents: 'none', // Allow clicks to pass through to canvas
           overflow: 'hidden'
         }}>
-          {hexPositionsRef.current.map((pos) => {
+          {throttledPositions.map((pos) => {
             const icon = getHexIcon(pos.row, pos.col);
             if (!icon) return null;
             
-            const hexRadius = hexRadiusRef.current;
-            const iconSize = hexRadius * 1.2; // Icon size relative to hex
+            const iconSize = throttledRadius * 1.2; // Icon size relative to hex
             
             return (
               <img
