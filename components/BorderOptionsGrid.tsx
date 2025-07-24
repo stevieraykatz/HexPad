@@ -77,19 +77,7 @@ const BorderOptionsGrid: React.FC<BorderOptionsGridProps> = ({
           }}
         />
       </div>
-      
-      <div style={{ 
-        fontSize: UI_CONFIG.FONT_SIZE.MEDIUM, 
-        color: UI_CONFIG.COLORS.TEXT_SUBTLE,
-        textAlign: 'center',
-        padding: UI_CONFIG.SPACING.MEDIUM,
-        background: UI_CONFIG.COLORS.INFO_BACKGROUND,
-        borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-        marginTop: UI_CONFIG.SPACING.LARGE
-      }}>
-        Choose a border color using the picker above, then click or drag on edges between hex tiles<br/>
-        Use the eraser (🧹) to remove borders or undo (↩️) to revert actions
-      </div>
+    
     </div>
   );
 };
