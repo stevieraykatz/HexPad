@@ -38,7 +38,7 @@ export type {
   ZIndexConfig 
 } from './uiConfig';
 
-export { COLORS, DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS, BARRIER_COLORS } from './assetsConfig';
+export { COLORS, DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS, BORDER_COLORS } from './assetsConfig';
 export type { 
   RGB, 
   Color, 
@@ -47,7 +47,7 @@ export type {
   AssetItem,
   DefaultColors, 
   BackgroundColor,
-  BarrierColor 
+  BorderColor 
 } from './assetsConfig';
 
 export { ICON_OPTIONS } from './iconsConfig';

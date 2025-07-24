@@ -3,10 +3,10 @@ import { UI_CONFIG } from './config';
 import type { IconItem } from './config';
 
 interface TabButtonsProps {
-  activeTab: 'paint' | 'icons' | 'barriers';
+  activeTab: 'paint' | 'icons' | 'borders';
   menuOpen: boolean;
   selectedIcon: IconItem | null;
-  onTabChange: (tab: 'paint' | 'icons' | 'barriers') => void;
+  onTabChange: (tab: 'paint' | 'icons' | 'borders') => void;
   onMenuToggle: () => void;
 }
 
@@ -17,15 +17,15 @@ const TabButtons: React.FC<TabButtonsProps> = ({
   onTabChange, 
   onMenuToggle 
 }) => {
-  const createTabButtonStyle = (tab: 'paint' | 'icons' | 'barriers', isActive: boolean) => ({
+  const createTabButtonStyle = (tab: 'paint' | 'icons' | 'borders', isActive: boolean) => ({
     width: (isActive && menuOpen) ? '60px' : '50px',
     height: (isActive && menuOpen) ? '60px' : '50px',
     background: (isActive && menuOpen) 
-      ? (tab === 'paint' || tab === 'barriers' ? UI_CONFIG.COLORS.SELECTED_BACKGROUND : UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND)
+      ? (tab === 'paint' || tab === 'borders' ? UI_CONFIG.COLORS.SELECTED_BACKGROUND : UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND)
       : UI_CONFIG.COLORS.OVERLAY_BACKGROUND,
     backdropFilter: UI_CONFIG.BLUR.LIGHT,
     border: (isActive && menuOpen) 
-      ? `2px solid ${tab === 'paint' || tab === 'barriers' ? UI_CONFIG.COLORS.SELECTED_BORDER : UI_CONFIG.COLORS.SELECTED_ALT_BORDER}`
+      ? `2px solid ${tab === 'paint' || tab === 'borders' ? UI_CONFIG.COLORS.SELECTED_BORDER : UI_CONFIG.COLORS.SELECTED_ALT_BORDER}`
       : `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
     borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
     color: UI_CONFIG.COLORS.TEXT_PRIMARY,
@@ -38,7 +38,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({
     justifyContent: 'center'
   });
 
-  const handleTabClick = (tab: 'paint' | 'icons' | 'barriers') => {
+  const handleTabClick = (tab: 'paint' | 'icons' | 'borders') => {
     onTabChange(tab);
     if (!menuOpen) onMenuToggle();
     
@@ -78,10 +78,10 @@ const TabButtons: React.FC<TabButtonsProps> = ({
         📍
       </button>
 
-      {/* Barriers Menu Button */}
+      {/* Borders Menu Button */}
       <button
-        onClick={() => handleTabClick('barriers')}
-        style={createTabButtonStyle('barriers', activeTab === 'barriers')}
+        onClick={() => handleTabClick('borders')}
+        style={createTabButtonStyle('borders', activeTab === 'borders')}
         title="Border Tools"
       >
         🧱

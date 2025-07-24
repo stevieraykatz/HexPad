@@ -68,7 +68,7 @@ export interface BackgroundColor {
   readonly cssColor: string;
 }
 
-export interface BarrierColor {
+export interface BorderColor {
   readonly name: string;
   readonly displayName: string;
   readonly value: string; // Hex color value
@@ -80,7 +80,7 @@ export const BACKGROUND_COLORS: readonly BackgroundColor[] = [
   { name: 'white', displayName: 'White', rgb: [1.0, 1.0, 1.0], cssColor: '#ffffff' }
 ];
 
-export const BARRIER_COLORS: readonly BarrierColor[] = [
+export const BORDER_COLORS: readonly BorderColor[] = [
   { name: 'stone', displayName: 'Stone', value: '#6B7280', rgb: [0.42, 0.45, 0.50] },
   { name: 'brick', displayName: 'Brick', value: '#DC2626', rgb: [0.86, 0.15, 0.15] },
   { name: 'wood', displayName: 'Wood', value: '#92400E', rgb: [0.57, 0.25, 0.05] },

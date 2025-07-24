@@ -6,6 +6,7 @@ interface BottomActionMenuProps {
   selectedIcon: IconItem | null;
   isExporting: boolean;
   hasUndoHistory: boolean;
+  activeTab?: 'paint' | 'icons' | 'borders';
   onCopyUrl: () => void;
   onExportPNG: () => void;
   onEraserToggle: () => void;
@@ -17,6 +18,7 @@ const BottomActionMenu: React.FC<BottomActionMenuProps> = ({
   selectedIcon,
   isExporting,
   hasUndoHistory,
+  activeTab = 'paint',
   onCopyUrl,
   onExportPNG,
   onEraserToggle,
@@ -110,7 +112,10 @@ const BottomActionMenu: React.FC<BottomActionMenuProps> = ({
       <button
         onClick={onEraserToggle}
         style={createActionButtonStyle(selectedIcon?.name === 'eraser' ? 'danger' : 'inactive')}
-        title={selectedIcon?.name === 'eraser' ? 'Deselect eraser' : 'Erase icons and textures'}
+        title={selectedIcon?.name === 'eraser' ? 'Deselect eraser' : 
+               activeTab === 'borders' ? 'Erase borders' :
+               activeTab === 'icons' ? 'Erase icons and textures' :
+               'Erase icons and textures'}
       >
         🧹
       </button>

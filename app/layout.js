@@ -2,7 +2,7 @@ import './globals.css'
 
 export const metadata = {
   title: 'HexPad',
-  description: 'Interactive hexagonal grid painting application with WebGL',
+  description: 'Free, Open Source Hexagon Map Editor',
   icons: {
     icon: '/favicon.ico',
   },

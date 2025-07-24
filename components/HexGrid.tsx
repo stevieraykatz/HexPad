@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, f
 import { GRID_CONFIG, DEFAULT_COLORS } from './config';
 import type { Color, RGB, IconItem } from './config';
 
-// Import utility modules
 import { initializeWebGLContext, createShaderPrograms, loadTexture } from '../utils/webglUtils';
 import { 
   calculateHexRadius, 
@@ -16,7 +15,6 @@ import {
 import { calculateZoomToPoint } from '../utils/zoomPanUtils';
 import { exportAsPNG as exportUtility, type HexStyle } from '../utils/exportUtils';
 
-// Type definitions specific to HexGrid component
 interface HexTexture {
   type: 'color' | 'texture';
   name: string;
@@ -27,11 +25,10 @@ interface HexTexture {
 
 type HexColor = string;
 
-// Barrier edge type for rendering
-interface BarrierEdge {
+interface BorderEdge {
   fromHex: string;
   toHex: string;
-  color: { value: string; rgb: RGB };
+  color: string;
 }
 
 interface HexGridProps {
@@ -45,8 +42,10 @@ interface HexGridProps {
   hexColorsVersion?: number;
   hexIconsVersion?: number;
   backgroundColor?: { rgb: RGB };
-  barriers?: Record<string, BarrierEdge>;
-  barriersVersion?: number;
+  borders?: Record<string, BorderEdge>;
+  bordersVersion?: number;
+  activeTab?: 'paint' | 'icons' | 'borders';
+  selectedIcon?: IconItem | null;
 }
 
 export interface HexGridRef {
@@ -64,17 +63,17 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   hexColorsVersion = 0,
   hexIconsVersion = 0,
   backgroundColor,
-  barriers,
-  barriersVersion = 0
+  borders,
+  bordersVersion = 0,
+  activeTab = 'paint',
+  selectedIcon = null
 }, ref) => {
-  // Canvas and WebGL refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const barriersCanvasRef = useRef<HTMLCanvasElement>(null);
+  const bordersCanvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const colorProgramRef = useRef<WebGLProgram | null>(null);
   const textureProgramRef = useRef<WebGLProgram | null>(null);
   
-  // State management
   const [canvasSize, setCanvasSize] = useState<CanvasSize>({ 
     width: GRID_CONFIG.DEFAULT_CANVAS_WIDTH, 
     height: GRID_CONFIG.DEFAULT_CANVAS_HEIGHT 
@@ -83,13 +82,16 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   const [panOffset, setPanOffset] = useState<PanOffset>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
   
-  // Cached values for performance
   const hexPositionsRef = useRef<HexPosition[]>([]);
   const hexRadiusRef = useRef<number>(0);
   const paintedDuringDragRef = useRef<Set<string>>(new Set());
+  const paintedBordersDuringDragRef = useRef<Set<string>>(new Set());
   const texturesRef = useRef<Map<string, WebGLTexture>>(new Map());
+  
+  const borderRenderTimeoutRef = useRef<number | null>(null);
+  const lastBorderRenderRef = useRef<number>(0);
+  const BORDER_RENDER_THROTTLE_MS = 16; // ~60fps throttling
 
-  // Export functionality using the utility
   const exportAsPNG = useCallback(async (
     filename: string = GRID_CONFIG.EXPORT_FILENAME_PREFIX, 
     scale: number = GRID_CONFIG.DEFAULT_EXPORT_SCALE
@@ -101,26 +103,24 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       gridHeight,
       canvasSize,
       backgroundColor,
-      getHexagonStyle: (row: number, col: number) => getHexagonStyle(row, col)
+      getHexagonStyle: (row: number, col: number) => getHexagonStyle(row, col),
+      borders,
+      getHexIcon
     });
-  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, colors]);
+  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, colors, borders, getHexIcon]);
 
-  // Expose export function through ref
   useImperativeHandle(ref, () => ({
     exportAsPNG
   }), [exportAsPNG]);
 
-  // Get color or texture for a hexagon
   const getHexagonStyle = useCallback((row: number, col: number): HexStyle => {
     const userTexture = getHexColor && getHexColor(row, col);
     
     if (userTexture) {
-      // Handle special grey case
       if (userTexture === DEFAULT_COLORS.SELECTED) {
         return { type: 'color', rgb: DEFAULT_COLORS.GREY_RGB };
       }
       
-      // Handle color textures
       if (typeof userTexture === 'object' && userTexture.type === 'color') {
         if (userTexture.rgb) {
           return { type: 'color', rgb: userTexture.rgb };
@@ -133,17 +133,14 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         }
       }
       
-      // Handle image textures
       if (typeof userTexture === 'object' && userTexture.type === 'texture') {
         return { type: 'texture', path: userTexture.path, name: userTexture.name };
       }
     }
     
-    // Default grey color if no user color is set
     return { type: 'color', rgb: DEFAULT_COLORS.GREY_RGB };
   }, [getHexColor, colors]);
 
-  // Handle wheel event for zooming
   const handleWheel = useCallback((event: WheelEvent): void => {
     event.preventDefault();
     
@@ -173,7 +170,6 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     setPanOffset(result.newPanOffset);
   }, [zoomLevel, panOffset, canvasSize, gridWidth, gridHeight]);
 
-  // Paint a hex if it hasn't been painted during this drag
   const paintHexIfNew = useCallback((hex: HexPosition | null): void => {
     if (!hex || !onHexClick) return;
     
@@ -251,10 +247,10 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       }
     });
 
-    // Note: Barriers are now drawn separately in useEffect to avoid WebGL interference
+    // Note: Borders are now drawn separately in useEffect to avoid WebGL interference
   }, [getHexagonStyle, backgroundColor]);
 
-  // Calculate barrier position in the gap between two adjacent hexagons
+  // Calculate border position in the gap between two adjacent hexagons
   const getSharedEdgeVertices = useCallback((fromHex: string, toHex: string, hexRadius: number, hexPositions: HexPosition[]): { start: { x: number; y: number }, end: { x: number; y: number } } | null => {
     const positionMap = new Map<string, HexPosition>();
     hexPositions.forEach(pos => {
@@ -265,10 +261,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     const toPos = positionMap.get(toHex);
     
     if (!fromPos || !toPos) return null;
-
-    
-    
-               // Parse hex coordinates to determine adjacency type
+      // Parse hex coordinates to determine adjacency type
       const [fromRow, fromCol] = fromHex.split('-').map(Number);
       const [toRow, toCol] = toHex.split('-').map(Number);
       const rowDiff = toRow - fromRow;
@@ -310,7 +303,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           start: { x: startX, y: startY },
           end: { x: endX, y: endY }
         };
-             } else {
+      } else {
          // Use standard midpoint approach for all other adjacencies
          
          // For horizontal adjacencies, ensure consistent orientation to prevent offset duplicates
@@ -348,22 +341,22 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
          };
          
          const visualRadius = hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO;
-         const barrierLength = visualRadius;
+         const borderLength = visualRadius;
          
          return {
            start: {
-             x: midpoint.x + perpendicular.x * barrierLength / 2,
-             y: midpoint.y + perpendicular.y * barrierLength / 2
+             x: midpoint.x + perpendicular.x * borderLength / 2,
+             y: midpoint.y + perpendicular.y * borderLength / 2
            },
            end: {
-             x: midpoint.x - perpendicular.x * barrierLength / 2,
-             y: midpoint.y - perpendicular.y * barrierLength / 2
+             x: midpoint.x - perpendicular.x * borderLength / 2,
+             y: midpoint.y - perpendicular.y * borderLength / 2
            }
          };
        }
    }, []);
 
-  // Detect if click is on an edge between two hexes  
+    // Detect if click is on an edge between two hexes  
   const getEdgeFromMousePos = useCallback((mouseX: number, mouseY: number): { fromHex: string, toHex: string } | null => {
     const hexPositions = hexPositionsRef.current;
     const hexRadius = hexRadiusRef.current;
@@ -389,34 +382,34 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       const isEvenCol = hex1.col % 2 === 0;
       let neighbors;
       
-             if (isEvenCol) {
-         // Even column neighbors
-         neighbors = [
-           { row: hex1.row, col: hex1.col + 1 }, // Right
-           { row: hex1.row, col: hex1.col - 1 }, // Left
-           { row: hex1.row - 1, col: hex1.col + 1 }, // Upper-right
-           { row: hex1.row - 1, col: hex1.col }, // Upper-left
-           { row: hex1.row + 1, col: hex1.col + 1 }, // Lower-right
-           { row: hex1.row + 1, col: hex1.col }  // Lower-left
-         ];
-       } else {
-         // Odd column neighbors  
-         neighbors = [
-           { row: hex1.row, col: hex1.col + 1 }, // Right
-           { row: hex1.row, col: hex1.col - 1 }, // Left
-           { row: hex1.row - 1, col: hex1.col }, // Upper-right
-           { row: hex1.row - 1, col: hex1.col - 1 }, // Upper-left
-           { row: hex1.row + 1, col: hex1.col + 1 }, // Lower-right
-           { row: hex1.row + 1, col: hex1.col - 1 }  // Lower-left
-         ];
-       }
+      if (isEvenCol) {
+        // Even column neighbors
+        neighbors = [
+          { row: hex1.row, col: hex1.col + 1 }, // Right
+          { row: hex1.row, col: hex1.col - 1 }, // Left
+          { row: hex1.row - 1, col: hex1.col + 1 }, // Upper-right
+          { row: hex1.row - 1, col: hex1.col }, // Upper-left
+          { row: hex1.row + 1, col: hex1.col + 1 }, // Lower-right
+          { row: hex1.row + 1, col: hex1.col }  // Lower-left
+        ];
+      } else {
+        // Odd column neighbors  
+        neighbors = [
+          { row: hex1.row, col: hex1.col + 1 }, // Right
+          { row: hex1.row, col: hex1.col - 1 }, // Left
+          { row: hex1.row - 1, col: hex1.col }, // Upper-right
+          { row: hex1.row - 1, col: hex1.col - 1 }, // Upper-left
+          { row: hex1.row + 1, col: hex1.col + 1 }, // Lower-right
+          { row: hex1.row + 1, col: hex1.col - 1 }  // Lower-left
+        ];
+      }
       
       neighbors.forEach(neighborCoord => {
         // Find the actual position of this neighbor
         const hex2 = hexPositions.find(p => p.row === neighborCoord.row && p.col === neighborCoord.col);
         if (!hex2) return;
         
-        // Get the actual edge vertices using the same logic as barrier rendering
+        // Get the actual edge vertices using the same logic as border rendering
         const fromHex = `${hex1.row}-${hex1.col}`;
         const toHex = `${hex2.row}-${hex2.col}`;
         const edgeVertices = getSharedEdgeVertices(fromHex, toHex, hexRadius, hexPositions);
@@ -449,14 +442,44 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       };
     }
     
-         return null;
-   }, [getSharedEdgeVertices]);
+    return null;
+  }, [getSharedEdgeVertices]);
+
+  // Paint a border if it hasn't been painted during this drag
+  const paintBorderIfNew = useCallback((mouseX: number, mouseY: number): void => {
+    if (!onEdgeClick || activeTab !== 'borders') return;
+    
+    const clickedEdge = getEdgeFromMousePos(mouseX, mouseY);
+    if (!clickedEdge) return;
+    
+    // Create consistent edge key for tracking
+    const [fromRow, fromCol] = clickedEdge.fromHex.split('-').map(Number);
+    const [toRow, toCol] = clickedEdge.toHex.split('-').map(Number);
+    
+    let normalizedFromHex = clickedEdge.fromHex;
+    let normalizedToHex = clickedEdge.toHex;
+    
+    // Sort by row first, then by column for consistent edge keys
+    if (fromRow > toRow || (fromRow === toRow && fromCol > toCol)) {
+      normalizedFromHex = clickedEdge.toHex;
+      normalizedToHex = clickedEdge.fromHex;
+    }
+    
+    const edgeKey = `${normalizedFromHex}_${normalizedToHex}`;
+    const paintedBordersSet = paintedBordersDuringDragRef.current;
+    
+    if (!paintedBordersSet.has(edgeKey)) {
+      paintedBordersSet.add(edgeKey);
+      onEdgeClick(clickedEdge.fromHex, clickedEdge.toHex);
+    }
+  }, [onEdgeClick, activeTab, getEdgeFromMousePos, selectedIcon]);
 
   // Mouse event handlers
   const handleMouseDown = useCallback((event: MouseEvent): void => {
     event.preventDefault();
     setIsDragging(true);
     paintedDuringDragRef.current.clear();
+    paintedBordersDuringDragRef.current.clear();
     
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -465,17 +488,16 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
     
-    // First try to detect edge click (for barriers)
-    const clickedEdge = getEdgeFromMousePos(mouseX, mouseY);
-    if (clickedEdge && onEdgeClick) {
-      onEdgeClick(clickedEdge.fromHex, clickedEdge.toHex);
-      return;
+    // Handle different interactions based on active tab
+    if (activeTab === 'borders') {
+      // Try to paint a border
+      paintBorderIfNew(mouseX, mouseY);
+    } else {
+      // Handle hex painting for paint and icons tabs
+      const clickedHex = getHexFromMousePos(mouseX, mouseY, hexPositionsRef.current, hexRadiusRef.current);
+      paintHexIfNew(clickedHex);
     }
-    
-    // If no edge was clicked, check for hex click
-    const clickedHex = getHexFromMousePos(mouseX, mouseY, hexPositionsRef.current, hexRadiusRef.current);
-    paintHexIfNew(clickedHex);
-  }, [paintHexIfNew, getEdgeFromMousePos, onEdgeClick]);
+  }, [paintHexIfNew, paintBorderIfNew, activeTab]);
 
   const handleMouseMove = useCallback((event: MouseEvent): void => {
     if (!isDragging) return;
@@ -487,46 +509,58 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
     
-    const hoveredHex = getHexFromMousePos(mouseX, mouseY, hexPositionsRef.current, hexRadiusRef.current);
-    paintHexIfNew(hoveredHex);
-  }, [isDragging, paintHexIfNew]);
+    // Handle different painting based on active tab
+    if (activeTab === 'borders') {
+      // Try to paint borders during drag
+      paintBorderIfNew(mouseX, mouseY);
+    } else {
+      // Handle hex painting for paint and icons tabs
+      const hoveredHex = getHexFromMousePos(mouseX, mouseY, hexPositionsRef.current, hexRadiusRef.current);
+      paintHexIfNew(hoveredHex);
+    }
+  }, [isDragging, paintHexIfNew, paintBorderIfNew, activeTab]);
 
   const handleMouseUp = useCallback((): void => {
     setIsDragging(false);
     paintedDuringDragRef.current.clear();
+    paintedBordersDuringDragRef.current.clear();
   }, []);
 
   const handleMouseLeave = useCallback((): void => {
     setIsDragging(false);
     paintedDuringDragRef.current.clear();
+    paintedBordersDuringDragRef.current.clear();
   }, []);
 
-  // Render barriers between hexagons on separate canvas
-  const renderBarriers = useCallback((): void => {
-    const barriersCanvas = barriersCanvasRef.current;
-    if (!barriersCanvas || !barriers || Object.keys(barriers).length === 0) return;
+  // Render borders between hexagons on separate canvas - optimized version
+  const renderBorders = useCallback((): void => {
+    const bordersCanvas = bordersCanvasRef.current;
+    if (!bordersCanvas) return;
 
     const hexRadius = hexRadiusRef.current;
     const hexPositions = hexPositionsRef.current;
     
-    if (hexRadius <= 0 || hexPositions.length === 0) return;
-
     // Set up canvas 2D context for drawing lines
-    const ctx = barriersCanvas.getContext('2d');
+    const ctx = bordersCanvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear the barriers canvas
-    ctx.clearRect(0, 0, barriersCanvas.width, barriersCanvas.height);
+    // Clear the borders canvas
+    ctx.clearRect(0, 0, bordersCanvas.width, bordersCanvas.height);
+
+    // Early return if no borders or invalid state
+    if (!borders || Object.keys(borders).length === 0 || hexRadius <= 0 || hexPositions.length === 0) {
+      return;
+    }
 
     // Save the current context state
     ctx.save();
 
-    // Draw each barrier in the gap between hexagons (recalculate positions for current zoom/pan)
-    Object.values(barriers).forEach(barrier => {
-      const edgeVertices = getSharedEdgeVertices(barrier.fromHex, barrier.toHex, hexRadius, hexPositions);
+    // Draw each border in the gap between hexagons (recalculate positions for current zoom/pan)
+    Object.values(borders).forEach(border => {
+      const edgeVertices = getSharedEdgeVertices(border.fromHex, border.toHex, hexRadius, hexPositions);
       
       if (edgeVertices) {
-        ctx.strokeStyle = barrier.color.value;
+        ctx.strokeStyle = border.color;
         ctx.lineWidth = 6;
         ctx.lineCap = 'round';
         
@@ -539,7 +573,31 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
 
     // Restore the context state
     ctx.restore();
-  }, [barriers, getSharedEdgeVertices]);
+  }, [borders, getSharedEdgeVertices]);
+
+  // Throttled border rendering for performance during zoom/pan operations
+  const renderBordersThrottled = useCallback((): void => {
+    // Cancel any pending render
+    if (borderRenderTimeoutRef.current) {
+      cancelAnimationFrame(borderRenderTimeoutRef.current);
+    }
+
+    const now = performance.now();
+    const timeSinceLastRender = now - lastBorderRenderRef.current;
+
+    if (timeSinceLastRender >= BORDER_RENDER_THROTTLE_MS) {
+      // Enough time has passed, render immediately
+      lastBorderRenderRef.current = now;
+      renderBorders();
+    } else {
+      // Schedule render for next frame
+      borderRenderTimeoutRef.current = requestAnimationFrame(() => {
+        lastBorderRenderRef.current = performance.now();
+        renderBorders();
+        borderRenderTimeoutRef.current = null;
+      });
+    }
+  }, [renderBorders]);
 
   // Render a colored hexagon
   const renderColorHexagon = (
@@ -671,12 +729,12 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     initWebGL();
   }, [initWebGL]);
 
-  // Sync barriers canvas size with main canvas
+  // Sync borders canvas size with main canvas
   useEffect(() => {
-    const barriersCanvas = barriersCanvasRef.current;
-    if (barriersCanvas) {
-      barriersCanvas.width = canvasSize.width;
-      barriersCanvas.height = canvasSize.height;
+    const bordersCanvas = bordersCanvasRef.current;
+    if (bordersCanvas) {
+      bordersCanvas.width = canvasSize.width;
+      bordersCanvas.height = canvasSize.height;
     }
   }, [canvasSize]);
 
@@ -687,27 +745,23 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     }
   }, [hexColorsVersion, hexIconsVersion, renderGrid]);
 
-  // Separate effect for barrier rendering
+  // Optimized effect for border rendering - no delays, immediate response
   useEffect(() => {
-    const barriersCanvas = barriersCanvasRef.current;
-    if (!barriersCanvas || !barriers || Object.keys(barriers).length === 0) {
-      // Clear canvas if no barriers
-      if (barriersCanvas) {
-        const ctx = barriersCanvas.getContext('2d');
-        if (ctx) {
-          ctx.clearRect(0, 0, barriersCanvas.width, barriersCanvas.height);
-        }
-      }
-      return;
+    // Use throttled rendering for zoom/pan operations, immediate for border changes
+    if (hexPositionsRef.current.length > 0 && hexRadiusRef.current > 0) {
+      // For border version changes (add/remove borders), render immediately
+      // For zoom/pan changes, use throttled rendering
+      renderBordersThrottled();
     }
-    
-    // Small delay to ensure WebGL rendering is complete
-    const timeoutId = setTimeout(() => {
-      renderBarriers();
-    }, 10);
 
-    return () => clearTimeout(timeoutId);
-  }, [barriersVersion, barriers, renderBarriers, canvasSize, zoomLevel, panOffset]);
+    // Cleanup function to cancel pending renders
+    return () => {
+      if (borderRenderTimeoutRef.current) {
+        cancelAnimationFrame(borderRenderTimeoutRef.current);
+        borderRenderTimeoutRef.current = null;
+      }
+    };
+  }, [bordersVersion, borders, renderBordersThrottled, canvasSize, zoomLevel, panOffset]);
 
   // Add event listeners
   useEffect(() => {
@@ -733,6 +787,12 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         canvas.removeEventListener('wheel', handleWheel);
         document.removeEventListener('mouseup', handleMouseUp);
           canvas.style.cursor = 'default';
+        
+        // Clean up any pending border renders
+        if (borderRenderTimeoutRef.current) {
+          cancelAnimationFrame(borderRenderTimeoutRef.current);
+          borderRenderTimeoutRef.current = null;
+        }
       };
     }
   }, [handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave, handleWheel, isDragging]);
@@ -751,9 +811,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         height={canvasSize.height}
       />
       
-      {/* Barriers Canvas Overlay */}
+      {/* Borders Canvas Overlay */}
       <canvas 
-        ref={barriersCanvasRef}
+        ref={bordersCanvasRef}
         style={{ 
           position: 'absolute',
           top: 0,

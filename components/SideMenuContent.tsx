@@ -1,14 +1,14 @@
 import React from 'react';
 import { UI_CONFIG } from './config';
-import type { BackgroundColor, IconItem, BarrierColor, HexTexture, ColorItem, TextureItem } from './config';
+import type { BackgroundColor, IconItem, HexTexture, ColorItem, TextureItem } from './config';
 import GridSizeControls from './GridSizeControls';
 import BackgroundColorSelector from './BackgroundColorSelector';
 import PaintOptionsGrid from './PaintOptionsGrid';
 import IconOptionsGrid from './IconOptionsGrid';
-import BarrierOptionsGrid from './BarrierOptionsGrid';
+import BorderOptionsGrid from './BorderOptionsGrid';
 
 interface SideMenuContentProps {
-  activeTab: 'paint' | 'icons' | 'barriers';
+  activeTab: 'paint' | 'icons' | 'borders';
   // Paint tab props
   gridWidth: number;
   gridHeight: number;
@@ -21,9 +21,9 @@ interface SideMenuContentProps {
   // Icons tab props
   selectedIcon: IconItem | null;
   onIconSelect: (icon: IconItem) => void;
-  // Barriers tab props
-  selectedBarrierColor: BarrierColor;
-  onBarrierColorSelect: (color: BarrierColor) => void;
+  // Borders tab props
+  selectedBorderColor: string;
+  onBorderColorSelect: (color: string) => void;
 }
 
 const SideMenuContent: React.FC<SideMenuContentProps> = ({
@@ -38,8 +38,8 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
   onTextureSelect,
   selectedIcon,
   onIconSelect,
-  selectedBarrierColor,
-  onBarrierColorSelect
+  selectedBorderColor,
+  onBorderColorSelect
 }) => {
   const sectionTitleStyle = {
     color: UI_CONFIG.COLORS.TEXT_SECONDARY,
@@ -90,15 +90,15 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
         </div>
       )}
       
-      {activeTab === 'barriers' && (
+      {activeTab === 'borders' && (
         <div style={sectionWrapperStyle}>
           <h3 style={sectionTitleStyle}>
-            Barrier Colors
+            Border Colors
           </h3>
           
-          <BarrierOptionsGrid 
-            selectedBarrierColor={selectedBarrierColor}
-            onBarrierColorSelect={onBarrierColorSelect}
+          <BorderOptionsGrid 
+            selectedBorderColor={selectedBorderColor}
+            onBorderColorSelect={onBorderColorSelect}
           />
         </div>
       )}
