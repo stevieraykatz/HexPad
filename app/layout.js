@@ -1,7 +1,7 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'Hex Grid Painter',
+  title: 'HexPad',
   description: 'Interactive hexagonal grid painting application with WebGL',
   icons: {
     icon: '/favicon.ico',

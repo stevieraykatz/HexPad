@@ -1,7 +1,12 @@
-import React, { useState, useCallback, MouseEvent, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import HexGrid, { HexGridRef } from './HexGrid';
-import { GRID_CONFIG, UI_CONFIG, COLORS, DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS, ICON_OPTIONS } from './config';
-import type { Color, AssetItem, ColorItem, TextureItem, BackgroundColor, RGB, IconItem } from './config';
+import { GRID_CONFIG, UI_CONFIG, COLORS, DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS, BARRIER_COLORS } from './config';
+import type { Color, AssetItem, ColorItem, TextureItem, BackgroundColor, IconItem, BarrierColor, HexTexture } from './config';
+import TopCornerLinks from './TopCornerLinks';
+import MenuToggleButton from './MenuToggleButton';
+import TabButtons from './TabButtons';
+import BottomActionMenu from './BottomActionMenu';
+import SideMenuContent from './SideMenuContent';
 import { 
   createEncodingMap, 
   decodeUrlToGrid, 
@@ -13,20 +18,26 @@ import type { EncodingMap } from '../utils/gridEncoding';
 
 // Type definitions for hex colors and textures
 type HexColor = string;
-
-interface HexTexture {
-  type: 'color' | 'texture';
-  name: string;
-  displayName: string;
-  rgb?: [number, number, number];
-  path?: string;
-}
-
 type HexColorsMap = Record<string, HexColor | HexTexture>;
 
-interface HexGridAppProps {}
+// Barrier placement between hex tiles
+interface BarrierEdge {
+  fromHex: string; // hex key "row-col"
+  toHex: string;   // hex key "row-col" 
+  color: BarrierColor;
+}
 
-const HexGridApp: React.FC<HexGridAppProps> = () => {
+type BarriersMap = Record<string, BarrierEdge>; // key format: "fromRow-fromCol_toRow-toCol"
+
+// Unified history entry that captures all state
+interface HistoryEntry {
+  iconState: Record<string, IconItem>;
+  colorState: HexColorsMap;
+  barrierState: BarriersMap;
+  changedType: 'icons' | 'colors' | 'barriers'; // What actually changed in this entry
+}
+
+const HexGridApp: React.FC = () => {
   const [gridWidth, setGridWidth] = useState<number>(GRID_CONFIG.DEFAULT_WIDTH);
   const [gridHeight, setGridHeight] = useState<number>(GRID_CONFIG.DEFAULT_HEIGHT);
   const [selectedColor, setSelectedColor] = useState<string>(DEFAULT_COLORS.SELECTED);
@@ -35,11 +46,14 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
   const [selectedTexture, setSelectedTexture] = useState<HexTexture | null>(null);
   const [selectedIcon, setSelectedIcon] = useState<IconItem | null>(null);
   const [hexIcons, setHexIcons] = useState<Record<string, IconItem>>({});
-  const [hexIconsHistory, setHexIconsHistory] = useState<Record<string, IconItem>[]>([]);
+  const [selectedBarrierColor, setSelectedBarrierColor] = useState<BarrierColor>(BARRIER_COLORS[0]);
+  const [barriers, setBarriers] = useState<BarriersMap>({});
+  const [unifiedHistory, setUnifiedHistory] = useState<HistoryEntry[]>([]);
   const [hexColorsVersion, setHexColorsVersion] = useState<number>(0);
   const [hexIconsVersion, setHexIconsVersion] = useState<number>(0);
+  const [barriersVersion, setBarriersVersion] = useState<number>(0);
   const [menuOpen, setMenuOpen] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<'paint' | 'icons'>('paint');
+  const [activeTab, setActiveTab] = useState<'paint' | 'icons' | 'barriers'>('paint');
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [selectedBackgroundColor, setSelectedBackgroundColor] = useState<BackgroundColor>(BACKGROUND_COLORS[0]); // Default to grey
   const hexGridRef = useRef<HexGridRef>(null);
@@ -49,6 +63,8 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
   
   // Track previous state for undo functionality
   const prevHexIconsRef = useRef<Record<string, IconItem>>({});
+  const prevHexColorsRef = useRef<HexColorsMap>({});
+  const prevBarriersRef = useRef<BarriersMap>({});
   const isUndoingRef = useRef<boolean>(false);
 
   // Initialize encoding map
@@ -57,28 +73,50 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
     setEncodingMap(map);
   }, []);
 
-  // Save previous state to history when hexIcons changes (but not during undo operations)
+  // Save previous state to unified history when icons, colors, or barriers change (but not during undo operations)
   useEffect(() => {
     // Skip saving to history if we're currently undoing
     if (isUndoingRef.current) {
       isUndoingRef.current = false; // Reset the flag
-      prevHexIconsRef.current = { ...hexIcons }; // Update ref to current state
+      prevHexIconsRef.current = { ...hexIcons }; // Update refs to current state
+      prevHexColorsRef.current = { ...hexColors };
+      prevBarriersRef.current = { ...barriers };
       return;
     }
     
-    const prevState = prevHexIconsRef.current;
-    const currentState = hexIcons;
+    const prevIconState = prevHexIconsRef.current;
+    const prevColorState = prevHexColorsRef.current;
+    const prevBarrierState = prevBarriersRef.current;
+    const currentIconState = hexIcons;
+    const currentColorState = hexColors;
+    const currentBarrierState = barriers;
     
-    // Only save to history if this is not the initial empty state and there was actually a change
-    if (Object.keys(prevState).length > 0 || Object.keys(currentState).length > 0) {
-      if (JSON.stringify(prevState) !== JSON.stringify(currentState)) {
-        setHexIconsHistory(prev => [...prev.slice(-9), { ...prevState }]); // Keep last 10 states
+    // Check what changed
+    const iconsChanged = JSON.stringify(prevIconState) !== JSON.stringify(currentIconState);
+    const colorsChanged = JSON.stringify(prevColorState) !== JSON.stringify(currentColorState);
+    const barriersChanged = JSON.stringify(prevBarrierState) !== JSON.stringify(currentBarrierState);
+    
+    // Only save to history if something actually changed and it's not the initial state
+    if (iconsChanged || colorsChanged || barriersChanged) {
+      const hasInitialState = Object.keys(prevIconState).length > 0 || Object.keys(prevColorState).length > 0 || Object.keys(prevBarrierState).length > 0;
+      
+      if (hasInitialState) {
+        const historyEntry: HistoryEntry = {
+          iconState: { ...prevIconState },
+          colorState: { ...prevColorState },
+          barrierState: { ...prevBarrierState },
+          changedType: iconsChanged ? 'icons' : colorsChanged ? 'colors' : 'barriers'
+        };
+        
+        setUnifiedHistory(prev => [...prev.slice(-99), historyEntry]); // Keep last 100 states
       }
     }
     
-    // Update the ref to current state for next comparison
-    prevHexIconsRef.current = { ...currentState };
-  }, [hexIcons]);
+    // Update the refs to current state for next comparison
+    prevHexIconsRef.current = { ...currentIconState };
+    prevHexColorsRef.current = { ...currentColorState };
+    prevBarriersRef.current = { ...currentBarrierState };
+  }, [hexIcons, hexColors, barriers]);
 
   // Load grid from URL on mount (only once) when encoding map is ready
   useEffect(() => {
@@ -114,21 +152,43 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
   const paintHex = useCallback((row: number, col: number): void => {
     const hexKey = `${row}-${col}`;
     
-    if (activeTab === 'icons') {
-      // Handle icon eraser or placement
-      if (selectedIcon?.name === 'eraser') {
-        // Only process if there's actually an icon to remove
-        if (hexIcons[hexKey]) {
-          // Remove icon from this hex
-          setHexIcons(prev => {
-            const newIcons = { ...prev };
-            delete newIcons[hexKey];
-            return newIcons;
+    // Handle eraser logic (works in both tabs)
+    if (selectedIcon?.name === 'eraser') {
+      // Priority 1: Remove icon if it exists
+      if (hexIcons[hexKey]) {
+        setHexIcons(prev => {
+          const newIcons = { ...prev };
+          delete newIcons[hexKey];
+          return newIcons;
+        });
+        setHexIconsVersion(prev => prev + 1);
+        return; // Exit early after removing icon
+      }
+      
+      // Priority 2: Remove texture if it exists and is not default
+      const currentTexture = hexColors[hexKey];
+      if (currentTexture && currentTexture !== DEFAULT_COLORS.SELECTED) {
+        // Check if it's a non-default texture/color
+        const isNonDefault = typeof currentTexture === 'object' || 
+                           (typeof currentTexture === 'string' && currentTexture !== DEFAULT_COLORS.SELECTED);
+        
+        if (isNonDefault) {
+          setHexColors(prev => {
+            const newColors = { ...prev };
+            delete newColors[hexKey]; // Remove the texture, will fall back to default
+            return newColors;
           });
-          setHexIconsVersion(prev => prev + 1);
+          setHexColorsVersion(prev => prev + 1);
         }
-      } else if (selectedIcon) {
-        // Place icon
+      }
+      
+      // Priority 3: Do nothing if tile is empty (no icon and default/no texture)
+      return;
+    }
+    
+    if (activeTab === 'icons') {
+      // Handle icon placement (not eraser)
+      if (selectedIcon) {
         setHexIcons(prev => ({
           ...prev,
           [hexKey]: selectedIcon
@@ -166,7 +226,51 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
       }));
       setHexColorsVersion(prev => prev + 1);
     }
-  }, [selectedColor, selectedTexture, selectedIcon, activeTab]);
+    
+    // Note: Barrier placement now handled by placeBarrier function via onEdgeClick
+  }, [selectedColor, selectedTexture, selectedIcon, activeTab, hexIcons, hexColors]);
+
+  // Handle placing a single barrier on a specific edge
+  const placeBarrier = useCallback((fromHex: string, toHex: string): void => {
+    // Only place barriers when in barriers mode
+    if (activeTab !== 'barriers') {
+      return;
+    }
+    
+    const newBarriers: BarriersMap = { ...barriers };
+    
+    // Normalize edge key to always use consistent ordering (smaller coordinate first)
+    const [fromRow, fromCol] = fromHex.split('-').map(Number);
+    const [toRow, toCol] = toHex.split('-').map(Number);
+    
+    let normalizedFromHex = fromHex;
+    let normalizedToHex = toHex;
+    
+    // Sort by row first, then by column for consistent edge keys
+    if (fromRow > toRow || (fromRow === toRow && fromCol > toCol)) {
+      normalizedFromHex = toHex;
+      normalizedToHex = fromHex;
+    }
+    
+    const normalizedEdgeKey = `${normalizedFromHex}_${normalizedToHex}`;
+    
+    // Check if barrier already exists
+    if (newBarriers[normalizedEdgeKey]) {
+      // Remove existing barrier
+      delete newBarriers[normalizedEdgeKey];
+    } else {
+      // Add new barrier using normalized key
+      newBarriers[normalizedEdgeKey] = {
+        fromHex: normalizedFromHex,
+        toHex: normalizedToHex,
+        color: selectedBarrierColor
+      };
+    }
+    
+    // Update barriers state
+    setBarriers(newBarriers);
+    setBarriersVersion(prev => prev + 1);
+  }, [activeTab, barriers, selectedBarrierColor]);
 
   const clearGrid = useCallback((): void => {
     // Set all hexes to default grey instead of clearing them
@@ -179,10 +283,12 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
     setHexColors(greyColors);
     setHexColorsVersion(prev => prev + 1);
     
-    // Also clear all icons
+    // Also clear all icons, barriers, and unified history
     setHexIcons({});
-    setHexIconsHistory([]);
+    setBarriers({});
+    setUnifiedHistory([]);
     setHexIconsVersion(prev => prev + 1);
+    setBarriersVersion(prev => prev + 1);
   }, [gridWidth, gridHeight]);
 
   const getHexColor = useCallback((row: number, col: number): HexColor | HexTexture | undefined => {
@@ -210,33 +316,61 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
     if (texture.type === 'color') {
       setSelectedColor(texture.name);
     }
+    
+    // Clear eraser state when selecting a texture
+    setSelectedIcon(null);
   }, []);
 
   const handleIconSelect = useCallback((icon: IconItem): void => {
     setSelectedIcon(icon);
   }, []);
 
-  const handleIconUndo = useCallback((): void => {
-    if (hexIconsHistory.length > 0) {
-      const previousState = hexIconsHistory[hexIconsHistory.length - 1];
-      const newHistory = hexIconsHistory.slice(0, -1);
+  const handleUndo = useCallback((): void => {
+    if (unifiedHistory.length > 0) {
+      const previousEntry = unifiedHistory[unifiedHistory.length - 1];
+      const newHistory = unifiedHistory.slice(0, -1);
       
       // Set flag to prevent useEffect from saving this state change to history
       isUndoingRef.current = true;
       
-      setHexIcons(previousState);
-      setHexIconsHistory(newHistory);
+      // Restore icon, color, and barrier states from the history entry
+      setHexIcons(previousEntry.iconState);
+      setHexColors(previousEntry.colorState);
+      setBarriers(previousEntry.barrierState);
+      setUnifiedHistory(newHistory);
+      
+      // Update version counters to trigger re-renders
       setHexIconsVersion(prev => prev + 1);
+      setHexColorsVersion(prev => prev + 1);
+      setBarriersVersion(prev => prev + 1);
     }
-  }, [hexIconsHistory]);
+  }, [unifiedHistory]);
 
-  const handleMouseOver = useCallback((e: MouseEvent<HTMLButtonElement>): void => {
-    (e.target as HTMLButtonElement).style.background = UI_CONFIG.HOVER.DANGER_BACKGROUND;
-  }, []);
+  const hasUndoHistory = useCallback((): boolean => {
+    return unifiedHistory.length > 0;
+  }, [unifiedHistory.length]);
 
-  const handleMouseOut = useCallback((e: MouseEvent<HTMLButtonElement>): void => {
-    (e.target as HTMLButtonElement).style.background = UI_CONFIG.COLORS.DANGER_BACKGROUND;
-  }, []);
+  // Handlers for the new modular components
+  const handleMenuToggle = useCallback((): void => {
+    setMenuOpen(!menuOpen);
+  }, [menuOpen]);
+
+  const handleTabChange = useCallback((tab: 'paint' | 'icons' | 'barriers'): void => {
+    setActiveTab(tab);
+    // Clear eraser state when switching to paint tab
+    if (tab === 'paint' && selectedIcon?.name === 'eraser') {
+      setSelectedIcon(null);
+    }
+  }, [selectedIcon]);
+
+  const handleEraserToggle = useCallback((): void => {
+    // Toggle eraser - deselect if already selected, select if not
+    if (selectedIcon?.name === 'eraser') {
+      setSelectedIcon(null);
+    } else {
+      handleIconSelect({ name: 'eraser', displayName: 'Eraser', type: 'icon', path: '' } as IconItem);
+    }
+  }, [selectedIcon, handleIconSelect]);
 
   const handleExportPNG = useCallback(async (): Promise<void> => {
     if (hexGridRef.current && !isExporting) {
@@ -282,99 +416,23 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
 
   return (
     <div className="App" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      {/* Top Right Corner Links */}
+      <TopCornerLinks />
+
       {/* Menu Toggle Button */}
-      <button
-        onClick={() => setMenuOpen(!menuOpen)}
-        style={{
-          position: 'fixed',
-          top: UI_CONFIG.SPACING.XLARGE,
-          left: menuOpen ? `${UI_CONFIG.MENU_WIDTH + UI_CONFIG.MENU.TOGGLE_BUTTON_OFFSET}px` : UI_CONFIG.SPACING.XLARGE,
-          zIndex: UI_CONFIG.Z_INDEX.MENU_TOGGLE,
-          background: menuOpen ? UI_CONFIG.COLORS.OVERLAY_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-          backdropFilter: UI_CONFIG.BLUR.LIGHT,
-          border: `1px solid ${menuOpen ? UI_CONFIG.COLORS.BORDER_COLOR : UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
-          borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-          color: menuOpen ? UI_CONFIG.COLORS.TEXT_PRIMARY : UI_CONFIG.COLORS.TEXT_TERTIARY,
-          padding: `${UI_CONFIG.SPACING.SMALL} ${UI_CONFIG.SPACING.LARGE}`,
-          cursor: 'pointer',
-          fontSize: UI_CONFIG.FONT_SIZE.XLARGE,
-          transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-          boxShadow: menuOpen ? UI_CONFIG.BOX_SHADOW.LIGHT : 'none'
-        }}
-        title={menuOpen ? 'Close Menu' : 'Open Menu'}
-      >
-        {menuOpen ? '✕' : '☰'}
-      </button>
+      <MenuToggleButton 
+        menuOpen={menuOpen} 
+        onToggle={handleMenuToggle} 
+      />
 
-      {/* Menu Type Buttons */}
-      <div style={{
-        position: 'fixed',
-        top: `calc(${UI_CONFIG.SPACING.XLARGE} + 60px)`, // Below the menu toggle
-        left: menuOpen ? `${UI_CONFIG.MENU_WIDTH + UI_CONFIG.MENU.TOGGLE_BUTTON_OFFSET}px` : UI_CONFIG.SPACING.XLARGE,
-        zIndex: UI_CONFIG.Z_INDEX.MENU_TOGGLE,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: UI_CONFIG.SPACING.MEDIUM,
-        transition: `left ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`
-      }}>
-        {/* Paint Menu Button */}
-        <button
-          onClick={() => {
-            setActiveTab('paint');
-            if (!menuOpen) setMenuOpen(true);
-          }}
-          style={{
-            width: (activeTab === 'paint' && menuOpen) ? '60px' : '50px',
-            height: (activeTab === 'paint' && menuOpen) ? '60px' : '50px',
-            background: (activeTab === 'paint' && menuOpen) ? UI_CONFIG.COLORS.SELECTED_BACKGROUND : UI_CONFIG.COLORS.OVERLAY_BACKGROUND,
-            backdropFilter: UI_CONFIG.BLUR.LIGHT,
-            border: (activeTab === 'paint' && menuOpen) 
-              ? `2px solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` 
-              : `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-            borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-            color: UI_CONFIG.COLORS.TEXT_PRIMARY,
-            cursor: 'pointer',
-            fontSize: (activeTab === 'paint' && menuOpen) ? '24px' : '20px',
-            transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-            boxShadow: (activeTab === 'paint' && menuOpen) ? UI_CONFIG.BOX_SHADOW.SELECTED : UI_CONFIG.BOX_SHADOW.LIGHT,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          title="Paint Tools"
-        >
-          🎨
-        </button>
-
-        {/* Icons Menu Button */}
-        <button
-          onClick={() => {
-            setActiveTab('icons');
-            if (!menuOpen) setMenuOpen(true);
-          }}
-          style={{
-            width: (activeTab === 'icons' && menuOpen) ? '60px' : '50px',
-            height: (activeTab === 'icons' && menuOpen) ? '60px' : '50px',
-            background: (activeTab === 'icons' && menuOpen) ? UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND : UI_CONFIG.COLORS.OVERLAY_BACKGROUND,
-            backdropFilter: UI_CONFIG.BLUR.LIGHT,
-            border: (activeTab === 'icons' && menuOpen) 
-              ? `2px solid ${UI_CONFIG.COLORS.SELECTED_ALT_BORDER}` 
-              : `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-            borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-            color: UI_CONFIG.COLORS.TEXT_PRIMARY,
-            cursor: 'pointer',
-            fontSize: (activeTab === 'icons' && menuOpen) ? '24px' : '20px',
-            transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-            boxShadow: (activeTab === 'icons' && menuOpen) ? UI_CONFIG.BOX_SHADOW.SELECTED : UI_CONFIG.BOX_SHADOW.LIGHT,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          title="Icon Overlays"
-        >
-          📍
-        </button>
-      </div>
+      {/* Tab Navigation Buttons */}
+      <TabButtons
+        activeTab={activeTab}
+        menuOpen={menuOpen}
+        selectedIcon={selectedIcon}
+        onTabChange={handleTabChange}
+        onMenuToggle={handleMenuToggle}
+      />
 
       {/* Collapsible Side Menu */}
       <div style={{
@@ -394,421 +452,27 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
         padding: UI_CONFIG.SPACING.XLARGE
       }}>
         
-        {activeTab === 'paint' && (
-          <>
-            {/* Grid Size Controls */}
-        <div style={{ marginBottom: UI_CONFIG.SPACING.XXLARGE }}>
-          
-          <div style={{ marginBottom: UI_CONFIG.SPACING.LARGE }}>
-            <label style={{ 
-              display: 'block',
-              marginBottom: UI_CONFIG.SPACING.SMALL, 
-              color: UI_CONFIG.COLORS.TEXT_TERTIARY,
-              fontSize: UI_CONFIG.FONT_SIZE.NORMAL
-            }}>
-              Width: {gridWidth}
-            </label>
-            <input
-              type="range"
-              min={GRID_CONFIG.MIN_SIZE}
-              max={GRID_CONFIG.MAX_SIZE}
-              value={gridWidth}
-              onChange={(e) => setGridWidth(parseInt(e.target.value))}
-              style={{
-                width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
-                height: UI_CONFIG.GRID_CONTROLS.SLIDER_HEIGHT,
-                borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-                outline: 'none',
-                background: UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-                cursor: 'pointer'
-              }}
-            />
-          </div>
-          
-          <div>
-            <label style={{ 
-              display: 'block',
-              marginBottom: UI_CONFIG.SPACING.SMALL, 
-              color: UI_CONFIG.COLORS.TEXT_TERTIARY,
-              fontSize: UI_CONFIG.FONT_SIZE.NORMAL
-            }}>
-              Height: {gridHeight}
-            </label>
-            <input
-              type="range"
-              min={GRID_CONFIG.MIN_SIZE}
-              max={GRID_CONFIG.MAX_SIZE}
-              value={gridHeight}
-              onChange={(e) => setGridHeight(parseInt(e.target.value))}
-              style={{
-                width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
-                height: UI_CONFIG.GRID_CONTROLS.SLIDER_HEIGHT,
-                borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-                outline: 'none',
-                background: UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-                cursor: 'pointer'
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Background Color */}
-        <div style={{ marginBottom: UI_CONFIG.SPACING.XXLARGE }}>
-          <h3 style={{ 
-            color: UI_CONFIG.COLORS.TEXT_SECONDARY, 
-            fontSize: UI_CONFIG.FONT_SIZE.LARGE,
-            marginBottom: UI_CONFIG.SPACING.LARGE,
-            fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM
-          }}>
-            Background
-          </h3>
-          
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column',
-            gap: UI_CONFIG.SPACING.SMALL
-          }}>
-            {BACKGROUND_COLORS.map((bgColor: BackgroundColor) => (
-              <button
-                key={bgColor.name}
-                onClick={() => setSelectedBackgroundColor(bgColor)}
-                style={{
-                  padding: `${UI_CONFIG.SPACING.MEDIUM} ${UI_CONFIG.SPACING.LARGE}`,
-                  background: selectedBackgroundColor.name === bgColor.name ? UI_CONFIG.COLORS.SELECTED_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-                  border: selectedBackgroundColor.name === bgColor.name ? `2px solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` : `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
-                  borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                  color: UI_CONFIG.COLORS.TEXT_PRIMARY,
-                  fontSize: UI_CONFIG.FONT_SIZE.NORMAL,
-                  cursor: 'pointer',
-                  transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                  textAlign: 'left',
-                  fontWeight: selectedBackgroundColor.name === bgColor.name ? UI_CONFIG.FONT_WEIGHT.MEDIUM : UI_CONFIG.FONT_WEIGHT.NORMAL,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: UI_CONFIG.SPACING.MEDIUM
-                }}
-              >
-                <div style={{
-                  width: UI_CONFIG.SPACING.XLARGE,
-                  height: UI_CONFIG.SPACING.XLARGE,
-                  borderRadius: '4px',
-                  background: bgColor.cssColor,
-                  border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-                  flexShrink: 0
-                }} />
-                {bgColor.displayName}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Paint Tools */}
-        <div style={{ marginBottom: UI_CONFIG.SPACING.XXLARGE }}>
-          {/* All Assets - Compact Icon Grid */}
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: `repeat(${UI_CONFIG.PAINT_OPTIONS.GRID_COLUMNS}, 1fr)`,
-            gap: UI_CONFIG.PAINT_OPTIONS.TILE_GAP, // Minimal gap between tiles
-            maxHeight: UI_CONFIG.PAINT_OPTIONS.MAX_HEIGHT,
-            overflowY: 'auto',
-            justifyContent: 'center',
-            justifyItems: 'center'
-          }}>
-            {PAINT_OPTIONS.map((item: AssetItem) => (
-              item.type === 'color' ? (
-                <button
-                  key={item.name}
-                  onClick={() => handleTextureSelect(item)}
-                  style={{
-                    width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                    height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                    padding: UI_CONFIG.PAINT_OPTIONS.TILE_PADDING,
-                    background: selectedTexture?.name === item.name ? UI_CONFIG.COLORS.SELECTED_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-                    border: selectedTexture?.name === item.name ? `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_SELECTED} solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` : `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_NORMAL} solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
-                    borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                    cursor: 'pointer',
-                    transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                    boxShadow: selectedTexture?.name === item.name ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
-                  }}
-                  title={item.displayName}
-                >
-                  <div style={{
-                    width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
-                    height: UI_CONFIG.APP_LAYOUT.FULL_HEIGHT_PERCENTAGE,
-                    borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-                    background: (item as ColorItem).value,
-                    border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`
-                  }} />
-                </button>
-              ) : (
-                <button
-                  key={item.name}
-                  onClick={() => handleTextureSelect(item)}
-                  style={{
-                    width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                    height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                    padding: UI_CONFIG.PAINT_OPTIONS.TILE_PADDING,
-                    background: selectedTexture?.name === item.name ? UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-                    border: selectedTexture?.name === item.name ? `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_SELECTED} solid ${UI_CONFIG.COLORS.SELECTED_ALT_BORDER}` : `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_NORMAL} solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
-                    borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                    cursor: 'pointer',
-                    transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                    boxShadow: selectedTexture?.name === item.name ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
-                  }}
-                  title={item.displayName}
-                >
-                  <div style={{
-                    width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
-                    height: UI_CONFIG.APP_LAYOUT.FULL_HEIGHT_PERCENTAGE,
-                    borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-                    border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-                    overflow: 'hidden',
-                    position: 'relative'
-                  }}>
-                    <div style={{
-                      width: UI_CONFIG.PAINT_OPTIONS.ZOOM_SCALE_PERCENTAGE,
-                      height: UI_CONFIG.PAINT_OPTIONS.ZOOM_SCALE_PERCENTAGE,
-                      position: 'absolute',
-                      top: UI_CONFIG.PAINT_OPTIONS.ZOOM_OFFSET_PERCENTAGE,
-                      left: UI_CONFIG.PAINT_OPTIONS.ZOOM_OFFSET_PERCENTAGE,
-                      backgroundImage: `url(${(item as TextureItem).path})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center'
-                    }} />
-                  </div>
-                </button>
-              )
-            ))}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div style={{ marginTop: 'auto', paddingTop: UI_CONFIG.SPACING.XLARGE }}>
-          <div style={{
-            display: 'flex',
-            gap: UI_CONFIG.SPACING.LARGE,
-            marginBottom: UI_CONFIG.SPACING.LARGE,
-            justifyContent: 'center'
-          }}>
-            <button
-              onClick={handleCopyUrl}
-              style={{
-                width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                padding: UI_CONFIG.SPACING.SMALL,
-                background: UI_CONFIG.COLORS.SELECTED_BACKGROUND,
-                border: `2px solid ${UI_CONFIG.COLORS.SELECTED_BORDER}`,
-                borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                color: UI_CONFIG.COLORS.TEXT_PRIMARY,
-                fontSize: UI_CONFIG.FONT_SIZE.XLARGE,
-                cursor: 'pointer',
-                transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title="Copy shareable URL to clipboard"
-            >
-              🔗
-            </button>
-            
-            <button
-              onClick={handleExportPNG}
-              disabled={isExporting}
-              style={{
-                width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                padding: UI_CONFIG.SPACING.SMALL,
-                background: isExporting ? UI_CONFIG.COLORS.BUTTON_BACKGROUND : UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND,
-                border: `2px solid ${isExporting ? UI_CONFIG.COLORS.BORDER_COLOR : UI_CONFIG.COLORS.SELECTED_ALT_BORDER}`,
-                borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                color: isExporting ? UI_CONFIG.COLORS.TEXT_MUTED : UI_CONFIG.COLORS.TEXT_PRIMARY,
-                fontSize: UI_CONFIG.FONT_SIZE.XLARGE,
-                cursor: isExporting ? 'wait' : 'pointer',
-                transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
-                opacity: isExporting ? UI_CONFIG.APP_LAYOUT.EXPORT_OPACITY_DISABLED : 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title={isExporting ? 'Exporting PNG...' : 'Download PNG'}
-            >
-              {isExporting ? '⏳' : '⬇️'}
-            </button>
-            
-            <button
-              onClick={clearGrid}
-              style={{
-                width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                padding: UI_CONFIG.SPACING.SMALL,
-                background: UI_CONFIG.COLORS.DANGER_BACKGROUND,
-                border: `2px solid ${UI_CONFIG.COLORS.DANGER_BORDER}`,
-                borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                color: UI_CONFIG.COLORS.TEXT_DANGER,
-                fontSize: UI_CONFIG.FONT_SIZE.XLARGE,
-                cursor: 'pointer',
-                transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              onMouseOver={handleMouseOver}
-              onMouseOut={handleMouseOut}
-              title="Clear all hexagons"
-            >
-              🗑️
-            </button>
-          </div>
-        </div>
-          </>
-        )}
-        
-        {/* Icons Tab Content */}
-        {activeTab === 'icons' && (
-          <div style={{ marginBottom: UI_CONFIG.SPACING.XXLARGE }}>
-            <h3 style={{ 
-              color: UI_CONFIG.COLORS.TEXT_SECONDARY, 
-              fontSize: UI_CONFIG.FONT_SIZE.LARGE,
-              marginBottom: UI_CONFIG.SPACING.LARGE,
-              fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM
-            }}>
-              Icon Overlays
-            </h3>
-            
-            {/* Icon Options Grid */}
-            <div style={{ 
-              display: 'grid',
-              gridTemplateColumns: `repeat(${UI_CONFIG.PAINT_OPTIONS.GRID_COLUMNS}, 1fr)`,
-              gap: UI_CONFIG.PAINT_OPTIONS.TILE_GAP,
-              maxHeight: UI_CONFIG.PAINT_OPTIONS.MAX_HEIGHT,
-              overflowY: 'auto',
-              justifyContent: 'center',
-              justifyItems: 'center'
-            }}>
-              {ICON_OPTIONS.map((icon: IconItem) => (
-                <button
-                  key={icon.name}
-                  onClick={() => handleIconSelect(icon)}
-                  style={{
-                    width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                    height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                    padding: UI_CONFIG.PAINT_OPTIONS.TILE_PADDING,
-                    background: selectedIcon?.name === icon.name ? UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-                    border: selectedIcon?.name === icon.name ? `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_SELECTED} solid ${UI_CONFIG.COLORS.SELECTED_ALT_BORDER}` : `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_NORMAL} solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
-                    borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                    cursor: 'pointer',
-                    transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                    boxShadow: selectedIcon?.name === icon.name ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
-                  }}
-                  title={icon.displayName}
-                >
-                  <div style={{
-                    width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
-                    height: UI_CONFIG.APP_LAYOUT.FULL_HEIGHT_PERCENTAGE,
-                    borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-                    border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-                    overflow: 'hidden',
-                    position: 'relative',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <img 
-                      src={icon.path}
-                      alt={icon.displayName}
-                      style={{
-                        width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
-                        height: UI_CONFIG.APP_LAYOUT.FULL_HEIGHT_PERCENTAGE,
-                        objectFit: 'contain',
-                        padding: '4px'
-                      }}
-                    />
-                  </div>
-                </button>
-              ))}
-            </div>
-            
-            {/* Icon Actions */}
-            <div style={{
-              display: 'flex',
-              gap: UI_CONFIG.SPACING.LARGE,
-              marginTop: UI_CONFIG.SPACING.XXLARGE,
-              marginBottom: UI_CONFIG.SPACING.LARGE,
-              justifyContent: 'center'
-            }}>
-              {/* Icon Eraser Button */}
-              <button
-                onClick={() => handleIconSelect({ name: 'eraser', displayName: 'Eraser', type: 'icon', path: '' } as IconItem)}
-                style={{
-                  width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                  height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                  padding: UI_CONFIG.SPACING.SMALL,
-                  background: selectedIcon?.name === 'eraser' ? UI_CONFIG.COLORS.DANGER_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-                  border: selectedIcon?.name === 'eraser' ? `2px solid ${UI_CONFIG.COLORS.DANGER_BORDER}` : `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-                  borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                  color: selectedIcon?.name === 'eraser' ? UI_CONFIG.COLORS.TEXT_DANGER : UI_CONFIG.COLORS.TEXT_PRIMARY,
-                  fontSize: UI_CONFIG.FONT_SIZE.XLARGE,
-                  cursor: 'pointer',
-                  transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                  fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
-                  boxShadow: selectedIcon?.name === 'eraser' ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                title="Remove icon overlay"
-              >
-                🧹
-              </button>
-              
-              {/* Icon Undo Button */}
-              <button
-                onClick={handleIconUndo}
-                disabled={hexIconsHistory.length === 0}
-                style={{
-                  width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                  height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                  padding: UI_CONFIG.SPACING.SMALL,
-                  background: UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-                  border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-                  borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                  color: hexIconsHistory.length > 0 ? UI_CONFIG.COLORS.TEXT_PRIMARY : UI_CONFIG.COLORS.TEXT_MUTED,
-                  fontSize: UI_CONFIG.FONT_SIZE.XLARGE,
-                  cursor: hexIconsHistory.length > 0 ? 'pointer' : 'not-allowed',
-                  transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                  fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
-                  opacity: hexIconsHistory.length > 0 ? 1 : UI_CONFIG.APP_LAYOUT.EXPORT_OPACITY_DISABLED,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                title={hexIconsHistory.length > 0 ? 'Undo last icon action' : 'No actions to undo'}
-              >
-                ↩️
-              </button>
-            </div>
-            
-            <div style={{ 
-              fontSize: UI_CONFIG.FONT_SIZE.MEDIUM, 
-              color: UI_CONFIG.COLORS.TEXT_SUBTLE,
-              textAlign: 'center',
-              padding: UI_CONFIG.SPACING.MEDIUM,
-              background: UI_CONFIG.COLORS.INFO_BACKGROUND,
-              borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM
-            }}>
-              Select an icon to place as overlay on hex tiles<br/>
-              Use the eraser (🧹) to remove overlays or undo (↩️) to revert actions
-            </div>
-          </div>
-        )}
+        <SideMenuContent
+          activeTab={activeTab}
+          gridWidth={gridWidth}
+          gridHeight={gridHeight}
+          selectedBackgroundColor={selectedBackgroundColor}
+          selectedTexture={selectedTexture}
+          onWidthChange={setGridWidth}
+          onHeightChange={setGridHeight}
+          onBackgroundColorChange={setSelectedBackgroundColor}
+          onTextureSelect={handleTextureSelect}
+          selectedIcon={selectedIcon}
+          onIconSelect={handleIconSelect}
+          selectedBarrierColor={selectedBarrierColor}
+          onBarrierColorSelect={setSelectedBarrierColor}
+        />
       </div>
       
       {/* Main Grid Area */}
       <div style={{
         width: '100vw', // Always full viewport width
-        height: '100vh',
+        height: 'calc(100vh - 80px)', // Account for bottom menu height
         position: 'fixed', // Fixed positioning to avoid container size changes
         top: 0,
         left: 0,
@@ -821,13 +485,28 @@ const HexGridApp: React.FC<HexGridAppProps> = () => {
           gridHeight={gridHeight}
           colors={COLORS}
           onHexClick={paintHex}
+          onEdgeClick={placeBarrier}
           getHexColor={getHexColor}
           getHexIcon={getHexIcon}
           hexColorsVersion={hexColorsVersion}
           hexIconsVersion={hexIconsVersion}
           backgroundColor={selectedBackgroundColor}
+          barriers={barriers}
+          barriersVersion={barriersVersion}
         />
       </div>
+
+      {/* Bottom Action Menu */}
+      <BottomActionMenu
+        selectedIcon={selectedIcon}
+        isExporting={isExporting}
+        hasUndoHistory={hasUndoHistory()}
+        onCopyUrl={handleCopyUrl}
+        onExportPNG={handleExportPNG}
+        onEraserToggle={handleEraserToggle}
+        onUndo={handleUndo}
+        onClearGrid={clearGrid}
+      />
     </div>
   );
 };

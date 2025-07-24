@@ -27,16 +27,26 @@ interface HexTexture {
 
 type HexColor = string;
 
+// Barrier edge type for rendering
+interface BarrierEdge {
+  fromHex: string;
+  toHex: string;
+  color: { value: string; rgb: RGB };
+}
+
 interface HexGridProps {
   gridWidth?: number;
   gridHeight?: number;
   colors?: readonly Color[];
   onHexClick?: (row: number, col: number) => void;
+  onEdgeClick?: (fromHex: string, toHex: string) => void;
   getHexColor?: (row: number, col: number) => HexColor | HexTexture | undefined;
   getHexIcon?: (row: number, col: number) => IconItem | undefined;
   hexColorsVersion?: number;
   hexIconsVersion?: number;
   backgroundColor?: { rgb: RGB };
+  barriers?: Record<string, BarrierEdge>;
+  barriersVersion?: number;
 }
 
 export interface HexGridRef {
@@ -48,14 +58,18 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   gridHeight = GRID_CONFIG.DEFAULT_HEIGHT, 
   colors, 
   onHexClick, 
+  onEdgeClick,
   getHexColor, 
   getHexIcon,
   hexColorsVersion = 0,
   hexIconsVersion = 0,
-  backgroundColor 
+  backgroundColor,
+  barriers,
+  barriersVersion = 0
 }, ref) => {
   // Canvas and WebGL refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const barriersCanvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const colorProgramRef = useRef<WebGLProgram | null>(null);
   const textureProgramRef = useRef<WebGLProgram | null>(null);
@@ -89,7 +103,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       backgroundColor,
       getHexagonStyle: (row: number, col: number) => getHexagonStyle(row, col)
     });
-  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor]);
+  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, colors]);
 
   // Expose export function through ref
   useImperativeHandle(ref, () => ({
@@ -172,46 +186,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     }
   }, [onHexClick]);
 
-  // Mouse event handlers
-  const handleMouseDown = useCallback((event: MouseEvent): void => {
-    event.preventDefault();
-    setIsDragging(true);
-    paintedDuringDragRef.current.clear();
-    
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-    
-    const clickedHex = getHexFromMousePos(mouseX, mouseY, hexPositionsRef.current, hexRadiusRef.current);
-    paintHexIfNew(clickedHex);
-  }, [paintHexIfNew]);
 
-  const handleMouseMove = useCallback((event: MouseEvent): void => {
-    if (!isDragging) return;
-    
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-    
-    const hoveredHex = getHexFromMousePos(mouseX, mouseY, hexPositionsRef.current, hexRadiusRef.current);
-    paintHexIfNew(hoveredHex);
-  }, [isDragging, paintHexIfNew]);
 
-  const handleMouseUp = useCallback((): void => {
-    setIsDragging(false);
-    paintedDuringDragRef.current.clear();
-  }, []);
 
-  const handleMouseLeave = useCallback((): void => {
-    setIsDragging(false);
-    paintedDuringDragRef.current.clear();
-  }, []);
 
   // Initialize WebGL context and shaders
   const initWebGL = useCallback((): void => {
@@ -273,7 +250,296 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         renderTextureHexagon(gl, textureProgram, pos, style, hexRadius, canvas);
       }
     });
+
+    // Note: Barriers are now drawn separately in useEffect to avoid WebGL interference
   }, [getHexagonStyle, backgroundColor]);
+
+  // Calculate barrier position in the gap between two adjacent hexagons
+  const getSharedEdgeVertices = useCallback((fromHex: string, toHex: string, hexRadius: number, hexPositions: HexPosition[]): { start: { x: number; y: number }, end: { x: number; y: number } } | null => {
+    const positionMap = new Map<string, HexPosition>();
+    hexPositions.forEach(pos => {
+      positionMap.set(`${pos.row}-${pos.col}`, pos);
+    });
+
+    const fromPos = positionMap.get(fromHex);
+    const toPos = positionMap.get(toHex);
+    
+    if (!fromPos || !toPos) return null;
+
+    
+    
+               // Parse hex coordinates to determine adjacency type
+      const [fromRow, fromCol] = fromHex.split('-').map(Number);
+      const [toRow, toCol] = toHex.split('-').map(Number);
+      const rowDiff = toRow - fromRow;
+      const colDiff = toCol - fromCol;
+      
+      // Check if this is a problematic diagonal that appears center-to-center
+      const isProblematicDiagonal = (
+        (rowDiff === 1 && colDiff === 1 && fromCol % 2 === 0) || // Even col to lower-right
+        (rowDiff === -1 && colDiff === -1 && fromCol % 2 === 1)   // Odd col to upper-left
+      );
+      
+      if (isProblematicDiagonal) {
+        // Use actual edge vertex approach for these problematic cases
+        const visualRadius = hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO;
+        const angleStep = (Math.PI * 2) / 6;
+        
+        let fromAngle: number, toAngle: number;
+        
+        if (rowDiff === 1 && colDiff === 1) {
+          // Lower-right diagonal from even column
+          fromAngle = 4 * angleStep; // 240°
+          toAngle = 5 * angleStep; // 300°
+        } else {
+          // Upper-left diagonal from odd column  
+          fromAngle = angleStep; // 60°
+          toAngle = 2 * angleStep; // 120°
+        }
+        
+        // Calculate edge vertices slightly inward to create gap appearance
+        const inwardOffset = 0.15; // 15% inward from edge
+        const adjustedRadius = visualRadius * (1 - inwardOffset);
+        
+        const startX = fromPos.x + Math.cos(fromAngle) * adjustedRadius;
+        const startY = fromPos.y + Math.sin(fromAngle) * adjustedRadius;
+        const endX = fromPos.x + Math.cos(toAngle) * adjustedRadius;
+        const endY = fromPos.y + Math.sin(toAngle) * adjustedRadius;
+        
+        return {
+          start: { x: startX, y: startY },
+          end: { x: endX, y: endY }
+        };
+             } else {
+         // Use standard midpoint approach for all other adjacencies
+         
+         // For horizontal adjacencies, ensure consistent orientation to prevent offset duplicates
+         let fromPosition = fromPos;
+         let toPosition = toPos;
+         
+         if (rowDiff === 0) {
+           // Horizontal edge - always orient left to right for consistency
+           if (fromCol > toCol) {
+             fromPosition = toPos;
+             toPosition = fromPos;
+           }
+         }
+         
+         const centerToCenter = {
+           x: toPosition.x - fromPosition.x,
+           y: toPosition.y - fromPosition.y
+         };
+         
+         const distance = Math.sqrt(centerToCenter.x * centerToCenter.x + centerToCenter.y * centerToCenter.y);
+         
+         const normalized = {
+           x: centerToCenter.x / distance,
+           y: centerToCenter.y / distance
+         };
+         
+         const perpendicular = {
+           x: -normalized.y,
+           y: normalized.x
+         };
+         
+         const midpoint = {
+           x: (fromPosition.x + toPosition.x) / 2,
+           y: (fromPosition.y + toPosition.y) / 2
+         };
+         
+         const visualRadius = hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO;
+         const barrierLength = visualRadius;
+         
+         return {
+           start: {
+             x: midpoint.x + perpendicular.x * barrierLength / 2,
+             y: midpoint.y + perpendicular.y * barrierLength / 2
+           },
+           end: {
+             x: midpoint.x - perpendicular.x * barrierLength / 2,
+             y: midpoint.y - perpendicular.y * barrierLength / 2
+           }
+         };
+       }
+   }, []);
+
+  // Detect if click is on an edge between two hexes  
+  const getEdgeFromMousePos = useCallback((mouseX: number, mouseY: number): { fromHex: string, toHex: string } | null => {
+    const hexPositions = hexPositionsRef.current;
+    const hexRadius = hexRadiusRef.current;
+    
+    if (hexPositions.length === 0 || hexRadius === 0) {
+      return null;
+    }
+    
+    interface EdgeCandidate {
+      fromHex: string;
+      toHex: string;
+      distance: number;
+    }
+    
+    let closestEdge: EdgeCandidate | null = null;
+    let minDistance = Infinity;
+    
+    // Check all hex pairs for nearby edges
+    for (let i = 0; i < hexPositions.length; i++) {
+      const hex1 = hexPositions[i];
+      
+      // Calculate hex1's neighbors using COLUMN-based parity (matches our layout)
+      const isEvenCol = hex1.col % 2 === 0;
+      let neighbors;
+      
+             if (isEvenCol) {
+         // Even column neighbors
+         neighbors = [
+           { row: hex1.row, col: hex1.col + 1 }, // Right
+           { row: hex1.row, col: hex1.col - 1 }, // Left
+           { row: hex1.row - 1, col: hex1.col + 1 }, // Upper-right
+           { row: hex1.row - 1, col: hex1.col }, // Upper-left
+           { row: hex1.row + 1, col: hex1.col + 1 }, // Lower-right
+           { row: hex1.row + 1, col: hex1.col }  // Lower-left
+         ];
+       } else {
+         // Odd column neighbors  
+         neighbors = [
+           { row: hex1.row, col: hex1.col + 1 }, // Right
+           { row: hex1.row, col: hex1.col - 1 }, // Left
+           { row: hex1.row - 1, col: hex1.col }, // Upper-right
+           { row: hex1.row - 1, col: hex1.col - 1 }, // Upper-left
+           { row: hex1.row + 1, col: hex1.col + 1 }, // Lower-right
+           { row: hex1.row + 1, col: hex1.col - 1 }  // Lower-left
+         ];
+       }
+      
+      neighbors.forEach(neighborCoord => {
+        // Find the actual position of this neighbor
+        const hex2 = hexPositions.find(p => p.row === neighborCoord.row && p.col === neighborCoord.col);
+        if (!hex2) return;
+        
+        // Get the actual edge vertices using the same logic as barrier rendering
+        const fromHex = `${hex1.row}-${hex1.col}`;
+        const toHex = `${hex2.row}-${hex2.col}`;
+        const edgeVertices = getSharedEdgeVertices(fromHex, toHex, hexRadius, hexPositions);
+        
+        if (!edgeVertices) return;
+        
+        // Calculate the midpoint of the actual edge
+        const edgeMidX = (edgeVertices.start.x + edgeVertices.end.x) / 2;
+        const edgeMidY = (edgeVertices.start.y + edgeVertices.end.y) / 2;
+        
+        // Calculate distance from mouse to actual edge midpoint
+        const distance = Math.sqrt(Math.pow(mouseX - edgeMidX, 2) + Math.pow(mouseY - edgeMidY, 2));
+        
+        // Use a reasonable threshold for edge detection
+        if (distance < hexRadius * 0.4 && distance < minDistance) {
+          closestEdge = {
+            fromHex,
+            toHex,
+            distance
+          };
+          minDistance = distance;
+        }
+      });
+    }
+    
+    if (closestEdge) {
+      return { 
+        fromHex: (closestEdge as EdgeCandidate).fromHex, 
+        toHex: (closestEdge as EdgeCandidate).toHex 
+      };
+    }
+    
+         return null;
+   }, [getSharedEdgeVertices]);
+
+  // Mouse event handlers
+  const handleMouseDown = useCallback((event: MouseEvent): void => {
+    event.preventDefault();
+    setIsDragging(true);
+    paintedDuringDragRef.current.clear();
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    
+    // First try to detect edge click (for barriers)
+    const clickedEdge = getEdgeFromMousePos(mouseX, mouseY);
+    if (clickedEdge && onEdgeClick) {
+      onEdgeClick(clickedEdge.fromHex, clickedEdge.toHex);
+      return;
+    }
+    
+    // If no edge was clicked, check for hex click
+    const clickedHex = getHexFromMousePos(mouseX, mouseY, hexPositionsRef.current, hexRadiusRef.current);
+    paintHexIfNew(clickedHex);
+  }, [paintHexIfNew, getEdgeFromMousePos, onEdgeClick]);
+
+  const handleMouseMove = useCallback((event: MouseEvent): void => {
+    if (!isDragging) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    
+    const hoveredHex = getHexFromMousePos(mouseX, mouseY, hexPositionsRef.current, hexRadiusRef.current);
+    paintHexIfNew(hoveredHex);
+  }, [isDragging, paintHexIfNew]);
+
+  const handleMouseUp = useCallback((): void => {
+    setIsDragging(false);
+    paintedDuringDragRef.current.clear();
+  }, []);
+
+  const handleMouseLeave = useCallback((): void => {
+    setIsDragging(false);
+    paintedDuringDragRef.current.clear();
+  }, []);
+
+  // Render barriers between hexagons on separate canvas
+  const renderBarriers = useCallback((): void => {
+    const barriersCanvas = barriersCanvasRef.current;
+    if (!barriersCanvas || !barriers || Object.keys(barriers).length === 0) return;
+
+    const hexRadius = hexRadiusRef.current;
+    const hexPositions = hexPositionsRef.current;
+    
+    if (hexRadius <= 0 || hexPositions.length === 0) return;
+
+    // Set up canvas 2D context for drawing lines
+    const ctx = barriersCanvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear the barriers canvas
+    ctx.clearRect(0, 0, barriersCanvas.width, barriersCanvas.height);
+
+    // Save the current context state
+    ctx.save();
+
+    // Draw each barrier in the gap between hexagons (recalculate positions for current zoom/pan)
+    Object.values(barriers).forEach(barrier => {
+      const edgeVertices = getSharedEdgeVertices(barrier.fromHex, barrier.toHex, hexRadius, hexPositions);
+      
+      if (edgeVertices) {
+        ctx.strokeStyle = barrier.color.value;
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        
+        ctx.beginPath();
+        ctx.moveTo(edgeVertices.start.x, edgeVertices.start.y);
+        ctx.lineTo(edgeVertices.end.x, edgeVertices.end.y);
+        ctx.stroke();
+      }
+    });
+
+    // Restore the context state
+    ctx.restore();
+  }, [barriers, getSharedEdgeVertices]);
 
   // Render a colored hexagon
   const renderColorHexagon = (
@@ -405,12 +671,43 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     initWebGL();
   }, [initWebGL]);
 
-  // Re-render when hex colors or icons change
+  // Sync barriers canvas size with main canvas
+  useEffect(() => {
+    const barriersCanvas = barriersCanvasRef.current;
+    if (barriersCanvas) {
+      barriersCanvas.width = canvasSize.width;
+      barriersCanvas.height = canvasSize.height;
+    }
+  }, [canvasSize]);
+
+  // Re-render when hex colors, icons change
   useEffect(() => {
     if (glRef.current && colorProgramRef.current && textureProgramRef.current) {
       renderGrid();
     }
   }, [hexColorsVersion, hexIconsVersion, renderGrid]);
+
+  // Separate effect for barrier rendering
+  useEffect(() => {
+    const barriersCanvas = barriersCanvasRef.current;
+    if (!barriersCanvas || !barriers || Object.keys(barriers).length === 0) {
+      // Clear canvas if no barriers
+      if (barriersCanvas) {
+        const ctx = barriersCanvas.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, barriersCanvas.width, barriersCanvas.height);
+        }
+      }
+      return;
+    }
+    
+    // Small delay to ensure WebGL rendering is complete
+    const timeoutId = setTimeout(() => {
+      renderBarriers();
+    }, 10);
+
+    return () => clearTimeout(timeoutId);
+  }, [barriersVersion, barriers, renderBarriers, canvasSize, zoomLevel, panOffset]);
 
   // Add event listeners
   useEffect(() => {
@@ -442,12 +739,29 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {/* Main WebGL Canvas */}
       <canvas 
         ref={canvasRef} 
         style={{ 
           display: 'block',
           width: '100%',
           height: '100%'
+        }} 
+        width={canvasSize.width}
+        height={canvasSize.height}
+      />
+      
+      {/* Barriers Canvas Overlay */}
+      <canvas 
+        ref={barriersCanvasRef}
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none', // Allow clicks to pass through
+          zIndex: 2
         }} 
         width={canvasSize.width}
         height={canvasSize.height}

@@ -68,9 +68,25 @@ export interface BackgroundColor {
   readonly cssColor: string;
 }
 
+export interface BarrierColor {
+  readonly name: string;
+  readonly displayName: string;
+  readonly value: string; // Hex color value
+  readonly rgb: RGB; // RGB values in 0-1 range for WebGL
+}
+
 export const BACKGROUND_COLORS: readonly BackgroundColor[] = [
   { name: 'grey', displayName: 'Dark Grey', rgb: [0.1, 0.1, 0.1], cssColor: '#1a1a1a' },
   { name: 'white', displayName: 'White', rgb: [1.0, 1.0, 1.0], cssColor: '#ffffff' }
+];
+
+export const BARRIER_COLORS: readonly BarrierColor[] = [
+  { name: 'stone', displayName: 'Stone', value: '#6B7280', rgb: [0.42, 0.45, 0.50] },
+  { name: 'brick', displayName: 'Brick', value: '#DC2626', rgb: [0.86, 0.15, 0.15] },
+  { name: 'wood', displayName: 'Wood', value: '#92400E', rgb: [0.57, 0.25, 0.05] },
+  { name: 'iron', displayName: 'Iron', value: '#374151', rgb: [0.22, 0.25, 0.32] },
+  { name: 'gold', displayName: 'Gold', value: '#D97706', rgb: [0.85, 0.47, 0.02] },
+  { name: 'crystal', displayName: 'Crystal', value: '#7C3AED', rgb: [0.49, 0.23, 0.93] }
 ];
 
 // All available paint options - colors and terrain textures in a flat array

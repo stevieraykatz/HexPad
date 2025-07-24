@@ -2,7 +2,7 @@
  * Configuration System
  * 
  * This centralized configuration system organizes all magic numbers and constants
- * used throughout the Hex Grid Painter application.
+ * used throughout the HexPad application.
  * 
  * ORGANIZATION:
  * 
@@ -17,31 +17,9 @@
  *    - COLORS: Paint color definitions with WebGL RGB values
  *    - PAINT_OPTIONS: All available paint options (colors and textures) in a flat array
  *    - DEFAULT_COLORS: Fallback and initial states
- * 
- * USAGE EXAMPLES:
- * 
- * // Import specific configs
- * import { GRID_CONFIG, UI_CONFIG } from './config';
- * 
- * // Use in components
- * const defaultWidth = GRID_CONFIG.DEFAULT_WIDTH;
- * const menuWidth = UI_CONFIG.MENU_WIDTH;
- * 
- * // Consistent styling
- * style={{ 
- *   padding: UI_CONFIG.SPACING.LARGE,
- *   borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM 
- * }}
- * 
- * BENEFITS:
- * - Single source of truth for all constants
- * - Easy theme and behavior modifications
- * - Consistent design system
- * - Type-safe constant references
- * - Clear separation of concerns
+ *
  */
 
-// Central export for all configuration files
 export { GRID_CONFIG, HEX_GEOMETRY } from './gridConfig';
 export type { GridConfig, HexGeometry } from './gridConfig';
 
@@ -60,7 +38,7 @@ export type {
   ZIndexConfig 
 } from './uiConfig';
 
-export { COLORS, DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS } from './assetsConfig';
+export { COLORS, DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS, BARRIER_COLORS } from './assetsConfig';
 export type { 
   RGB, 
   Color, 
@@ -68,8 +46,18 @@ export type {
   TextureItem, 
   AssetItem,
   DefaultColors, 
-  BackgroundColor 
+  BackgroundColor,
+  BarrierColor 
 } from './assetsConfig';
 
 export { ICON_OPTIONS } from './iconsConfig';
-export type { IconItem } from './iconsConfig'; 
+export type { IconItem } from './iconsConfig';
+
+// Additional types used by components
+export interface HexTexture {
+  type: 'color' | 'texture';
+  name: string;
+  displayName: string;
+  rgb?: [number, number, number];
+  path?: string;
+} 
