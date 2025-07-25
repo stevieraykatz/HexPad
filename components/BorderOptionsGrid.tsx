@@ -65,7 +65,10 @@ const BorderOptionsGrid: React.FC<BorderOptionsGridProps> = ({
         backdropFilter: UI_CONFIG.BLUR.LIGHT,
         border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
         borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-        padding: UI_CONFIG.SPACING.MEDIUM
+        padding: UI_CONFIG.SPACING.MEDIUM,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
       }}>
         <HexColorPicker
           color={selectedBorderColor}
