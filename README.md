@@ -1,6 +1,6 @@
 # HexPad
 
-A modern, open-source hex map editor for tabletop games, worldbuilding, and creative projects.
+An always free, modern, open-source hex map editor for tabletop games, worldbuilding, and creative projects.
 
 ## Quick Start
 
