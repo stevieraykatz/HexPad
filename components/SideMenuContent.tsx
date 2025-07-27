@@ -53,7 +53,9 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
   };
 
   return (
-    <>
+    <div style={{
+      paddingBottom: 80 // Match BottomActionMenu height
+    }}>
       {activeTab === 'paint' && (
         <>
           <GridSizeControls
@@ -102,7 +104,7 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
           />
         </div>
       )}
-    </>
+    </div>
   );
 };
 
