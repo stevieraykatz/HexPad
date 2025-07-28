@@ -69,7 +69,7 @@ const BottomActionMenu: React.FC<BottomActionMenuProps> = ({
       bottom: 0,
       left: 0,
       right: 0,
-      height: '80px',
+      height: UI_CONFIG.MENU.MENU_HEIGHT,
       background: UI_CONFIG.COLORS.MENU_BACKGROUND,
       backdropFilter: UI_CONFIG.BLUR.MEDIUM,
       borderTop: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,

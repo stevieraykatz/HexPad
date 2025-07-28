@@ -109,6 +109,7 @@ export interface MenuConfig {
   readonly TOGGLE_BUTTON_OFFSET: number; // Offset for menu toggle button when menu is open
   readonly TOP_MARGIN: string; // Top margin for menu content
   readonly MENU_ITEM_SPACING: string; // Spacing between major menu sections
+  readonly MENU_HEIGHT: string; // Height of the bottom action menu
 }
 
 export interface AppLayoutConfig {
@@ -283,6 +284,7 @@ export const UI_CONFIG: UIConfig = {
     TOGGLE_BUTTON_OFFSET: 10, // Offset for menu toggle button when menu is open
     TOP_MARGIN: '40px', // Top margin for menu content
     MENU_ITEM_SPACING: '0', // Spacing between major menu sections (using SPACING.XXLARGE instead)
+    MENU_HEIGHT: '80px', // Height of the bottom action menu
   },
   
   // App layout

@@ -54,7 +54,7 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
 
   return (
     <div style={{
-      paddingBottom: 80 // Match BottomActionMenu height
+      paddingBottom: UI_CONFIG.MENU.MENU_HEIGHT // Match BottomActionMenu height
     }}>
       {activeTab === 'paint' && (
         <>
