@@ -1,6 +1,9 @@
 {
   "short_name": "HexPad",
-  "name": "Free open source hexagon grid editor",
+  "name": "HexPad - Free, Open Source Hex Map Maker",
+  "description": "Create stunning hexagonal grid maps for tabletop RPGs, D&D campaigns, and game masters. Always free online hex map maker with terrain painting and instant sharing.",
+  "categories": ["games", "productivity", "utilities"],
+  "keywords": "hex map maker, hexagonal grid, D&D maps, RPG maps, tabletop maps, game master tools, map making, hexcrawler map maker, hexmap",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +13,22 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
+  "orientation": "any",
   "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr"
 }

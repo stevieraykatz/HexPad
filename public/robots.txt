@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Allow all major search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# Sitemap location
+Sitemap: https://hexpad.app/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 1 
