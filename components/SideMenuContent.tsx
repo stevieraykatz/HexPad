@@ -30,6 +30,8 @@ interface SideMenuContentProps {
   onWidthChange: (width: number) => void;
   onHeightChange: (height: number) => void;
   onBackgroundColorChange: (color: BackgroundColor) => void;
+  // Mobile layout
+  isMobile?: boolean; // Optional mobile detection for layout adjustments
 }
 
 const SideMenuContent: React.FC<SideMenuContentProps> = ({ 
@@ -54,7 +56,9 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
   selectedBackgroundColor,
   onWidthChange,
   onHeightChange,
-  onBackgroundColorChange
+  onBackgroundColorChange,
+  // Mobile layout
+  isMobile = false
 }) => {
   const sectionTitleStyle = {
     color: UI_CONFIG.COLORS.TEXT_SECONDARY,
@@ -64,22 +68,26 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
   };
 
   const sectionWrapperStyle = {
-    marginBottom: UI_CONFIG.SPACING.XXLARGE
+    marginBottom: isMobile ? UI_CONFIG.SPACING.LARGE : UI_CONFIG.SPACING.XXLARGE
   };
 
   return (
-    <div style={{
-      paddingBottom: UI_CONFIG.MENU.MENU_HEIGHT
-    }}>
+    <div 
+      className={`mobile-spacing-medium ${isMobile ? 'mobile-menu-content' : ''}`}
+      style={{
+        paddingBottom: UI_CONFIG.MENU.MENU_HEIGHT
+      }}
+    >
       {activeTab === 'paint' && (
         <>
-          <div style={sectionWrapperStyle}>
+          <div className={isMobile ? 'mobile-section' : ''} style={sectionWrapperStyle}>
             <PaintOptionsGrid 
               selectedTexture={selectedTexture}
               selectedColor={selectedColor}
               onTextureSelect={onTextureSelect}
               onColorSelect={onColorSelect}
               onTextureClear={onTextureClear}
+              isMobile={isMobile}
             />
           </div>
         </>
@@ -87,12 +95,13 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
       
       {activeTab === 'icons' && (
         <>
-          <div style={sectionWrapperStyle}>
+          <div className={isMobile ? 'mobile-section' : ''} style={sectionWrapperStyle}>
             <IconOptionsGrid 
               selectedIcon={selectedIcon}
               selectedIconColor={selectedIconColor}
               onIconSelect={onIconSelect}
               onIconColorSelect={onIconColorSelect}
+              isMobile={isMobile}
             />
           </div>
         </>
@@ -100,32 +109,37 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
       
       {activeTab === 'borders' && (
         <>
-          <div style={sectionWrapperStyle}>
+          <div className={isMobile ? 'mobile-section' : ''} style={sectionWrapperStyle}>
             <BorderOptionsGrid 
               selectedBorderColor={selectedBorderColor}
               onBorderColorSelect={onBorderColorSelect}
+              isMobile={isMobile}
             />
           </div>
         </>
       )}
-
+      
       {activeTab === 'settings' && (
         <>
-          <div style={{ ...sectionTitleStyle, textAlign: 'center', marginBottom: UI_CONFIG.SPACING.XLARGE }}>
+          <div className={isMobile ? 'mobile-section' : ''} style={{ ...sectionTitleStyle, textAlign: 'center', marginBottom: UI_CONFIG.SPACING.XLARGE }}>
             Grid Settings
           </div>
 
-          <GridSizeControls
-            gridWidth={gridWidth}
-            gridHeight={gridHeight}
-            onWidthChange={onWidthChange}
-            onHeightChange={onHeightChange}
-          />
+          <div className={isMobile ? 'mobile-section' : ''}>
+            <GridSizeControls
+              gridWidth={gridWidth}
+              gridHeight={gridHeight}
+              onWidthChange={onWidthChange}
+              onHeightChange={onHeightChange}
+            />
+          </div>
 
-          <BackgroundColorSelector
-            selectedBackgroundColor={selectedBackgroundColor}
-            onBackgroundColorChange={onBackgroundColorChange}
-          />
+          <div className={isMobile ? 'mobile-section' : ''}>
+            <BackgroundColorSelector
+              selectedBackgroundColor={selectedBackgroundColor}
+              onBackgroundColorChange={onBackgroundColorChange}
+            />
+          </div>
         </>
       )}
     </div>

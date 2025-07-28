@@ -31,6 +31,7 @@ interface UseGridStateProps {
   selectedIconColor: string;
   selectedBorderColor: string;
   activeTab: 'paint' | 'icons' | 'borders' | 'settings';
+  onPaintStart?: () => void; // Optional callback for when painting starts
 }
 
 interface UseGridStateReturn {
@@ -73,7 +74,8 @@ export function useGridState({
   selectedIcon,
   selectedIconColor,
   selectedBorderColor,
-  activeTab
+  activeTab,
+  onPaintStart
 }: UseGridStateProps): UseGridStateReturn {
   
   // Core grid state
@@ -145,6 +147,11 @@ export function useGridState({
   // Paint hex operation
   const paintHex = useCallback((row: number, col: number): void => {
     const hexKey = `${row}-${col}`;
+    
+    // Trigger paint start callback for auto-minimize functionality
+    if (onPaintStart) {
+      onPaintStart();
+    }
     
     // Handle eraser logic (works in both tabs)
     if (selectedIcon?.name === 'eraser') {
@@ -246,7 +253,7 @@ export function useGridState({
       }));
       setHexColorsVersion(prev => prev + 1);
     }
-  }, [selectedColor, selectedTexture, selectedIcon, selectedIconColor, activeTab, hexIcons, hexColors]);
+  }, [selectedColor, selectedTexture, selectedIcon, selectedIconColor, activeTab, hexIcons, hexColors, onPaintStart]);
 
   // Place border operation
   const placeBorder = useCallback((fromHex: string, toHex: string): void => {

@@ -9,6 +9,7 @@ interface PaintOptionsGridProps {
   onTextureSelect: (texture: TextureItem) => void;
   onColorSelect: (color: string) => void;
   onTextureClear?: () => void;
+  isMobile?: boolean; // Optional mobile detection for layout optimizations
 }
 
 const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({ 
@@ -16,7 +17,8 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
   selectedColor,
   onTextureSelect,
   onColorSelect,
-  onTextureClear
+  onTextureClear,
+  isMobile = false
 }) => {
   // Filter out color items, only show textures
   const textureOptions = PAINT_OPTIONS.filter(item => item.type === 'texture');
@@ -51,6 +53,7 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
         alignItems: 'center'
       }}>
         <HexColorPicker
+          className="mobile-color-picker"
           color={selectedColor}
           onChange={onColorSelect}
           style={{
@@ -69,17 +72,21 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
         borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
         padding: UI_CONFIG.SPACING.MEDIUM
       }}>
-        <div style={{ 
-          display: 'grid',
-          gridTemplateColumns: `repeat(${UI_CONFIG.PAINT_OPTIONS.GRID_COLUMNS}, 1fr)`,
-          gap: UI_CONFIG.PAINT_OPTIONS.TILE_GAP,
-          maxHeight: UI_CONFIG.PAINT_OPTIONS.MAX_HEIGHT,
-          overflowY: 'auto',
-          justifyContent: 'center',
-          justifyItems: 'center'
-        }}>
+        <div 
+          className={isMobile ? 'mobile-paint-grid' : ''}
+          style={{ 
+            display: 'grid',
+            gridTemplateColumns: isMobile ? `repeat(4, 1fr)` : `repeat(${UI_CONFIG.PAINT_OPTIONS.GRID_COLUMNS}, 1fr)`,
+            gap: isMobile ? '6px' : UI_CONFIG.PAINT_OPTIONS.TILE_GAP,
+            maxHeight: isMobile ? '300px' : UI_CONFIG.PAINT_OPTIONS.MAX_HEIGHT,
+            overflowY: 'auto',
+            justifyContent: 'center',
+            justifyItems: 'center'
+          }}
+        >
           {/* Color Tile (First Option) */}
           <button
+            className="mobile-paint-tile"
             onClick={handleColorPreviewClick}
             style={{
               width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
@@ -111,6 +118,7 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
           {/* Texture Options */}
           {textureOptions.map((item: AssetItem) => (
             <button
+              className="mobile-paint-tile"
               key={item.name}
               onClick={() => onTextureSelect(item)}
               style={{

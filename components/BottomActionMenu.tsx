@@ -118,23 +118,26 @@ const BottomActionMenu: React.FC<BottomActionMenuProps> = ({
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: UI_CONFIG.MENU.MENU_HEIGHT,
-      background: UI_CONFIG.COLORS.MENU_BACKGROUND,
-      backdropFilter: UI_CONFIG.BLUR.MEDIUM,
-      borderTop: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-      boxShadow: UI_CONFIG.BOX_SHADOW.MEDIUM,
-      zIndex: UI_CONFIG.Z_INDEX.MENU,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: UI_CONFIG.SPACING.LARGE,
-      padding: `0 ${UI_CONFIG.SPACING.XLARGE}`
-    }}>
+    <div 
+      className="mobile-bottom-menu mobile-spacing-small"
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: UI_CONFIG.MENU.MENU_HEIGHT,
+        background: UI_CONFIG.COLORS.MENU_BACKGROUND,
+        backdropFilter: UI_CONFIG.BLUR.MEDIUM,
+        borderTop: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+        boxShadow: UI_CONFIG.BOX_SHADOW.MEDIUM,
+        zIndex: UI_CONFIG.Z_INDEX.MENU,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: UI_CONFIG.SPACING.LARGE,
+        padding: `0 ${UI_CONFIG.SPACING.XLARGE}`
+      }}
+    >
       <ActionButton
         onClick={onCopyUrl}
         type="primary"

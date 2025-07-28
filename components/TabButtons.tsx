@@ -8,6 +8,7 @@ interface TabButtonsProps {
   selectedIcon: IconItem | null;
   onTabChange: (tab: 'paint' | 'icons' | 'borders' | 'settings') => void;
   onMenuToggle: () => void;
+  isMobile?: boolean; // Optional mobile detection for positioning
 }
 
 const TabButtons: React.FC<TabButtonsProps> = ({ 
@@ -15,7 +16,8 @@ const TabButtons: React.FC<TabButtonsProps> = ({
   menuOpen, 
   selectedIcon, 
   onTabChange, 
-  onMenuToggle 
+  onMenuToggle,
+  isMobile = false
 }) => {
   const createTabButtonStyle = (tab: 'paint' | 'icons' | 'borders' | 'settings', isActive: boolean) => ({
     width: (isActive && menuOpen) ? '60px' : '50px',
@@ -52,16 +54,33 @@ const TabButtons: React.FC<TabButtonsProps> = ({
   return (
     <div style={{
       position: 'fixed',
-      top: `calc(${UI_CONFIG.SPACING.XLARGE} + 60px)`, // Below the menu toggle
-      left: menuOpen ? `${UI_CONFIG.MENU_WIDTH + UI_CONFIG.MENU.TOGGLE_BUTTON_OFFSET}px` : UI_CONFIG.SPACING.XLARGE,
+      ...(isMobile ? {
+        // Mobile: Position for bottom menu
+        bottom: menuOpen ? '60vh' : '80px', // Above bottom menu when open, above action bar when closed
+        left: '50%',
+        transform: 'translateX(-50%)',
+        flexDirection: 'row',
+        gap: UI_CONFIG.SPACING.LARGE,
+      } : {
+        // Desktop: Position for side menu
+        top: `calc(${UI_CONFIG.SPACING.XLARGE} + 60px)`, // Below the menu toggle
+        left: menuOpen ? `${UI_CONFIG.MENU_WIDTH + UI_CONFIG.MENU.TOGGLE_BUTTON_OFFSET}px` : UI_CONFIG.SPACING.XLARGE,
+        flexDirection: 'column',
+        gap: UI_CONFIG.SPACING.MEDIUM,
+        transition: `left ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+      }),
       zIndex: UI_CONFIG.Z_INDEX.MENU_TOGGLE,
       display: 'flex',
-      flexDirection: 'column',
-      gap: UI_CONFIG.SPACING.MEDIUM,
-      transition: `left ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`
+      alignItems: 'center',
+      background: isMobile ? UI_CONFIG.COLORS.OVERLAY_BACKGROUND : 'transparent',
+      backdropFilter: isMobile ? UI_CONFIG.BLUR.LIGHT : 'none',
+      borderRadius: isMobile ? UI_CONFIG.BORDER_RADIUS.XLARGE : '0',
+      padding: isMobile ? UI_CONFIG.SPACING.SMALL : '0',
+      boxShadow: isMobile ? UI_CONFIG.BOX_SHADOW.LIGHT : 'none',
     }}>
       {/* Paint Menu Button */}
       <button
+        className="mobile-tab-button"
         onClick={() => handleTabClick('paint')}
         style={createTabButtonStyle('paint', activeTab === 'paint')}
         title="Paint Tools"
@@ -71,6 +90,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({
 
       {/* Icons Menu Button */}
       <button
+        className="mobile-tab-button"
         onClick={() => handleTabClick('icons')}
         style={createTabButtonStyle('icons', activeTab === 'icons')}
         title="Icon Overlays"
@@ -80,6 +100,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({
 
       {/* Borders Menu Button */}
       <button
+        className="mobile-tab-button"
         onClick={() => handleTabClick('borders')}
         style={createTabButtonStyle('borders', activeTab === 'borders')}
         title="Border Tools"
@@ -89,6 +110,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({
 
       {/* Settings Menu Button */}
       <button
+        className="mobile-tab-button"
         onClick={() => handleTabClick('settings')}
         style={createTabButtonStyle('settings', activeTab === 'settings')}
         title="Grid Settings"

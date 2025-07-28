@@ -17,6 +17,17 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
+  
+  /* Mobile touch improvements */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  
+  /* Prevent zoom on input focus (iOS) */
+  -webkit-text-size-adjust: 100%;
 }
 
 code {
@@ -29,4 +40,158 @@ code {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+}
+
+/* ===== MOBILE RESPONSIVE STYLES ===== */
+
+/* Mobile Portrait (phones) */
+@media screen and (max-width: 768px) {
+  /* Ensure minimum touch target sizes */
+  button, .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Reduce menu width on mobile */
+  .mobile-menu-width {
+    width: 280px !important;
+  }
+  
+  /* Smaller spacing on mobile */
+  .mobile-spacing-small {
+    padding: 6px !important;
+    gap: 6px !important;
+  }
+  
+  .mobile-spacing-medium {
+    padding: 10px !important;
+    gap: 10px !important;
+  }
+  
+  /* Smaller paint option tiles on mobile for better grid fit */
+  .mobile-paint-tile {
+    width: 55px !important;
+    height: 55px !important;
+  }
+  
+  /* Optimized tab buttons for mobile */
+  .mobile-tab-button {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 20px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+  }
+  
+  /* Bottom menu height adjustment */
+  .mobile-bottom-menu {
+    height: 65px !important;
+    padding: 0 10px !important;
+  }
+  
+  /* Color picker size adjustment */
+  .mobile-color-picker {
+    width: 140px !important;
+    height: 140px !important;
+  }
+  
+  /* Mobile-specific grid layout */
+  .mobile-paint-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 6px !important;
+    max-height: 300px !important;
+  }
+  
+  /* Icon grid optimizations */
+  .mobile-icon-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    max-height: 250px !important;
+  }
+  
+  /* Mobile icon tile sizing */
+  .mobile-icon-tile {
+    width: 50px !important;
+    height: 50px !important;
+    padding: 4px !important;
+  }
+  
+  /* Mobile menu content spacing */
+  .mobile-menu-content {
+    gap: 12px !important;
+    padding-bottom: 10px !important;
+  }
+  
+  /* Compact mobile sections */
+  .mobile-section {
+    margin-bottom: 15px !important;
+  }
+}
+
+/* Mobile Landscape & Small Tablets */
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+  /* Optimize for landscape on mobile/tablet */
+  .mobile-landscape-menu {
+    width: 260px !important;
+  }
+  
+  .mobile-landscape-spacing {
+    padding: 10px !important;
+    gap: 10px !important;
+  }
+}
+
+/* Touch device specific optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* This targets touch devices specifically */
+  
+  /* Larger touch targets */
+  button {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px;
+  }
+  
+  /* Remove hover effects on touch devices */
+  button:hover {
+    transition: none;
+  }
+  
+  /* Prevent text selection during touch interactions */
+  * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Optimize scrolling on touch devices */
+  .scrollable {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Prevent overscroll/bounce on iOS */
+@media screen and (max-device-width: 812px) {
+  body {
+    position: fixed;
+    overflow: hidden;
+  }
+}
+
+/* High DPI displays (Retina) adjustments */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Sharper borders and shadows on high DPI */
+  .crisp-borders {
+    border-width: 0.5px;
+  }
+}
+
+/* Accessibility: Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 } 

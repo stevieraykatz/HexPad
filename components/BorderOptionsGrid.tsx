@@ -3,8 +3,9 @@ import { HexColorPicker } from 'react-colorful';
 import { UI_CONFIG } from './config';
 
 interface BorderOptionsGridProps {
-  selectedBorderColor: string; // Now just a hex color string
+  selectedBorderColor: string;
   onBorderColorSelect: (color: string) => void;
+  isMobile?: boolean; // Optional mobile detection for layout optimizations
 }
 
 const BorderOptionsGrid: React.FC<BorderOptionsGridProps> = ({
@@ -57,6 +58,7 @@ const BorderOptionsGrid: React.FC<BorderOptionsGridProps> = ({
         alignItems: 'center'
       }}>
         <HexColorPicker
+          className="mobile-color-picker"
           color={selectedBorderColor}
           onChange={onBorderColorSelect}
           style={{

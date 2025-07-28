@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import HexGrid, { HexGridRef } from './HexGrid';
 import { UI_CONFIG, PAINT_OPTIONS, BACKGROUND_COLORS, ICON_OPTIONS } from './config';
 import type { BackgroundColor, IconItem, HexTexture } from './config';
@@ -17,6 +17,7 @@ import {
 import type { EncodingMap } from '../utils/gridEncoding';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { useGridState } from '../hooks/useGridState';
+import { useMobileDetection } from '../hooks/useMobileDetection';
 import {
   createTextureSelectHandler,
   createTextureClearHandler,
@@ -41,6 +42,16 @@ const HexGridApp: React.FC = () => {
   const hexGridRef = useRef<HexGridRef>(null);
   
   const [encodingMap, setEncodingMap] = useState<EncodingMap | null>(null);
+  
+  // Mobile detection
+  const { isMobile } = useMobileDetection();
+
+  // Auto-minimize menu when painting starts on mobile
+  const handlePaintStart = useCallback(() => {
+    if (isMobile && menuOpen) {
+      setMenuOpen(false);
+    }
+  }, [isMobile, menuOpen]);
 
   useEffect(() => {
     // Encoding map for base64 system
@@ -76,7 +87,8 @@ const HexGridApp: React.FC = () => {
     selectedIcon,
     selectedIconColor,
     selectedBorderColor,
-    activeTab
+    activeTab,
+    onPaintStart: handlePaintStart
   });
 
   const { loadFromLocalStorage, clearAutosave } = useAutoSave({
@@ -182,24 +194,41 @@ const HexGridApp: React.FC = () => {
         selectedIcon={selectedIcon}
         onTabChange={handleTabChange}
         onMenuToggle={handleMenuToggle}
+        isMobile={isMobile}
       />
 
-      {/* Collapsible Side Menu */}
+      {/* Collapsible Menu - Side on Desktop, Bottom on Mobile */}
       <div style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        width: `${UI_CONFIG.MENU_WIDTH}px`,
-        height: '100vh',
+        ...(isMobile ? {
+          // Mobile: Bottom menu
+          bottom: 0,
+          left: 0,
+          right: 0,
+          width: '100%',
+          height: menuOpen ? '60vh' : '0',
+          maxHeight: '60vh',
+          borderTop: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+          borderRadius: `${UI_CONFIG.BORDER_RADIUS.LARGE} ${UI_CONFIG.BORDER_RADIUS.LARGE} 0 0`,
+          transform: `translateY(${menuOpen ? '0' : '100%'})`,
+        } : {
+          // Desktop: Side menu
+          top: 0,
+          left: 0,
+          width: `${UI_CONFIG.MENU_WIDTH}px`,
+          height: '100vh',
+          borderRight: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+          transform: `translateX(${menuOpen ? '0' : `-${UI_CONFIG.MENU_WIDTH}px`})`,
+        }),
         background: UI_CONFIG.COLORS.MENU_BACKGROUND,
         backdropFilter: UI_CONFIG.BLUR.MEDIUM,
-        transform: `translateX(${menuOpen ? '0' : `-${UI_CONFIG.MENU_WIDTH}px`})`,
         transition: `transform ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
         zIndex: UI_CONFIG.Z_INDEX.MENU,
-        borderRight: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
         boxShadow: menuOpen ? UI_CONFIG.BOX_SHADOW.MEDIUM : 'none',
         overflowY: 'auto',
-        padding: UI_CONFIG.SPACING.XLARGE
+        padding: isMobile ? 
+          `${UI_CONFIG.SPACING.LARGE} ${UI_CONFIG.SPACING.MEDIUM}` : 
+          UI_CONFIG.SPACING.XLARGE
       }}>
         
         <SideMenuContent
@@ -221,6 +250,7 @@ const HexGridApp: React.FC = () => {
           onIconColorSelect={setSelectedIconColor}
           selectedBorderColor={selectedBorderColor}
           onBorderColorSelect={setSelectedBorderColor}
+          isMobile={isMobile}
         />
       </div>
       

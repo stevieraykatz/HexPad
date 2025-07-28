@@ -2,7 +2,7 @@ import './globals.css'
 
 export const metadata = {
   metadataBase: new URL('https://hexpad.app'),
-  title: 'HexPad - Always Free Hex Map Maker | Create Hexagonal Grid Maps Online',
+  title: 'HexPad',
   description: 'Create stunning hex maps for D&D, tabletop RPGs, and game masters. Free online hexagonal grid maker with terrain painting, icons, and instant sharing. Perfect for RPG campaigns and worldbuilding.',
   keywords: 'hex map maker, hexagonal grid, D&D maps, RPG maps, tabletop maps, hex grid creator, game master tools, map making, hex mapper, fantasy maps',
   author: 'HexPad',

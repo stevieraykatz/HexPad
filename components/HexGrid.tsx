@@ -260,19 +260,19 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
 
   }, [getHexagonStyle, backgroundColor]);
 
-  // Shared painting logic for both mouse down and move events
-  const handlePaintAtPosition = useCallback((event: MouseEvent): void => {
+  // Shared painting logic for both mouse and touch events
+  const handlePaintAtPosition = useCallback((clientX: number, clientY: number): void => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
     const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
     
     if (activeTab === 'borders') {
-      paintBorderIfNew(mouseX, mouseY);
+      paintBorderIfNew(x, y);
     } else {
-      const clickedHex = getHexFromMousePos(mouseX, mouseY, hexPositionsRef.current, hexRadiusRef.current);
+      const clickedHex = getHexFromMousePos(x, y, hexPositionsRef.current, hexRadiusRef.current);
       paintHexIfNew(clickedHex);
     }
   }, [paintHexIfNew, paintBorderIfNew, activeTab]);
@@ -283,12 +283,12 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     paintedDuringDragRef.current.clear();
     clearPaintedBorders();
     
-    handlePaintAtPosition(event);
+    handlePaintAtPosition(event.clientX, event.clientY);
   }, [handlePaintAtPosition, clearPaintedBorders]);
 
   const handleMouseMove = useCallback((event: MouseEvent): void => {
     if (!isDragging) return;
-    handlePaintAtPosition(event);
+    handlePaintAtPosition(event.clientX, event.clientY);
   }, [isDragging, handlePaintAtPosition]);
 
   const handleMouseUp = useCallback((): void => {
@@ -298,6 +298,36 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   }, [clearPaintedBorders]);
 
   const handleMouseLeave = useCallback((): void => {
+    setIsDragging(false);
+    paintedDuringDragRef.current.clear();
+    clearPaintedBorders();
+  }, [clearPaintedBorders]);
+
+  // Touch event handlers
+  const handleTouchStart = useCallback((event: TouchEvent): void => {
+    event.preventDefault(); // Prevent page scrolling and default touch behaviors
+    const touch = event.touches[0];
+    if (!touch) return;
+    
+    setIsDragging(true);
+    paintedDuringDragRef.current.clear();
+    clearPaintedBorders();
+    
+    handlePaintAtPosition(touch.clientX, touch.clientY);
+  }, [handlePaintAtPosition, clearPaintedBorders]);
+
+  const handleTouchMove = useCallback((event: TouchEvent): void => {
+    event.preventDefault(); // Prevent page scrolling
+    if (!isDragging) return;
+    
+    const touch = event.touches[0];
+    if (!touch) return;
+    
+    handlePaintAtPosition(touch.clientX, touch.clientY);
+  }, [isDragging, handlePaintAtPosition]);
+
+  const handleTouchEnd = useCallback((event: TouchEvent): void => {
+    event.preventDefault();
     setIsDragging(false);
     paintedDuringDragRef.current.clear();
     clearPaintedBorders();
@@ -454,6 +484,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
+      // Mouse events
       canvas.addEventListener('mousedown', handleMouseDown);
       canvas.addEventListener('mousemove', handleMouseMove);
       canvas.addEventListener('mouseup', handleMouseUp);
@@ -461,17 +492,31 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       canvas.addEventListener('contextmenu', (e) => e.preventDefault());
       canvas.addEventListener('wheel', handleWheel, { passive: false });
       
+      // Touch events
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+      canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false }); // Treat touchcancel same as touchend
+      
       document.addEventListener('mouseup', handleMouseUp);
       
         canvas.style.cursor = isDragging ? 'grabbing' : 'crosshair';
       
       return () => {
+        // Remove mouse events
         canvas.removeEventListener('mousedown', handleMouseDown);
         canvas.removeEventListener('mousemove', handleMouseMove);
         canvas.removeEventListener('mouseup', handleMouseUp);
         canvas.removeEventListener('mouseleave', handleMouseLeave);
         canvas.removeEventListener('contextmenu', (e) => e.preventDefault());
         canvas.removeEventListener('wheel', handleWheel);
+        
+        // Remove touch events
+        canvas.removeEventListener('touchstart', handleTouchStart);
+        canvas.removeEventListener('touchmove', handleTouchMove);
+        canvas.removeEventListener('touchend', handleTouchEnd);
+        canvas.removeEventListener('touchcancel', handleTouchEnd);
+        
         document.removeEventListener('mouseup', handleMouseUp);
           canvas.style.cursor = 'default';
         
@@ -479,7 +524,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         cancelPendingIconUpdates();
       };
     }
-  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave, handleWheel, isDragging, cancelPendingRenders, cancelPendingIconUpdates]);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave, handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd, isDragging, cancelPendingRenders, cancelPendingIconUpdates]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

@@ -8,6 +8,7 @@ interface IconOptionsGridProps {
   selectedIconColor: string;
   onIconSelect: (icon: IconItem) => void;
   onIconColorSelect: (color: string) => void;
+  isMobile?: boolean; // Optional mobile detection for layout optimizations
 }
 
 const IconOptionsGrid: React.FC<IconOptionsGridProps> = ({ 
@@ -108,6 +109,7 @@ const IconOptionsGrid: React.FC<IconOptionsGridProps> = ({
         alignItems: 'center'
       }}>
         <HexColorPicker
+          className="mobile-color-picker"
           color={selectedIconColor}
           onChange={onIconColorSelect}
           style={{
