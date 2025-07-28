@@ -94,7 +94,7 @@ export const GRID_CONFIG: GridConfig = {
   DEFAULT_CANVAS_HEIGHT: 600, // Default canvas height in pixels
   
   // Zoom configuration
-  BASE_ZOOM_LEVEL: 1.0,
+  BASE_ZOOM_LEVEL: 0.67,
   ZOOM_SPEED: 0.1,
   TARGET_TILES_AT_MAX_ZOOM: 4.5, // Number of tiles to show across screen when fully zoomed in
   

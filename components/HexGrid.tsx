@@ -13,7 +13,7 @@ import {
   type CanvasSize,
   type PanOffset
 } from '../utils/hexagonUtils';
-import { calculateZoomToPoint } from '../utils/zoomPanUtils';
+import { calculateZoomToPoint, constrainPanOffset } from '../utils/zoomPanUtils';
 import { exportAsPNG as exportUtility, type HexStyle } from '../utils/exportUtils';
 import { useBorderInteraction } from '../hooks/useBorderInteraction';
 import { useBorderRendering } from '../hooks/useBorderRendering';
@@ -77,9 +77,11 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     width: GRID_CONFIG.DEFAULT_CANVAS_WIDTH, 
     height: GRID_CONFIG.DEFAULT_CANVAS_HEIGHT 
   });
-  const [zoomLevel, setZoomLevel] = useState<number>(GRID_CONFIG.BASE_ZOOM_LEVEL);
+  const [zoomLevel, setZoomLevel] = useState<number>(1.0); // Start at normal zoom, but allow zooming out to BASE_ZOOM_LEVEL
   const [panOffset, setPanOffset] = useState<PanOffset>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isPanning, setIsPanning] = useState<boolean>(false);
+  const [lastPanPosition, setLastPanPosition] = useState<{ x: number; y: number } | null>(null);
   
   const hexPositionsRef = useRef<HexPosition[]>([]);
   const hexRadiusRef = useRef<number>(0);
@@ -279,26 +281,62 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
 
   const handleMouseDown = useCallback((event: MouseEvent): void => {
     event.preventDefault();
-    setIsDragging(true);
-    paintedDuringDragRef.current.clear();
-    clearPaintedBorders();
     
-    handlePaintAtPosition(event);
+    if (event.button === 1) { // Middle mouse button for panning
+      setIsPanning(true);
+      setLastPanPosition({ x: event.clientX, y: event.clientY });
+    } else if (event.button === 0) { // Left mouse button for painting
+      setIsDragging(true);
+      paintedDuringDragRef.current.clear();
+      clearPaintedBorders();
+      handlePaintAtPosition(event);
+    }
   }, [handlePaintAtPosition, clearPaintedBorders]);
 
   const handleMouseMove = useCallback((event: MouseEvent): void => {
-    if (!isDragging) return;
-    handlePaintAtPosition(event);
-  }, [isDragging, handlePaintAtPosition]);
+    if (isPanning && lastPanPosition) {
+      // Handle panning
+      const deltaX = event.clientX - lastPanPosition.x;
+      const deltaY = event.clientY - lastPanPosition.y;
+      
+      const newPanOffset = {
+        x: panOffset.x + deltaX,
+        y: panOffset.y + deltaY
+      };
+      
+      // Constrain the pan offset to reasonable bounds
+      const currentHexRadius = hexRadiusRef.current || GRID_CONFIG.FALLBACK_HEX_RADIUS;
+      const constrainedOffset = constrainPanOffset(
+        newPanOffset,
+        currentHexRadius,
+        gridWidth,
+        gridHeight,
+        canvasSize
+      );
+      
+      setPanOffset(constrainedOffset);
+      setLastPanPosition({ x: event.clientX, y: event.clientY });
+    } else if (isDragging) {
+      // Handle painting
+      handlePaintAtPosition(event);
+    }
+  }, [isDragging, isPanning, lastPanPosition, panOffset, gridWidth, gridHeight, canvasSize, handlePaintAtPosition]);
 
-  const handleMouseUp = useCallback((): void => {
-    setIsDragging(false);
-    paintedDuringDragRef.current.clear();
-    clearPaintedBorders();
+  const handleMouseUp = useCallback((event: MouseEvent): void => {
+    if (event.button === 1) { // Middle mouse button
+      setIsPanning(false);
+      setLastPanPosition(null);
+    } else if (event.button === 0) { // Left mouse button
+      setIsDragging(false);
+      paintedDuringDragRef.current.clear();
+      clearPaintedBorders();
+    }
   }, [clearPaintedBorders]);
 
   const handleMouseLeave = useCallback((): void => {
     setIsDragging(false);
+    setIsPanning(false);
+    setLastPanPosition(null);
     paintedDuringDragRef.current.clear();
     clearPaintedBorders();
   }, [clearPaintedBorders]);
@@ -463,7 +501,14 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       
       document.addEventListener('mouseup', handleMouseUp);
       
-        canvas.style.cursor = isDragging ? 'grabbing' : 'crosshair';
+      // Update cursor based on interaction state
+      if (isPanning) {
+        canvas.style.cursor = 'grabbing';
+      } else if (isDragging) {
+        canvas.style.cursor = 'crosshair';
+      } else {
+        canvas.style.cursor = 'grab'; // Show grab cursor to indicate panning is available
+      }
       
       return () => {
         canvas.removeEventListener('mousedown', handleMouseDown);
@@ -479,7 +524,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         cancelPendingIconUpdates();
       };
     }
-  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave, handleWheel, isDragging, cancelPendingRenders, cancelPendingIconUpdates]);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave, handleWheel, isDragging, isPanning, cancelPendingRenders, cancelPendingIconUpdates]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
