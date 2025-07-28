@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import HexGrid, { HexGridRef } from './HexGrid';
-import { UI_CONFIG, COLORS, DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS, BORDER_COLORS, ICON_OPTIONS } from './config';
-import type { ColorItem, TextureItem, BackgroundColor, IconItem, HexTexture } from './config';
+import { UI_CONFIG, PAINT_OPTIONS, BACKGROUND_COLORS, ICON_OPTIONS } from './config';
+import type { BackgroundColor, IconItem, HexTexture } from './config';
+
 import TopCornerLinks from './TopCornerLinks';
 import MenuToggleButton from './MenuToggleButton';
 import TabButtons from './TabButtons';
@@ -18,6 +19,7 @@ import { useAutoSave } from '../hooks/useAutoSave';
 import { useGridState } from '../hooks/useGridState';
 import {
   createTextureSelectHandler,
+  createTextureClearHandler,
   createIconSelectHandler,
   createMenuToggleHandler,
   createTabChangeHandler,
@@ -27,12 +29,13 @@ import {
 } from '../utils/gridActions';
 
 const HexGridApp: React.FC = () => {
-  const [selectedColor, setSelectedColor] = useState<string>(DEFAULT_COLORS.SELECTED);
+  const [selectedColor, setSelectedColor] = useState<string>('#6B7280'); // Default grey as hex
   const [selectedTexture, setSelectedTexture] = useState<HexTexture | null>(null);
   const [selectedIcon, setSelectedIcon] = useState<IconItem | null>(null);
   const [selectedBorderColor, setSelectedBorderColor] = useState<string>('#FF1A00');
+  const [selectedIconColor, setSelectedIconColor] = useState<string>('#FFFFFF');
   const [menuOpen, setMenuOpen] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<'paint' | 'icons' | 'borders'>('paint');
+  const [activeTab, setActiveTab] = useState<'paint' | 'icons' | 'borders' | 'settings'>('paint');
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [selectedBackgroundColor, setSelectedBackgroundColor] = useState<BackgroundColor>(BACKGROUND_COLORS[0]);
   const hexGridRef = useRef<HexGridRef>(null);
@@ -41,7 +44,7 @@ const HexGridApp: React.FC = () => {
 
   useEffect(() => {
     // Encoding map for base64 system
-    const borderColorValues = BORDER_COLORS.map(color => color.value);
+    const borderColorValues: string[] = []; // No longer using predefined border colors
     const map = createEncodingMap(PAINT_OPTIONS, ICON_OPTIONS, borderColorValues);
     setEncodingMap(map);
   }, []);
@@ -71,6 +74,7 @@ const HexGridApp: React.FC = () => {
     selectedColor,
     selectedTexture,
     selectedIcon,
+    selectedIconColor,
     selectedBorderColor,
     activeTab
   });
@@ -102,22 +106,15 @@ const HexGridApp: React.FC = () => {
       const decodedGridState = decodeBase64ToGrid(encoded, encodingMap);
       
       if (decodedGridState) {
-        const { hexColors, hexIcons, borders } = decodedGridState;
+        const { gridWidth: decodedWidth, gridHeight: decodedHeight, hexColors, hexIcons, borders } = decodedGridState;
         
-        const hexTextureColors: Record<string, string | HexTexture> = {};
-        Object.entries(hexColors).forEach(([key, assetItem]) => {
-          const hexTexture: HexTexture = {
-            type: assetItem.type,
-            name: assetItem.name,
-            displayName: assetItem.displayName,
-            ...(assetItem.type === 'color' && { rgb: (assetItem as ColorItem).rgb }),
-            ...(assetItem.type === 'texture' && { path: (assetItem as TextureItem).path })
-          };
-          hexTextureColors[key] = hexTexture;
-        });
+        // Set grid dimensions from decoded URL
+        setGridWidth(decodedWidth);
+        setGridHeight(decodedHeight);
         
-        setHexColors(hexTextureColors);
-        setHexIcons(hexIcons);
+        // hexColors from decoding is already in the correct format (string | HexTexture)
+        setHexColors(hexColors);
+        setHexIcons(hexIcons); // hexIcons is already in ColoredIcon format from new decoding
         setBorders(borders);
         
         window.history.replaceState({}, '', '/');
@@ -147,6 +144,7 @@ const HexGridApp: React.FC = () => {
   };
 
   const handleTextureSelect = createTextureSelectHandler(gridActionHelpers);
+  const handleTextureClear = createTextureClearHandler(gridActionHelpers);
   const handleIconSelect = createIconSelectHandler(gridActionHelpers);
   const handleMenuToggle = createMenuToggleHandler(menuOpen, gridActionHelpers);
   const handleTabChange = createTabChangeHandler(selectedIcon, gridActionHelpers);
@@ -210,12 +208,17 @@ const HexGridApp: React.FC = () => {
           gridHeight={gridHeight}
           selectedBackgroundColor={selectedBackgroundColor}
           selectedTexture={selectedTexture}
+          selectedColor={selectedColor}
           onWidthChange={setGridWidth}
           onHeightChange={setGridHeight}
           onBackgroundColorChange={setSelectedBackgroundColor}
           onTextureSelect={handleTextureSelect}
+          onColorSelect={setSelectedColor}
+          onTextureClear={handleTextureClear}
           selectedIcon={selectedIcon}
+          selectedIconColor={selectedIconColor}
           onIconSelect={handleIconSelect}
+          onIconColorSelect={setSelectedIconColor}
           selectedBorderColor={selectedBorderColor}
           onBorderColorSelect={setSelectedBorderColor}
         />
@@ -235,7 +238,6 @@ const HexGridApp: React.FC = () => {
           ref={hexGridRef}
           gridWidth={gridWidth} 
           gridHeight={gridHeight}
-          colors={COLORS}
           onHexClick={paintHex}
           onEdgeClick={placeBorder}
           getHexColor={getHexColor}

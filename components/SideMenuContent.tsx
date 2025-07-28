@@ -1,45 +1,60 @@
 import React from 'react';
-import { UI_CONFIG } from './config';
-import type { BackgroundColor, IconItem, HexTexture, ColorItem, TextureItem } from './config';
-import GridSizeControls from './GridSizeControls';
-import BackgroundColorSelector from './BackgroundColorSelector';
 import PaintOptionsGrid from './PaintOptionsGrid';
 import IconOptionsGrid from './IconOptionsGrid';
 import BorderOptionsGrid from './BorderOptionsGrid';
+import GridSizeControls from './GridSizeControls';
+import BackgroundColorSelector from './BackgroundColorSelector';
+import { UI_CONFIG } from './config';
+import type { BackgroundColor, TextureItem, HexTexture, IconItem } from './config';
 
 interface SideMenuContentProps {
-  activeTab: 'paint' | 'icons' | 'borders';
+  activeTab: 'paint' | 'icons' | 'borders' | 'settings';
   // Paint tab props
-  gridWidth: number;
-  gridHeight: number;
-  selectedBackgroundColor: BackgroundColor;
   selectedTexture: HexTexture | null;
-  onWidthChange: (width: number) => void;
-  onHeightChange: (height: number) => void;
-  onBackgroundColorChange: (color: BackgroundColor) => void;
-  onTextureSelect: (texture: ColorItem | TextureItem) => void;
+  selectedColor: string;
+  onTextureSelect: (texture: TextureItem) => void;
+  onColorSelect: (color: string) => void;
+  onTextureClear: () => void;
   // Icons tab props
   selectedIcon: IconItem | null;
+  selectedIconColor: string;
   onIconSelect: (icon: IconItem) => void;
+  onIconColorSelect: (color: string) => void;
   // Borders tab props
   selectedBorderColor: string;
   onBorderColorSelect: (color: string) => void;
+  // Settings tab props
+  gridWidth: number;
+  gridHeight: number;
+  selectedBackgroundColor: BackgroundColor;
+  onWidthChange: (width: number) => void;
+  onHeightChange: (height: number) => void;
+  onBackgroundColorChange: (color: BackgroundColor) => void;
 }
 
-const SideMenuContent: React.FC<SideMenuContentProps> = ({
+const SideMenuContent: React.FC<SideMenuContentProps> = ({ 
   activeTab,
+  // Paint props
+  selectedTexture,
+  selectedColor,
+  onTextureSelect,
+  onColorSelect,
+  onTextureClear,
+  // Icons props
+  selectedIcon,
+  selectedIconColor,
+  onIconSelect,
+  onIconColorSelect,
+  // Borders props
+  selectedBorderColor,
+  onBorderColorSelect,
+  // Settings props
   gridWidth,
   gridHeight,
   selectedBackgroundColor,
-  selectedTexture,
   onWidthChange,
   onHeightChange,
-  onBackgroundColorChange,
-  onTextureSelect,
-  selectedIcon,
-  onIconSelect,
-  selectedBorderColor,
-  onBorderColorSelect
+  onBackgroundColorChange
 }) => {
   const sectionTitleStyle = {
     color: UI_CONFIG.COLORS.TEXT_SECONDARY,
@@ -54,10 +69,52 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
 
   return (
     <div style={{
-      paddingBottom: UI_CONFIG.MENU.MENU_HEIGHT // Match BottomActionMenu height
+      paddingBottom: UI_CONFIG.MENU.MENU_HEIGHT
     }}>
       {activeTab === 'paint' && (
         <>
+          <div style={sectionWrapperStyle}>
+            <PaintOptionsGrid 
+              selectedTexture={selectedTexture}
+              selectedColor={selectedColor}
+              onTextureSelect={onTextureSelect}
+              onColorSelect={onColorSelect}
+              onTextureClear={onTextureClear}
+            />
+          </div>
+        </>
+      )}
+      
+      {activeTab === 'icons' && (
+        <>
+          <div style={sectionWrapperStyle}>
+            <IconOptionsGrid 
+              selectedIcon={selectedIcon}
+              selectedIconColor={selectedIconColor}
+              onIconSelect={onIconSelect}
+              onIconColorSelect={onIconColorSelect}
+            />
+          </div>
+        </>
+      )}
+      
+      {activeTab === 'borders' && (
+        <>
+          <div style={sectionWrapperStyle}>
+            <BorderOptionsGrid 
+              selectedBorderColor={selectedBorderColor}
+              onBorderColorSelect={onBorderColorSelect}
+            />
+          </div>
+        </>
+      )}
+
+      {activeTab === 'settings' && (
+        <>
+          <div style={{ ...sectionTitleStyle, textAlign: 'center', marginBottom: UI_CONFIG.SPACING.XLARGE }}>
+            Grid Settings
+          </div>
+
           <GridSizeControls
             gridWidth={gridWidth}
             gridHeight={gridHeight}
@@ -69,40 +126,7 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
             selectedBackgroundColor={selectedBackgroundColor}
             onBackgroundColorChange={onBackgroundColorChange}
           />
-
-          <div style={sectionWrapperStyle}>
-            <PaintOptionsGrid 
-              selectedTexture={selectedTexture}
-              onTextureSelect={onTextureSelect}
-            />
-          </div>
         </>
-      )}
-      
-      {activeTab === 'icons' && (
-        <div style={sectionWrapperStyle}>
-          <h3 style={sectionTitleStyle}>
-            Icon Overlays
-          </h3>
-          
-          <IconOptionsGrid 
-            selectedIcon={selectedIcon}
-            onIconSelect={onIconSelect}
-          />
-        </div>
-      )}
-      
-      {activeTab === 'borders' && (
-        <div style={sectionWrapperStyle}>
-          <h3 style={sectionTitleStyle}>
-            Border Colors
-          </h3>
-          
-          <BorderOptionsGrid 
-            selectedBorderColor={selectedBorderColor}
-            onBorderColorSelect={onBorderColorSelect}
-          />
-        </div>
       )}
     </div>
   );

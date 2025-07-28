@@ -23,6 +23,11 @@ export interface IconItem {
   readonly path: string;
 }
 
+export interface ColoredIcon {
+  readonly icon: IconItem;
+  readonly color: string;
+}
+
 // All available icon overlays
 export const ICON_OPTIONS: readonly IconItem[] = [
   { name: 'castle', displayName: 'Castle', type: 'icon', path: '/assets/icons/castle.png' },

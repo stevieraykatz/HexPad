@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { IconItem, HexTexture } from '../components/config';
-import { GRID_CONFIG, DEFAULT_COLORS, COLORS } from '../components/config';
+import type { ColoredIcon } from '../components/config/iconsConfig';
+import { GRID_CONFIG, DEFAULT_COLORS } from '../components/config';
 
 // Type definitions for hex colors and textures
 type HexColor = string;
@@ -17,7 +18,7 @@ type BordersMap = Record<string, BorderEdge>; // key format: "fromRow-fromCol_to
 
 // Unified history entry that captures all state
 interface HistoryEntry {
-  iconState: Record<string, IconItem>;
+  iconState: Record<string, ColoredIcon>;
   colorState: HexColorsMap;
   borderState: BordersMap;
   changedType: 'icons' | 'colors' | 'borders'; // What actually changed in this entry
@@ -27,8 +28,9 @@ interface UseGridStateProps {
   selectedColor: string;
   selectedTexture: HexTexture | null;
   selectedIcon: IconItem | null;
+  selectedIconColor: string;
   selectedBorderColor: string;
-  activeTab: 'paint' | 'icons' | 'borders';
+  activeTab: 'paint' | 'icons' | 'borders' | 'settings';
 }
 
 interface UseGridStateReturn {
@@ -36,7 +38,7 @@ interface UseGridStateReturn {
   gridWidth: number;
   gridHeight: number;
   hexColors: HexColorsMap;
-  hexIcons: Record<string, IconItem>;
+  hexIcons: Record<string, ColoredIcon>;
   borders: BordersMap;
   hexColorsVersion: number;
   hexIconsVersion: number;
@@ -47,7 +49,7 @@ interface UseGridStateReturn {
   setGridWidth: (width: number) => void;
   setGridHeight: (height: number) => void;
   setHexColors: (colors: HexColorsMap) => void;
-  setHexIcons: (icons: Record<string, IconItem>) => void;
+  setHexIcons: (icons: Record<string, ColoredIcon>) => void;
   setBorders: (borders: BordersMap) => void;
   
   // Operations
@@ -57,7 +59,7 @@ interface UseGridStateReturn {
   
   // Helpers
   getHexColor: (row: number, col: number) => HexColor | HexTexture | undefined;
-  getHexIcon: (row: number, col: number) => IconItem | undefined;
+  getHexIcon: (row: number, col: number) => ColoredIcon | undefined;
   hasUndoHistory: () => boolean;
   handleUndo: () => void;
   
@@ -69,6 +71,7 @@ export function useGridState({
   selectedColor,
   selectedTexture,
   selectedIcon,
+  selectedIconColor,
   selectedBorderColor,
   activeTab
 }: UseGridStateProps): UseGridStateReturn {
@@ -77,7 +80,7 @@ export function useGridState({
   const [gridWidth, setGridWidth] = useState<number>(GRID_CONFIG.DEFAULT_WIDTH);
   const [gridHeight, setGridHeight] = useState<number>(GRID_CONFIG.DEFAULT_HEIGHT);
   const [hexColors, setHexColors] = useState<HexColorsMap>({});
-  const [hexIcons, setHexIcons] = useState<Record<string, IconItem>>({});
+  const [hexIcons, setHexIcons] = useState<Record<string, ColoredIcon>>({});
   const [borders, setBorders] = useState<BordersMap>({});
   
   // Version counters for triggering re-renders
@@ -89,7 +92,7 @@ export function useGridState({
   const [unifiedHistory, setUnifiedHistory] = useState<HistoryEntry[]>([]);
   
   // Track previous state for undo functionality
-  const prevHexIconsRef = useRef<Record<string, IconItem>>({});
+  const prevHexIconsRef = useRef<Record<string, ColoredIcon>>({});
   const prevHexColorsRef = useRef<HexColorsMap>({});
   const prevBordersRef = useRef<BordersMap>({});
   const isUndoingRef = useRef<boolean>(false);
@@ -182,7 +185,7 @@ export function useGridState({
       if (selectedIcon) {
         setHexIcons(prev => ({
           ...prev,
-          [hexKey]: selectedIcon
+          [hexKey]: { icon: selectedIcon, color: selectedIconColor }
         }));
         setHexIconsVersion(prev => prev + 1);
       }
@@ -191,21 +194,47 @@ export function useGridState({
       let textureToUse: HexTexture | null = selectedTexture;
       
       if (!textureToUse) {
-        // Create a color texture from selectedColor
-        const colorData = COLORS.find(c => c.name === selectedColor);
-        if (colorData) {
+        // Create a color texture from selectedColor (hex string)
+        // Convert hex color to RGB values (0-255 range for proper rendering)
+        const hexToRgb = (hex: string): [number, number, number] => {
+          // Handle non-hex strings
+          if (!hex.startsWith('#')) {
+            throw new Error('Not a hex color');
+          }
+          
+          const cleanHex = hex.replace('#', '');
+          if (cleanHex.length !== 6) {
+            throw new Error('Invalid hex length');
+          }
+          
+          const r = parseInt(cleanHex.slice(0, 2), 16);
+          const g = parseInt(cleanHex.slice(2, 4), 16);
+          const b = parseInt(cleanHex.slice(4, 6), 16);
+          
+          // Validate RGB values
+          if (isNaN(r) || isNaN(g) || isNaN(b)) {
+            throw new Error('Invalid hex values');
+          }
+          
+          // Convert to WebGL 0-1 range by dividing by 255
+          return [r / 255, g / 255, b / 255];
+        };
+
+        try {
+          const rgb = hexToRgb(selectedColor);
           textureToUse = { 
             type: 'color', 
             name: selectedColor, 
-            displayName: selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1),
-            rgb: colorData.rgb
+            displayName: selectedColor.toUpperCase(),
+            rgb: rgb
           };
-        } else {
-          // Fallback for grey or unknown colors
+        } catch (error) {
+          console.warn('Failed to parse color:', selectedColor, error);
+          // Fallback for invalid hex colors
           textureToUse = { 
             type: 'color', 
-            name: selectedColor, 
-            displayName: selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1),
+            name: '#6B7280', // Default grey hex
+            displayName: '#6B7280',
             rgb: DEFAULT_COLORS.GREY_RGB
           };
         }
@@ -217,7 +246,7 @@ export function useGridState({
       }));
       setHexColorsVersion(prev => prev + 1);
     }
-  }, [selectedColor, selectedTexture, selectedIcon, activeTab, hexIcons, hexColors]);
+  }, [selectedColor, selectedTexture, selectedIcon, selectedIconColor, activeTab, hexIcons, hexColors]);
 
   // Place border operation
   const placeBorder = useCallback((fromHex: string, toHex: string): void => {
@@ -316,7 +345,7 @@ export function useGridState({
     return hexColors[hexKey];
   }, [hexColors]);
 
-  const getHexIcon = useCallback((row: number, col: number): IconItem | undefined => {
+  const getHexIcon = useCallback((row: number, col: number): ColoredIcon | undefined => {
     const hexKey = `${row}-${col}`;
     return hexIcons[hexKey];
   }, [hexIcons]);

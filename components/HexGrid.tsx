@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { GRID_CONFIG, DEFAULT_COLORS } from './config';
-import type { Color, RGB, IconItem } from './config';
+import type { RGB, IconItem } from './config';
+import type { ColoredIcon } from './config/iconsConfig';
 
 import { initializeWebGLContext, createShaderPrograms, loadTexture } from '../utils/webglUtils';
 import { 
@@ -32,17 +33,17 @@ type HexColor = string;
 interface HexGridProps {
   gridWidth?: number;
   gridHeight?: number;
-  colors?: readonly Color[];
   onHexClick?: (row: number, col: number) => void;
   onEdgeClick?: (fromHex: string, toHex: string) => void;
   getHexColor?: (row: number, col: number) => HexColor | HexTexture | undefined;
-  getHexIcon?: (row: number, col: number) => IconItem | undefined;
+  getHexIcon?: (row: number, col: number) => ColoredIcon | undefined;
+
   hexColorsVersion?: number;
   hexIconsVersion?: number;
   backgroundColor?: { rgb: RGB };
   borders?: Record<string, BorderEdge>;
   bordersVersion?: number;
-  activeTab?: 'paint' | 'icons' | 'borders';
+  activeTab?: 'paint' | 'icons' | 'borders' | 'settings';
   selectedIcon?: IconItem | null;
 }
 
@@ -53,11 +54,11 @@ export interface HexGridRef {
 const HexGrid = forwardRef<HexGridRef, HexGridProps>(({ 
   gridWidth = GRID_CONFIG.DEFAULT_WIDTH, 
   gridHeight = GRID_CONFIG.DEFAULT_HEIGHT, 
-  colors, 
   onHexClick, 
   onEdgeClick,
   getHexColor, 
   getHexIcon,
+
   hexColorsVersion = 0,
   hexIconsVersion = 0,
   backgroundColor,
@@ -134,7 +135,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       borders,
       getHexIcon
     });
-  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, colors, borders, getHexIcon]);
+  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, borders, getHexIcon]);
 
   useImperativeHandle(ref, () => ({
     exportAsPNG
@@ -152,12 +153,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         if (userTexture.rgb) {
           return { type: 'color', rgb: userTexture.rgb };
         }
-        if (colors) {
-          const colorData = colors.find(c => c.name === userTexture.name);
-          if (colorData) {
-            return { type: 'color', rgb: colorData.rgb };
-          }
-        }
+        // Fallback for color objects without RGB (shouldn't happen with new system)
+        return { type: 'color', rgb: DEFAULT_COLORS.GREY_RGB };
       }
       
       if (typeof userTexture === 'object' && userTexture.type === 'texture') {
@@ -166,7 +163,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     }
     
     return { type: 'color', rgb: DEFAULT_COLORS.GREY_RGB };
-  }, [getHexColor, colors]);
+  }, [getHexColor]);
 
   const handleWheel = useCallback((event: WheelEvent): void => {
     event.preventDefault();
@@ -526,27 +523,45 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           overflow: 'hidden'
         }}>
           {throttledPositions.map((pos) => {
-            const icon = getHexIcon(pos.row, pos.col);
-            if (!icon) return null;
+            const coloredIcon = getHexIcon(pos.row, pos.col);
+            if (!coloredIcon) return null;
             
+            const { icon, color } = coloredIcon;
             const iconSize = throttledRadius * 1.2; // Icon size relative to hex
             
             return (
-              <img
+              <div
                 key={`${pos.row}-${pos.col}`}
-                src={icon.path}
-                alt={icon.displayName}
                 style={{
                   position: 'absolute',
                   left: pos.x - iconSize / 2,
                   top: pos.y - iconSize / 2,
                   width: iconSize,
                   height: iconSize,
-                  objectFit: 'contain',
                   pointerEvents: 'none',
                   zIndex: 1
                 }}
-              />
+              >
+                <img
+                  src={icon.path}
+                  alt={icon.displayName}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    filter: 'brightness(0)',
+                    position: 'absolute'
+                  }}
+                />
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: color,
+                  mask: `url(${icon.path}) center/contain no-repeat`,
+                  WebkitMask: `url(${icon.path}) center/contain no-repeat`,
+                  position: 'absolute'
+                }} />
+              </div>
             );
           })}
         </div>

@@ -12,13 +12,14 @@
  * - border_data_by_color: Grouped by color (color_count + [color_rgb + border_count + borders]...)
  */
 
-import type { AssetItem, IconItem } from '../components/config';
+import type { AssetItem, IconItem, HexTexture } from '../components/config';
+import type { ColoredIcon } from '../components/config/iconsConfig';
 
 export interface CompleteGridState {
   gridWidth: number;
   gridHeight: number;
-  hexColors: Record<string, AssetItem>;
-  hexIcons: Record<string, IconItem>;
+  hexColors: Record<string, string | HexTexture>;
+  hexIcons: Record<string, ColoredIcon>;
   borders: Record<string, BorderEdge>;
 }
 
@@ -126,33 +127,114 @@ export function encodeGridToBase64(gridState: CompleteGridState, encodingMap: En
   dimensionsBuffer.set(widthBytes, 0);
   dimensionsBuffer.set(heightBytes, 2);
   
-  // 2. Texture data (gridWidth * gridHeight bytes)
-  const textureBuffer = new Uint8Array(gridWidth * gridHeight);
-  for (let row = 0; row < gridHeight; row++) {
-    for (let col = 0; col < gridWidth; col++) {
-      const hexKey = `${row}-${col}`;
-      const texture = hexColors[hexKey];
-      const textureId = texture ? encodingMap.textureToId.get(texture.name) || 0 : 0;
-      textureBuffer[row * gridWidth + col] = textureId;
-    }
-  }
+  // 2. Hex color data grouped by color with separator
+  const hexColorEntries: number[] = [];
+  hexColorEntries.push(0xFF); // Separator byte to mark start of hex color data
   
-  // 3. Icon data with separator and length prefix
-  const iconEntries: number[] = [];
-  iconEntries.push(0xFE); // Separator byte to mark start of icon data
-  
-  const iconDataEntries: number[] = [];
-  Object.entries(hexIcons).forEach(([hexKey, icon]) => {
+  // Group hex colors by their RGB values (for both textures and custom colors)
+  const hexColorsByRgb = new Map<string, Array<{row: number, col: number, textureId?: number}>>();
+  Object.entries(hexColors).forEach(([hexKey, hexTexture]) => {
     const [row, col] = hexKey.split('-').map(Number);
-    const iconId = encodingMap.iconToId.get(icon.name) || 0;
-    if (iconId > 0 && row < 256 && col < 256) {
-      iconDataEntries.push(row, col, iconId);
+    if (row < 256 && col < 256) {
+      let rgbKey: string;
+      let textureId: number | undefined;
+      
+      // Skip string values (legacy format)
+      if (typeof hexTexture === 'string') {
+        return;
+      }
+      
+      if (hexTexture.type === 'color' && hexTexture.rgb) {
+        // Custom color - use RGB values as key
+        const [r, g, b] = hexTexture.rgb;
+        // Convert back to 0-255 range for encoding
+        const r255 = Math.round(r * 255);
+        const g255 = Math.round(g * 255);
+        const b255 = Math.round(b * 255);
+        rgbKey = `${r255},${g255},${b255}`;
+      } else {
+        // Predefined texture - use texture ID and encode with special marker
+        textureId = encodingMap.textureToId.get(hexTexture.name) || 0;
+        rgbKey = `texture:${textureId}`;
+      }
+      
+      if (!hexColorsByRgb.has(rgbKey)) {
+        hexColorsByRgb.set(rgbKey, []);
+      }
+      hexColorsByRgb.get(rgbKey)!.push({ row, col, textureId });
     }
   });
   
-  const iconLengthBytes = encodeUint16(iconDataEntries.length);
-  iconEntries.push(...Array.from(iconLengthBytes)); // Add length
-  iconEntries.push(...iconDataEntries); // Add actual data
+  // Encode number of unique colors/textures
+  const hexColorCount = hexColorsByRgb.size;
+  const hexColorCountBytes = encodeUint16(hexColorCount);
+  hexColorEntries.push(...Array.from(hexColorCountBytes));
+  
+  // Encode each color/texture and its hexes
+  hexColorsByRgb.forEach((hexList, rgbKey) => {
+    if (rgbKey.startsWith('texture:')) {
+      // Predefined texture - encode with special marker
+      const textureId = parseInt(rgbKey.split(':')[1]);
+      hexColorEntries.push(0xFF, 0xFF, textureId); // Special marker for texture
+    } else {
+      // Custom color - encode RGB values
+      const [r, g, b] = rgbKey.split(',').map(Number);
+      hexColorEntries.push(r, g, b);
+    }
+    
+    // Encode number of hexes with this color/texture
+    const hexCountBytes = encodeUint16(hexList.length);
+    hexColorEntries.push(...Array.from(hexCountBytes));
+    
+    // Encode each hex position
+    hexList.forEach((hex) => {
+      hexColorEntries.push(hex.row, hex.col);
+    });
+  });
+  
+  const hexColorBuffer = new Uint8Array(hexColorEntries);
+  
+  // 3. Icon data grouped by color with separator
+  const iconEntries: number[] = [];
+  iconEntries.push(0xFE); // Separator byte to mark start of icon data
+  
+  // Group icons by color
+  const iconsByColor = new Map<string, Array<{row: number, col: number, iconId: number}>>();
+  Object.entries(hexIcons).forEach(([hexKey, coloredIcon]) => {
+    const [row, col] = hexKey.split('-').map(Number);
+    const iconId = encodingMap.iconToId.get(coloredIcon.icon.name) || 0;
+    if (iconId > 0 && row < 256 && col < 256) {
+      const color = coloredIcon.color;
+      if (!iconsByColor.has(color)) {
+        iconsByColor.set(color, []);
+      }
+      iconsByColor.get(color)!.push({ row, col, iconId });
+    }
+  });
+  
+  // Encode number of unique colors
+  const iconColorCount = iconsByColor.size;
+  const iconColorCountBytes = encodeUint16(iconColorCount);
+  iconEntries.push(...Array.from(iconColorCountBytes));
+  
+  // Encode each color and its icons
+  iconsByColor.forEach((iconList, color) => {
+    // Encode color as RGB (3 bytes)
+    const hexColor = color.replace('#', '').padEnd(6, '0').slice(0, 6);
+    const r = parseInt(hexColor.slice(0, 2), 16);
+    const g = parseInt(hexColor.slice(2, 4), 16);
+    const b = parseInt(hexColor.slice(4, 6), 16);
+    iconEntries.push(r, g, b);
+    
+    // Encode number of icons with this color
+    const iconCountBytes = encodeUint16(iconList.length);
+    iconEntries.push(...Array.from(iconCountBytes));
+    
+    // Encode each icon with this color
+    iconList.forEach((icon) => {
+      iconEntries.push(icon.row, icon.col, icon.iconId);
+    });
+  });
   
   const iconBuffer = new Uint8Array(iconEntries);
   
@@ -201,7 +283,7 @@ export function encodeGridToBase64(gridState: CompleteGridState, encodingMap: En
   const borderBuffer = new Uint8Array(borderEntries);
   
   // Combine all buffers with separators
-  const totalLength = dimensionsBuffer.length + textureBuffer.length + 
+  const totalLength = dimensionsBuffer.length + hexColorBuffer.length + 
                      iconBuffer.length + borderBuffer.length;
   const combinedBuffer = new Uint8Array(totalLength);
   let offset = 0;
@@ -209,8 +291,8 @@ export function encodeGridToBase64(gridState: CompleteGridState, encodingMap: En
   combinedBuffer.set(dimensionsBuffer, offset);
   offset += dimensionsBuffer.length;
   
-  combinedBuffer.set(textureBuffer, offset);
-  offset += textureBuffer.length;
+  combinedBuffer.set(hexColorBuffer, offset);
+  offset += hexColorBuffer.length;
   
   combinedBuffer.set(iconBuffer, offset);
   offset += iconBuffer.length;
@@ -248,31 +330,88 @@ export function decodeBase64ToGrid(encoded: string, encodingMap: EncodingMap): C
       return null;
     }
     
-    const expectedTextureLength = gridWidth * gridHeight;
-    if (bytes.length < 4 + expectedTextureLength) return null;
+    // 2. Start parsing sections after dimensions
+    let offset = 4;
     
-    // Start parsing after texture data
-    const textureEndOffset = 4 + expectedTextureLength;
+    // 3. Decode hex colors grouped by color (0xFF separator)
+    const hexColors: Record<string, string | HexTexture> = {};
     
-    // 2. Decode textures
-    const hexColors: Record<string, AssetItem> = {};
-    for (let row = 0; row < gridHeight; row++) {
-      for (let col = 0; col < gridWidth; col++) {
-        const textureId = bytes[4 + row * gridWidth + col];
-        if (textureId > 0) {
-          const texture = encodingMap.idToTexture.get(textureId);
-          if (texture) {
-            hexColors[`${row}-${col}`] = texture;
+    // Look for hex color separator (0xFF)
+    while (offset < bytes.length && bytes[offset] !== 0xFF) {
+      offset++; // Skip to find hex color section
+    }
+    
+    if (offset < bytes.length && bytes[offset] === 0xFF) {
+      offset++; // Skip separator
+      
+      if (offset + 1 < bytes.length) {
+        // Read number of unique colors/textures
+        const hexColorCount = decodeUint16(bytes, offset);
+        offset += 2;
+        
+        // Decode each color/texture group
+        for (let colorIndex = 0; colorIndex < hexColorCount && offset + 4 < bytes.length; colorIndex++) {
+          // Check if this is a texture or custom color
+          const byte1 = bytes[offset];
+          const byte2 = bytes[offset + 1];
+          const byte3 = bytes[offset + 2];
+          
+          let hexTexture: string | HexTexture;
+          
+          if (byte1 === 0xFF && byte2 === 0xFF) {
+            // Predefined texture (special marker)
+            const textureId = byte3;
+            offset += 3;
+            
+            const texture = encodingMap.idToTexture.get(textureId);
+            if (!texture) continue;
+            
+            // Convert AssetItem (TextureItem) to HexTexture format
+            hexTexture = {
+              type: texture.type,
+              name: texture.name,
+              displayName: texture.displayName,
+              path: texture.path
+            };
+          } else {
+            // Custom color (RGB values)
+            const r = byte1;
+            const g = byte2;
+            const b = byte3;
+            offset += 3;
+            
+            // Convert to WebGL 0-1 range
+            const rgb: [number, number, number] = [r / 255, g / 255, b / 255];
+            const hexColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+            
+            hexTexture = {
+              type: 'color' as const,
+              name: hexColor,
+              displayName: hexColor.toUpperCase(),
+              rgb
+            };
+          }
+          
+          // Read number of hexes with this color/texture
+          const hexCount = decodeUint16(bytes, offset);
+          offset += 2;
+          
+          // Read each hex position
+          for (let hexIndex = 0; hexIndex < hexCount && offset + 1 < bytes.length; hexIndex++) {
+            const row = bytes[offset];
+            const col = bytes[offset + 1];
+            
+            if (row < gridHeight && col < gridWidth) {
+              hexColors[`${row}-${col}`] = hexTexture;
+            }
+            offset += 2;
           }
         }
       }
     }
     
-    // 3. Start parsing optional sections after textures
-    let offset = 4 + expectedTextureLength;
-    
-    // 4. Decode icons (0xFE separator)
-    const hexIcons: Record<string, IconItem> = {};
+    // 4. Decode icons grouped by color (0xFE separator)
+    const hexIcons: Record<string, ColoredIcon> = {};
     
     // Look for icon separator (0xFE)
     while (offset < bytes.length && bytes[offset] !== 0xFE) {
@@ -283,22 +422,37 @@ export function decodeBase64ToGrid(encoded: string, encodingMap: EncodingMap): C
       offset++; // Skip separator
       
       if (offset + 1 < bytes.length) {
-        const iconDataLength = decodeUint16(bytes, offset);
+        // Read number of unique colors
+        const iconColorCount = decodeUint16(bytes, offset);
         offset += 2;
         
-        const iconDataEnd = offset + iconDataLength;
-        while (offset + 2 < iconDataEnd && offset + 2 < bytes.length) {
-          const row = bytes[offset];
-          const col = bytes[offset + 1];
-          const iconId = bytes[offset + 2];
-          
-          if (row < gridHeight && col < gridWidth && iconId > 0) {
-            const icon = encodingMap.idToIcon.get(iconId);
-            if (icon) {
-              hexIcons[`${row}-${col}`] = icon;
-            }
-          }
+        // Decode each color group
+        for (let colorIndex = 0; colorIndex < iconColorCount && offset + 4 < bytes.length; colorIndex++) {
+          // Read color RGB (3 bytes)
+          const r = bytes[offset];
+          const g = bytes[offset + 1];
+          const b = bytes[offset + 2];
+          const color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
           offset += 3;
+          
+          // Read number of icons with this color
+          const iconCount = decodeUint16(bytes, offset);
+          offset += 2;
+          
+          // Read each icon with this color
+          for (let iconIndex = 0; iconIndex < iconCount && offset + 2 < bytes.length; iconIndex++) {
+            const row = bytes[offset];
+            const col = bytes[offset + 1];
+            const iconId = bytes[offset + 2];
+            
+            if (row < gridHeight && col < gridWidth && iconId > 0) {
+              const icon = encodingMap.idToIcon.get(iconId);
+              if (icon) {
+                hexIcons[`${row}-${col}`] = { icon, color };
+              }
+            }
+            offset += 3;
+          }
         }
       }
     }

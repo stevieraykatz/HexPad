@@ -5,6 +5,7 @@
  */
 
 import { GRID_CONFIG, HEX_GEOMETRY } from '../components/config';
+import type { ColoredIcon } from '../components/config/iconsConfig';
 import { initializeWebGLContext, createShaderPrograms, loadTexture } from './webglUtils';
 import { createHexagonVertices, calculateExportHexPositions } from './hexagonUtils';
 import type { CanvasSize, HexPosition } from './hexagonUtils';
@@ -40,7 +41,7 @@ export interface ExportOptions {
   backgroundColor?: { rgb: RGB };
   getHexagonStyle: (row: number, col: number) => HexStyle;
   borders?: Record<string, BorderEdge>;
-  getHexIcon?: (row: number, col: number) => IconItem | undefined;
+  getHexIcon?: (row: number, col: number) => ColoredIcon | undefined;
 }
 
 /**
@@ -350,7 +351,7 @@ export const renderIcons = async (
   canvas: HTMLCanvasElement,
   hexPositions: HexPosition[],
   hexRadius: number,
-  getHexIcon: (row: number, col: number) => IconItem | undefined,
+  getHexIcon: (row: number, col: number) => ColoredIcon | undefined,
   scale: number
 ): Promise<void> => {
   const ctx = canvas.getContext('2d');
@@ -359,27 +360,43 @@ export const renderIcons = async (
   }
 
   // Collect all icons that need to be rendered
-  const iconsToRender: Array<{ pos: HexPosition; icon: IconItem }> = [];
+  const iconsToRender: Array<{ pos: HexPosition; coloredIcon: ColoredIcon }> = [];
   
   hexPositions.forEach((pos) => {
-    const icon = getHexIcon(pos.row, pos.col);
-    if (icon) {
-      iconsToRender.push({ pos, icon });
+    const coloredIcon = getHexIcon(pos.row, pos.col);
+    if (coloredIcon) {
+      iconsToRender.push({ pos, coloredIcon });
     }
   });
 
   if (iconsToRender.length === 0) return;
 
-  // Load and render each icon
-  const iconPromises = iconsToRender.map(({ pos, icon }) => {
+  // Load and render each icon with color masking
+  const iconPromises = iconsToRender.map(({ pos, coloredIcon }) => {
     return new Promise<void>((resolve) => {
+      const { icon, color } = coloredIcon;
       const img = new Image();
       img.onload = () => {
         const iconSize = hexRadius * 1.2; // Same scaling as in HexGrid component, radius is already scaled
         const x = pos.x - iconSize / 2;
         const y = pos.y - iconSize / 2;
         
-        ctx.drawImage(img, x, y, iconSize, iconSize);
+        // Create a temporary canvas for color masking
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = iconSize;
+        tempCanvas.height = iconSize;
+        const tempCtx = tempCanvas.getContext('2d')!;
+        
+        // Step 1: Draw the icon normally to get the shape
+        tempCtx.drawImage(img, 0, 0, iconSize, iconSize);
+        
+        // Step 2: Create colored version using compositing
+        tempCtx.globalCompositeOperation = 'source-in';
+        tempCtx.fillStyle = color;
+        tempCtx.fillRect(0, 0, iconSize, iconSize);
+        
+        // Draw the colored icon to the main canvas
+        ctx.drawImage(tempCanvas, x, y);
         resolve();
       };
       img.onerror = (error) => {

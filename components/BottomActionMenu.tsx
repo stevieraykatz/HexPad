@@ -6,7 +6,7 @@ interface BottomActionMenuProps {
   selectedIcon: IconItem | null;
   isExporting: boolean;
   hasUndoHistory: boolean;
-  activeTab?: 'paint' | 'icons' | 'borders';
+  activeTab?: 'paint' | 'icons' | 'borders' | 'settings';
   onCopyUrl: () => void;
   onExportPNG: () => void;
   onEraserToggle: () => void;

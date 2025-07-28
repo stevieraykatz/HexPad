@@ -7,7 +7,7 @@ interface UseBorderInteractionProps {
   hexPositionsRef: React.RefObject<HexPosition[]>;
   hexRadiusRef: React.RefObject<number>;
   onEdgeClick?: (fromHex: string, toHex: string) => void;
-  activeTab: 'paint' | 'icons' | 'borders';
+  activeTab: 'paint' | 'icons' | 'borders' | 'settings';
   selectedIcon?: IconItem | null;
 }
 

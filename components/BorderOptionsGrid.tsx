@@ -30,14 +30,6 @@ const BorderOptionsGrid: React.FC<BorderOptionsGridProps> = ({
         alignItems: 'center',
         gap: UI_CONFIG.SPACING.MEDIUM
       }}>
-        <div style={{
-          fontSize: UI_CONFIG.FONT_SIZE.MEDIUM,
-          color: UI_CONFIG.COLORS.TEXT_SECONDARY,
-          fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM
-        }}>
-          Border Preview
-        </div>
-        
         {/* Preview line showing current border color */}
         <div style={{
           width: '120px',
@@ -46,20 +38,14 @@ const BorderOptionsGrid: React.FC<BorderOptionsGridProps> = ({
           borderRadius: '3px',
           border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`
         }} />
-        
-        <div style={{
-          fontSize: UI_CONFIG.FONT_SIZE.SMALL,
-          color: UI_CONFIG.COLORS.TEXT_MUTED,
-          fontFamily: 'monospace',
-          background: UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-          padding: `${UI_CONFIG.SPACING.SMALL} ${UI_CONFIG.SPACING.MEDIUM}`,
-          borderRadius: UI_CONFIG.BORDER_RADIUS.SMALL,
-          border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`
-        }}>
-          {selectedBorderColor.toUpperCase()}
         </div>
-      </div>
-      
+        <div style={{
+            fontSize: UI_CONFIG.FONT_SIZE.MEDIUM,
+            color: UI_CONFIG.COLORS.TEXT_SECONDARY,
+            fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM
+          }}>
+            Border Preview
+        </div>
       <div style={{
         background: UI_CONFIG.COLORS.OVERLAY_BACKGROUND,
         backdropFilter: UI_CONFIG.BLUR.LIGHT,

@@ -38,16 +38,13 @@ export type {
   ZIndexConfig 
 } from './uiConfig';
 
-export { COLORS, DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS, BORDER_COLORS } from './assetsConfig';
+export { DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS } from './assetsConfig';
 export type { 
   RGB, 
-  Color, 
-  ColorItem, 
   TextureItem, 
   AssetItem,
   DefaultColors, 
-  BackgroundColor,
-  BorderColor 
+  BackgroundColor
 } from './assetsConfig';
 
 export { ICON_OPTIONS } from './iconsConfig';

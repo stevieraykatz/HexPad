@@ -1,6 +1,7 @@
 import { useCallback, useRef, useEffect } from 'react';
 import type { EncodingMap, CompleteGridState } from '../utils/gridEncoding';
-import type { AssetItem, ColorItem, TextureItem, IconItem, HexTexture } from '../components/config';
+import type { AssetItem, TextureItem, IconItem, HexTexture } from '../components/config';
+import type { ColoredIcon } from '../components/config/iconsConfig';
 import { PAINT_OPTIONS } from '../components/config';
 import { generateGridUrl, parseGridUrl, isValidGridEncoding, decodeBase64ToGrid } from '../utils/gridEncoding';
 
@@ -14,7 +15,7 @@ type BordersMap = Record<string, { fromHex: string; toHex: string; color: string
 interface UseAutoSaveProps {
   encodingMap: EncodingMap | null;
   hexColors: HexColorsMap;
-  hexIcons: Record<string, IconItem>;
+  hexIcons: Record<string, ColoredIcon>;
   borders: BordersMap;
   gridWidth: number;
   gridHeight: number;
@@ -22,7 +23,7 @@ interface UseAutoSaveProps {
 }
 
 interface UseAutoSaveReturn {
-  loadFromLocalStorage: () => { hexColors: HexColorsMap; hexIcons: Record<string, IconItem>; borders: BordersMap } | null;
+  loadFromLocalStorage: () => { hexColors: HexColorsMap; hexIcons: Record<string, ColoredIcon>; borders: BordersMap } | null;
   clearAutosave: () => void;
   triggerSave: () => void;
 }
@@ -60,7 +61,7 @@ export function useAutoSave({
         gridWidth,
         gridHeight,
         hexColors: assetItemColors,
-        hexIcons,
+        hexIcons, // Use ColoredIcon format directly
         borders
       };
       
@@ -92,7 +93,7 @@ export function useAutoSave({
   }, [saveToLocalStorage]);
 
   // Load from localStorage
-  const loadFromLocalStorage = useCallback((): { hexColors: HexColorsMap; hexIcons: Record<string, IconItem>; borders: BordersMap } | null => {
+  const loadFromLocalStorage = useCallback((): { hexColors: HexColorsMap; hexIcons: Record<string, ColoredIcon>; borders: BordersMap } | null => {
     if (!encodingMap) return null;
     
     try {
@@ -103,22 +104,12 @@ export function useAutoSave({
           const decodedGridState = decodeBase64ToGrid(encoded, encodingMap);
           
           if (decodedGridState) {
-            // Convert AssetItems to HexTexture format for hexColors
-            const hexTextureColors: HexColorsMap = {};
-            Object.entries(decodedGridState.hexColors).forEach(([key, assetItem]) => {
-              const hexTexture: HexTexture = {
-                type: assetItem.type,
-                name: assetItem.name,
-                displayName: assetItem.displayName,
-                ...(assetItem.type === 'color' && { rgb: (assetItem as ColorItem).rgb }),
-                ...(assetItem.type === 'texture' && { path: (assetItem as TextureItem).path })
-              };
-              hexTextureColors[key] = hexTexture;
-            });
+            // decodedGridState.hexColors is already in the correct format (string | HexTexture)
+            const hexTextureColors: HexColorsMap = decodedGridState.hexColors;
             
             return {
               hexColors: hexTextureColors,
-              hexIcons: decodedGridState.hexIcons,
+              hexIcons: decodedGridState.hexIcons, // Already in ColoredIcon format
               borders: decodedGridState.borders
             };
           }

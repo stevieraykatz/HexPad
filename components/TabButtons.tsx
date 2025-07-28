@@ -3,10 +3,10 @@ import { UI_CONFIG } from './config';
 import type { IconItem } from './config';
 
 interface TabButtonsProps {
-  activeTab: 'paint' | 'icons' | 'borders';
+  activeTab: 'paint' | 'icons' | 'borders' | 'settings';
   menuOpen: boolean;
   selectedIcon: IconItem | null;
-  onTabChange: (tab: 'paint' | 'icons' | 'borders') => void;
+  onTabChange: (tab: 'paint' | 'icons' | 'borders' | 'settings') => void;
   onMenuToggle: () => void;
 }
 
@@ -17,7 +17,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({
   onTabChange, 
   onMenuToggle 
 }) => {
-  const createTabButtonStyle = (tab: 'paint' | 'icons' | 'borders', isActive: boolean) => ({
+  const createTabButtonStyle = (tab: 'paint' | 'icons' | 'borders' | 'settings', isActive: boolean) => ({
     width: (isActive && menuOpen) ? '60px' : '50px',
     height: (isActive && menuOpen) ? '60px' : '50px',
     background: (isActive && menuOpen) 
@@ -38,7 +38,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({
     justifyContent: 'center'
   });
 
-  const handleTabClick = (tab: 'paint' | 'icons' | 'borders') => {
+  const handleTabClick = (tab: 'paint' | 'icons' | 'borders' | 'settings') => {
     onTabChange(tab);
     if (!menuOpen) onMenuToggle();
     
@@ -85,6 +85,27 @@ const TabButtons: React.FC<TabButtonsProps> = ({
         title="Border Tools"
       >
         🧱
+      </button>
+
+      {/* Settings Menu Button */}
+      <button
+        onClick={() => handleTabClick('settings')}
+        style={createTabButtonStyle('settings', activeTab === 'settings')}
+        title="Grid Settings"
+      >
+        <svg 
+          width="20" 
+          height="20" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+          style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }}
+        >
+          <polygon points="6,4 18,4 21,12 18,20 6,20 3,12" />
+        </svg>
       </button>
     </div>
   );

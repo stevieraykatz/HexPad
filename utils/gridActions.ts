@@ -1,4 +1,5 @@
-import type { AssetItem, ColorItem, TextureItem, IconItem, HexTexture } from '../components/config';
+import type { TextureItem, IconItem, HexTexture } from '../components/config';
+import type { ColoredIcon } from '../components/config/iconsConfig';
 import type { EncodingMap, CompleteGridState } from './gridEncoding';
 import { PAINT_OPTIONS, GRID_CONFIG } from '../components/config';
 import { generateGridUrl } from './gridEncoding';
@@ -7,7 +8,7 @@ type HexColorsMap = Record<string, string | HexTexture>;
 type BordersMap = Record<string, { fromHex: string; toHex: string; color: string }>;
 
 interface HistoryEntry {
-  iconState: Record<string, IconItem>;
+  iconState: Record<string, ColoredIcon>;
   colorState: HexColorsMap;
   borderState: BordersMap;
   changedType: 'icons' | 'colors' | 'borders';
@@ -18,8 +19,8 @@ interface GridActionHelpers {
   setSelectedColor: (color: string) => void;
   setSelectedIcon: (icon: IconItem | null) => void;
   setMenuOpen: (open: boolean) => void;
-  setActiveTab: (tab: 'paint' | 'icons' | 'borders') => void;
-  setHexIcons: (icons: Record<string, IconItem>) => void;
+  setActiveTab: (tab: 'paint' | 'icons' | 'borders' | 'settings') => void;
+  setHexIcons: (icons: Record<string, ColoredIcon>) => void;
   setHexColors: (colors: HexColorsMap) => void;
   setBorders: (borders: BordersMap) => void;
   setIsExporting: (exporting: boolean) => void;
@@ -35,7 +36,7 @@ interface ExportHelpers {
 interface CopyUrlHelpers {
   encodingMap: EncodingMap | null;
   hexColors: HexColorsMap;
-  hexIcons: Record<string, IconItem>;
+  hexIcons: Record<string, ColoredIcon>;
   borders: BordersMap;
   gridWidth: number;
   gridHeight: number;
@@ -44,22 +45,25 @@ interface CopyUrlHelpers {
 
 // Texture selection handler
 export function createTextureSelectHandler(helpers: GridActionHelpers) {
-  return (texture: ColorItem | TextureItem): void => {
+  return (texture: TextureItem): void => {
     const hexTexture: HexTexture = {
       type: texture.type,
       name: texture.name,
       displayName: texture.displayName,
-      ...(texture.type === 'color' && { rgb: (texture as ColorItem).rgb }),
-      ...(texture.type === 'texture' && { path: (texture as TextureItem).path })
+      path: texture.path
     };
     
     helpers.setSelectedTexture(hexTexture);
-    if (texture.type === 'color') {
-      helpers.setSelectedColor(texture.name);
-    }
     
     // Clear eraser state when selecting a texture
     helpers.setSelectedIcon(null);
+  };
+}
+
+// Texture clear handler
+export function createTextureClearHandler(helpers: GridActionHelpers) {
+  return (): void => {
+    helpers.setSelectedTexture(null);
   };
 }
 
@@ -81,7 +85,7 @@ export function createMenuToggleHandler(menuOpen: boolean, helpers: GridActionHe
 
 // Tab change handler
 export function createTabChangeHandler(selectedIcon: IconItem | null, helpers: GridActionHelpers) {
-  return (tab: 'paint' | 'icons' | 'borders'): void => {
+  return (tab: 'paint' | 'icons' | 'borders' | 'settings'): void => {
     helpers.setActiveTab(tab);
     // Clear eraser state when switching to paint tab
     if (tab === 'paint' && selectedIcon?.name === 'eraser') {
@@ -135,24 +139,12 @@ export function createCopyUrlHandler(urlHelpers: CopyUrlHelpers) {
     if (!encodingMap) return;
     
     try {
-      // Convert HexColorsMap to the format expected by the encoder
-      const assetItemColors: Record<string, AssetItem> = {};
-      Object.entries(hexColors).forEach(([key, value]) => {
-        if (typeof value === 'object' && 'name' in value) {
-          // Find matching AssetItem from PAINT_OPTIONS
-          const matchingAsset = PAINT_OPTIONS.find(option => option.name === value.name);
-          if (matchingAsset) {
-            assetItemColors[key] = matchingAsset;
-          }
-        }
-      });
-      
-      // Create complete grid state for base64 encoding
+      // Create complete grid state for base64 encoding - hexColors is already in correct format
       const completeGridState: CompleteGridState = {
         gridWidth,
         gridHeight,
-        hexColors: assetItemColors,
-        hexIcons,
+        hexColors, // hexColors is already Record<string, string | HexTexture>
+        hexIcons, // Use ColoredIcon format directly
         borders
       };
       
