@@ -65,6 +65,12 @@ export const PAINT_OPTIONS: readonly AssetItem[] = [
     path: "/assets/terrain/coast.png",
   },
   {
+    name: "desert",
+    displayName: "Desert",
+    type: "texture",
+    path: "/assets/terrain/desert.png",
+  },
+  {
     name: "forest",
     displayName: "Forest",
     type: "texture",
