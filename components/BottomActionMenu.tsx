@@ -14,6 +14,91 @@ interface BottomActionMenuProps {
   onClearGrid: () => void;
 }
 
+// Reusable Separator component
+const Separator: React.FC = () => (
+  <div style={{
+    width: '2px',
+    height: '40px',
+    background: UI_CONFIG.COLORS.BORDER_COLOR,
+    borderRadius: '1px'
+  }} />
+);
+
+// Button style generator
+const createActionButtonStyle = (type: 'primary' | 'secondary' | 'danger' | 'disabled' | 'inactive') => ({
+  width: '60px',
+  height: '60px',
+  padding: UI_CONFIG.SPACING.SMALL,
+  background: type === 'primary' ? UI_CONFIG.COLORS.SELECTED_BACKGROUND :
+              type === 'secondary' ? UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND :
+              type === 'danger' ? UI_CONFIG.COLORS.DANGER_BACKGROUND :
+              type === 'inactive' ? UI_CONFIG.COLORS.BUTTON_BACKGROUND :
+              UI_CONFIG.COLORS.BUTTON_BACKGROUND,
+  border: type === 'primary' ? `2px solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` :
+          type === 'secondary' ? `2px solid ${UI_CONFIG.COLORS.SELECTED_ALT_BORDER}` :
+          type === 'danger' ? `2px solid ${UI_CONFIG.COLORS.DANGER_BORDER}` :
+          type === 'inactive' ? `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}` :
+          `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+  borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
+  color: type === 'danger' ? UI_CONFIG.COLORS.TEXT_DANGER :
+         type === 'disabled' ? UI_CONFIG.COLORS.TEXT_MUTED :
+         type === 'inactive' ? UI_CONFIG.COLORS.TEXT_PRIMARY :
+         UI_CONFIG.COLORS.TEXT_PRIMARY,
+  fontSize: UI_CONFIG.FONT_SIZE.XLARGE,
+  cursor: type === 'disabled' ? 'not-allowed' : 'pointer',
+  transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+  fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxShadow: type === 'primary' || type === 'secondary' || type === 'danger' ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none',
+  opacity: type === 'disabled' ? UI_CONFIG.APP_LAYOUT.EXPORT_OPACITY_DISABLED : 1
+});
+
+// Reusable ActionButton component
+interface ActionButtonProps {
+  onClick: () => void;
+  disabled?: boolean;
+  type: 'primary' | 'secondary' | 'danger' | 'disabled' | 'inactive';
+  title: string;
+  emoji: string;
+  withDangerHover?: boolean;
+}
+
+const ActionButton: React.FC<ActionButtonProps> = ({
+  onClick,
+  disabled = false,
+  type,
+  title,
+  emoji,
+  withDangerHover = false
+}) => {
+  const handleMouseOver = (e: MouseEvent<HTMLButtonElement>): void => {
+    if (withDangerHover) {
+      (e.target as HTMLButtonElement).style.background = UI_CONFIG.HOVER.DANGER_BACKGROUND;
+    }
+  };
+
+  const handleMouseOut = (e: MouseEvent<HTMLButtonElement>): void => {
+    if (withDangerHover) {
+      (e.target as HTMLButtonElement).style.background = UI_CONFIG.COLORS.DANGER_BACKGROUND;
+    }
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={createActionButtonStyle(type)}
+      title={title}
+      onMouseOver={withDangerHover ? handleMouseOver : undefined}
+      onMouseOut={withDangerHover ? handleMouseOut : undefined}
+    >
+      {emoji}
+    </button>
+  );
+};
+
 const BottomActionMenu: React.FC<BottomActionMenuProps> = ({
   selectedIcon,
   isExporting,
@@ -25,43 +110,12 @@ const BottomActionMenu: React.FC<BottomActionMenuProps> = ({
   onUndo,
   onClearGrid
 }) => {
-  const handleMouseOver = (e: MouseEvent<HTMLButtonElement>): void => {
-    (e.target as HTMLButtonElement).style.background = UI_CONFIG.HOVER.DANGER_BACKGROUND;
+  // Dynamic button configurations
+  const getEraserTitle = () => {
+    if (selectedIcon?.name === 'eraser') return 'Deselect eraser';
+    if (activeTab === 'borders') return 'Erase borders';
+    return 'Erase icons and textures';
   };
-
-  const handleMouseOut = (e: MouseEvent<HTMLButtonElement>): void => {
-    (e.target as HTMLButtonElement).style.background = UI_CONFIG.COLORS.DANGER_BACKGROUND;
-  };
-
-  const createActionButtonStyle = (type: 'primary' | 'secondary' | 'danger' | 'disabled' | 'inactive') => ({
-    width: '60px',
-    height: '60px',
-    padding: UI_CONFIG.SPACING.SMALL,
-    background: type === 'primary' ? UI_CONFIG.COLORS.SELECTED_BACKGROUND :
-                type === 'secondary' ? UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND :
-                type === 'danger' ? UI_CONFIG.COLORS.DANGER_BACKGROUND :
-                type === 'inactive' ? UI_CONFIG.COLORS.BUTTON_BACKGROUND :
-                UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-    border: type === 'primary' ? `2px solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` :
-            type === 'secondary' ? `2px solid ${UI_CONFIG.COLORS.SELECTED_ALT_BORDER}` :
-            type === 'danger' ? `2px solid ${UI_CONFIG.COLORS.DANGER_BORDER}` :
-            type === 'inactive' ? `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}` :
-            `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-    borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-    color: type === 'danger' ? UI_CONFIG.COLORS.TEXT_DANGER :
-           type === 'disabled' ? UI_CONFIG.COLORS.TEXT_MUTED :
-           type === 'inactive' ? UI_CONFIG.COLORS.TEXT_PRIMARY :
-           UI_CONFIG.COLORS.TEXT_PRIMARY,
-    fontSize: UI_CONFIG.FONT_SIZE.XLARGE,
-    cursor: type === 'disabled' ? 'not-allowed' : 'pointer',
-    transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-    fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: type === 'primary' || type === 'secondary' || type === 'danger' ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none',
-    opacity: type === 'disabled' ? UI_CONFIG.APP_LAYOUT.EXPORT_OPACITY_DISABLED : 1
-  });
 
   return (
     <div style={{
@@ -81,73 +135,47 @@ const BottomActionMenu: React.FC<BottomActionMenuProps> = ({
       gap: UI_CONFIG.SPACING.LARGE,
       padding: `0 ${UI_CONFIG.SPACING.XLARGE}`
     }}>
-      {/* Copy URL */}
-      <button
+      <ActionButton
         onClick={onCopyUrl}
-        style={createActionButtonStyle('primary')}
+        type="primary"
         title="Copy shareable URL to clipboard"
-      >
-        🔗
-      </button>
+        emoji="🔗"
+      />
       
-      {/* Export PNG */}
-      <button
+      <ActionButton
         onClick={onExportPNG}
         disabled={isExporting}
-        style={createActionButtonStyle(isExporting ? 'disabled' : 'secondary')}
+        type={isExporting ? 'disabled' : 'secondary'}
         title={isExporting ? 'Exporting PNG...' : 'Download PNG'}
-      >
-        {isExporting ? '⏳' : '⬇️'}
-      </button>
+        emoji={isExporting ? '⏳' : '⬇️'}
+      />
 
-      {/* Separator */}
-      <div style={{
-        width: '2px',
-        height: '40px',
-        background: UI_CONFIG.COLORS.BORDER_COLOR,
-        borderRadius: '1px'
-      }} />
+      <Separator />
       
-      {/* Icon Eraser */}
-      <button
+      <ActionButton
         onClick={onEraserToggle}
-        style={createActionButtonStyle(selectedIcon?.name === 'eraser' ? 'danger' : 'inactive')}
-        title={selectedIcon?.name === 'eraser' ? 'Deselect eraser' : 
-               activeTab === 'borders' ? 'Erase borders' :
-               activeTab === 'icons' ? 'Erase icons and textures' :
-               'Erase icons and textures'}
-      >
-        🧹
-      </button>
+        type={selectedIcon?.name === 'eraser' ? 'danger' : 'inactive'}
+        title={getEraserTitle()}
+        emoji="🧹"
+      />
       
-      {/* Undo */}
-      <button
+      <ActionButton
         onClick={onUndo}
         disabled={!hasUndoHistory}
-        style={createActionButtonStyle(hasUndoHistory ? 'primary' : 'disabled')}
+        type={hasUndoHistory ? 'primary' : 'disabled'}
         title={hasUndoHistory ? 'Undo last action' : 'No actions to undo'}
-      >
-        ↩️
-      </button>
+        emoji="↩️"
+      />
 
-      {/* Separator */}
-      <div style={{
-        width: '2px',
-        height: '40px',
-        background: UI_CONFIG.COLORS.BORDER_COLOR,
-        borderRadius: '1px'
-      }} />
+      <Separator />
       
-      {/* Clear Grid */}
-      <button
+      <ActionButton
         onClick={onClearGrid}
-        style={createActionButtonStyle('danger')}
-        onMouseOver={handleMouseOver}
-        onMouseOut={handleMouseOut}
+        type="danger"
         title="Clear all hexagons"
-      >
-        🗑️
-      </button>
+        emoji="🗑️"
+        withDangerHover
+      />
     </div>
   );
 };
