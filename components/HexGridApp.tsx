@@ -6,8 +6,8 @@ import type { BackgroundColor, IconItem, HexTexture } from './config';
 import TopCornerLinks from './TopCornerLinks';
 import MenuToggleButton from './MenuToggleButton';
 import TabButtons from './TabButtons';
-import BottomActionMenu from './BottomActionMenu';
-import SideMenuContent from './SideMenuContent';
+import ActionMenu from './ActionMenu';
+import DesignMenuContent from './DesignMenuContent';
 import { 
   createEncodingMap,
   decodeBase64ToGrid,
@@ -215,7 +215,7 @@ const HexGridApp: React.FC = () => {
         isMobile={isMobile}
       />
 
-      {/* Collapsible Menu - Side on Desktop, Bottom on Mobile */}
+      {/* Design Menu - Side on Desktop, Bottom on Mobile */}
       <div 
         onClick={handleMenuClick}
         style={{
@@ -252,7 +252,7 @@ const HexGridApp: React.FC = () => {
         }}
       >
         
-        <SideMenuContent
+        <DesignMenuContent
           activeTab={activeTab}
           gridWidth={gridWidth}
           gridHeight={gridHeight}
@@ -303,8 +303,8 @@ const HexGridApp: React.FC = () => {
         />
       </div>
 
-      {/* Bottom Action Menu */}
-      <BottomActionMenu
+      {/* Action Menu */}
+      <ActionMenu
         selectedIcon={selectedIcon}
         isExporting={isExporting}
         hasUndoHistory={hasUndoHistory()}

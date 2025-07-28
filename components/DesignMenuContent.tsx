@@ -7,7 +7,7 @@ import BackgroundColorSelector from './BackgroundColorSelector';
 import { UI_CONFIG } from './config';
 import type { BackgroundColor, TextureItem, HexTexture, IconItem } from './config';
 
-interface SideMenuContentProps {
+interface DesignMenuContentProps {
   activeTab: 'paint' | 'icons' | 'borders' | 'settings';
   // Paint tab props
   selectedTexture: HexTexture | null;
@@ -34,7 +34,7 @@ interface SideMenuContentProps {
   isMobile?: boolean; // Optional mobile detection for layout adjustments
 }
 
-const SideMenuContent: React.FC<SideMenuContentProps> = ({ 
+const DesignMenuContent: React.FC<DesignMenuContentProps> = ({ 
   activeTab,
   // Paint props
   selectedTexture,
@@ -146,4 +146,4 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
   );
 };
 
-export default SideMenuContent; 
+export default DesignMenuContent; 
