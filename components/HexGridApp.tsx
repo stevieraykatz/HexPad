@@ -53,6 +53,18 @@ const HexGridApp: React.FC = () => {
     }
   }, [isMobile, menuOpen]);
 
+  // Close menu when clicking outside on mobile
+  const handleBackgroundClick = useCallback(() => {
+    if (isMobile && menuOpen) {
+      setMenuOpen(false);
+    }
+  }, [isMobile, menuOpen]);
+
+  // Prevent menu from closing when clicking on the menu itself
+  const handleMenuClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
   useEffect(() => {
     // Encoding map for base64 system
     const borderColorValues: string[] = []; // No longer using predefined border colors
@@ -178,14 +190,20 @@ const HexGridApp: React.FC = () => {
   });
 
   return (
-    <div className="App" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div 
+      className="App" 
+      style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}
+      onClick={handleBackgroundClick}
+    >
 
       <TopCornerLinks />
-      {/* Menu Toggle Button */}
-      <MenuToggleButton 
-        menuOpen={menuOpen} 
-        onToggle={handleMenuToggle} 
-      />
+      {/* Menu Toggle Button - Hidden on mobile */}
+      {!isMobile && (
+        <MenuToggleButton 
+          menuOpen={menuOpen} 
+          onToggle={handleMenuToggle} 
+        />
+      )}
 
       {/* Tab Navigation Buttons */}
       <TabButtons
@@ -198,38 +216,41 @@ const HexGridApp: React.FC = () => {
       />
 
       {/* Collapsible Menu - Side on Desktop, Bottom on Mobile */}
-      <div style={{
-        position: 'fixed',
-        ...(isMobile ? {
-          // Mobile: Bottom menu
-          bottom: 0,
-          left: 0,
-          right: 0,
-          width: '100%',
-          height: menuOpen ? '60vh' : '0',
-          maxHeight: '60vh',
-          borderTop: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-          borderRadius: `${UI_CONFIG.BORDER_RADIUS.LARGE} ${UI_CONFIG.BORDER_RADIUS.LARGE} 0 0`,
-          transform: `translateY(${menuOpen ? '0' : '100%'})`,
-        } : {
-          // Desktop: Side menu
-          top: 0,
-          left: 0,
-          width: `${UI_CONFIG.MENU_WIDTH}px`,
-          height: '100vh',
-          borderRight: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-          transform: `translateX(${menuOpen ? '0' : `-${UI_CONFIG.MENU_WIDTH}px`})`,
-        }),
-        background: UI_CONFIG.COLORS.MENU_BACKGROUND,
-        backdropFilter: UI_CONFIG.BLUR.MEDIUM,
-        transition: `transform ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-        zIndex: UI_CONFIG.Z_INDEX.MENU,
-        boxShadow: menuOpen ? UI_CONFIG.BOX_SHADOW.MEDIUM : 'none',
-        overflowY: 'auto',
-        padding: isMobile ? 
-          `${UI_CONFIG.SPACING.LARGE} ${UI_CONFIG.SPACING.MEDIUM}` : 
-          UI_CONFIG.SPACING.XLARGE
-      }}>
+      <div 
+        onClick={handleMenuClick}
+        style={{
+          position: 'fixed',
+          ...(isMobile ? {
+            // Mobile: Bottom menu
+            bottom: 0,
+            left: 0,
+            right: 0,
+            width: '100%',
+            height: menuOpen ? '60vh' : '0',
+            maxHeight: '60vh',
+            borderTop: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+            borderRadius: `${UI_CONFIG.BORDER_RADIUS.LARGE} ${UI_CONFIG.BORDER_RADIUS.LARGE} 0 0`,
+            transform: `translateY(${menuOpen ? '0' : '100%'})`,
+          } : {
+            // Desktop: Side menu
+            top: 0,
+            left: 0,
+            width: `${UI_CONFIG.MENU_WIDTH}px`,
+            height: '100vh',
+            borderRight: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+            transform: `translateX(${menuOpen ? '0' : `-${UI_CONFIG.MENU_WIDTH}px`})`,
+          }),
+          background: UI_CONFIG.COLORS.MENU_BACKGROUND,
+          backdropFilter: UI_CONFIG.BLUR.MEDIUM,
+          transition: `transform ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+          zIndex: UI_CONFIG.Z_INDEX.MENU,
+          boxShadow: menuOpen ? UI_CONFIG.BOX_SHADOW.MEDIUM : 'none',
+          overflowY: 'auto',
+          padding: isMobile ? 
+            `${UI_CONFIG.SPACING.LARGE} ${UI_CONFIG.SPACING.MEDIUM}` : 
+            UI_CONFIG.SPACING.XLARGE
+        }}
+      >
         
         <SideMenuContent
           activeTab={activeTab}
