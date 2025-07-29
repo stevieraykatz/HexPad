@@ -539,7 +539,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     // Render column letters relative to grid edges
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const columnOffset = hexRadius * 0.6; // Distance from grid edge
+    const columnOffset = hexRadius * 0.4; // Distance from grid edge
     
     hexesByCol.forEach((hexes, col) => {
       const letter = columnToLetter(col);
