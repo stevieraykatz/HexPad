@@ -6,10 +6,13 @@
 
 import { GRID_CONFIG, HEX_GEOMETRY } from '../components/config';
 import type { ColoredIcon } from '../components/config/iconsConfig';
+import type { NumberingMode } from '../components/GridSizeControls';
 import { initializeWebGLContext, createShaderPrograms, loadTexture } from './webglUtils';
 import { createHexagonVertices, calculateExportHexPositions } from './hexagonUtils';
 import type { CanvasSize, HexPosition } from './hexagonUtils';
 import type { RGB } from '../components/config';
+import { columnToLetter, rowToNumber, getHexCoordinate, calculateEdgeFontSize, calculateInHexFontSize } from './numberingUtils';
+import { NUMBERING_CONFIG } from '../components/config/numberingConfig';
 
 // Type definitions
 export interface HexStyle {
@@ -42,6 +45,7 @@ export interface ExportOptions {
   getHexagonStyle: (row: number, col: number) => HexStyle;
   borders?: Record<string, BorderEdge>;
   getHexIcon?: (row: number, col: number) => ColoredIcon | undefined;
+  numberingMode?: NumberingMode;
 }
 
 /**
@@ -426,18 +430,185 @@ export const downloadPNG = (blob: Blob, filename: string): void => {
 };
 
 /**
+ * Render numbering on export canvas
+ */
+const renderNumberingForExport = (
+  canvas: HTMLCanvasElement, 
+  hexPositions: HexPosition[],
+  hexRadius: number,
+  numberingMode: NumberingMode,
+  scale: number
+): void => {
+  if (numberingMode === 'off') return;
+  
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  
+  if (numberingMode === 'edge') {
+    renderEdgeNumberingForExport(ctx, canvas, hexPositions, hexRadius, scale);
+  } else if (numberingMode === 'in-hex') {
+    renderInHexNumberingForExport(ctx, hexPositions, hexRadius, scale);
+  }
+};
+
+/**
+ * Render edge numbering for export
+ */
+const renderEdgeNumberingForExport = (
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  hexPositions: HexPosition[],
+  hexRadius: number,
+  scale: number
+): void => {
+  const fontSize = calculateEdgeFontSize(hexRadius);
+  ctx.font = `${fontSize}px Arial`;
+  ctx.fillStyle = 'white';
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = NUMBERING_CONFIG.OUTLINE_WIDTH * scale;
+  
+  // Find the actual visual bounds of the rendered grid for export
+  const visibleHexes = hexPositions; // For export, all positioned hexes are relevant
+  
+  if (visibleHexes.length === 0) return;
+  
+  // Calculate the actual rendered grid boundaries
+  const leftmostX = Math.min(...visibleHexes.map(p => p.x - hexRadius));
+  const rightmostX = Math.max(...visibleHexes.map(p => p.x + hexRadius));
+  const topmostY = Math.min(...visibleHexes.map(p => p.y - hexRadius));
+  const bottommostY = Math.max(...visibleHexes.map(p => p.y + hexRadius));
+  
+  // For export, use the actual grid bounds (no viewport clipping needed)
+  const actualLeft = leftmostX;
+  const actualRight = rightmostX;
+  const actualTop = topmostY;
+  const actualBottom = bottommostY;
+  
+  // Group hexes by column and row for efficient rendering
+  const hexesByCol = new Map<number, HexPosition[]>();
+  const hexesByRow = new Map<number, HexPosition[]>();
+  
+  visibleHexes.forEach(hex => {
+    if (!hexesByCol.has(hex.col)) hexesByCol.set(hex.col, []);
+    if (!hexesByRow.has(hex.row)) hexesByRow.set(hex.row, []);
+    hexesByCol.get(hex.col)!.push(hex);
+    hexesByRow.get(hex.row)!.push(hex);
+  });
+  
+  // Render column letters relative to grid edges
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const columnOffset = hexRadius * 0.6; // Distance from grid edge
+  
+  hexesByCol.forEach((hexes, col) => {
+    const letter = columnToLetter(col);
+    const avgX = hexes.reduce((sum, hex) => sum + hex.x, 0) / hexes.length;
+    
+    // Top of grid
+    ctx.strokeText(letter, avgX, actualTop - columnOffset);
+    ctx.fillText(letter, avgX, actualTop - columnOffset);
+    
+    // Bottom of grid
+    ctx.strokeText(letter, avgX, actualBottom + columnOffset);
+    ctx.fillText(letter, avgX, actualBottom + columnOffset);
+  });
+  
+  // Render row numbers relative to grid edges (closer to grid)
+  const rowOffset = hexRadius * 0.3; // Closer to grid than columns
+  
+  hexesByRow.forEach((hexes, row) => {
+    const number = rowToNumber(row);
+    const avgY = hexes.reduce((sum, hex) => sum + hex.y, 0) / hexes.length;
+    
+    // Left of grid
+    ctx.strokeText(number, actualLeft - rowOffset, avgY);
+    ctx.fillText(number, actualLeft - rowOffset, avgY);
+    
+    // Right of grid
+    ctx.strokeText(number, actualRight + rowOffset, avgY);
+    ctx.fillText(number, actualRight + rowOffset, avgY);
+  });
+};
+
+/**
+ * Render in-hex numbering for export
+ */
+const renderInHexNumberingForExport = (
+  ctx: CanvasRenderingContext2D,
+  hexPositions: HexPosition[],
+  hexRadius: number,
+  scale: number
+): void => {
+  const fontSize = calculateInHexFontSize(hexRadius);
+  
+  hexPositions.forEach(pos => {
+    const coordinate = getHexCoordinate(pos.row, pos.col);
+    const textX = pos.x; // Centered horizontally
+    const textY = pos.y + hexRadius * NUMBERING_CONFIG.VERTICAL_OFFSET; // Bottom edge of hex
+    
+    // Save current state
+    ctx.save();
+    
+    // Set text properties
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `${fontSize}px Arial`;
+    
+    // Draw outline
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = NUMBERING_CONFIG.OUTLINE_WIDTH * scale;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(coordinate, textX, textY);
+    
+    // Draw fill
+    ctx.fillStyle = 'white';
+    ctx.fillText(coordinate, textX, textY);
+    
+    // Restore state
+    ctx.restore();
+  });
+};
+
+/**
  * Export hex grid as PNG with high quality
  */
 export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
-  const { filename, scale, gridWidth, gridHeight, canvasSize, backgroundColor, getHexagonStyle, borders, getHexIcon } = options;
+  const { filename, scale, gridWidth, gridHeight, canvasSize, backgroundColor, getHexagonStyle, borders, getHexIcon, numberingMode } = options;
   
 
 
-  // Create off-screen canvas at higher resolution
-  const exportCanvas = document.createElement('canvas');
-  const exportSize = {
+  // Calculate base export size without numbering
+  const baseExportSize = {
     width: canvasSize.width * scale,
     height: canvasSize.height * scale
+  };
+
+  // Calculate extra space needed for edge numbering
+  let numberingPadding = { top: 0, bottom: 0, left: 0, right: 0 };
+  
+  if (numberingMode === 'edge') {
+    // Pre-calculate hex radius based on the base size (without numbering padding)
+    const tempHexRadius = calculateExportHexRadius(baseExportSize, gridWidth, gridHeight, scale);
+    
+    // Calculate space needed for numbering
+    const columnOffset = tempHexRadius * 0.6;
+    const rowOffset = tempHexRadius * 0.3;
+    const fontSize = calculateEdgeFontSize(tempHexRadius);
+    
+    // Add padding for text height/width plus some buffer
+    numberingPadding = {
+      top: columnOffset + fontSize + 10 * scale,
+      bottom: columnOffset + fontSize + 10 * scale,
+      left: rowOffset + fontSize + 10 * scale,
+      right: rowOffset + fontSize + 10 * scale
+    };
+  }
+
+  // Create off-screen canvas at higher resolution with numbering padding
+  const exportCanvas = document.createElement('canvas');
+  const exportSize = {
+    width: baseExportSize.width + numberingPadding.left + numberingPadding.right,
+    height: baseExportSize.height + numberingPadding.top + numberingPadding.bottom
   };
   
   exportCanvas.width = exportSize.width;
@@ -455,9 +626,16 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
     const { colorProgram, textureProgram } = createShaderPrograms(exportGL);
     if (!colorProgram || !textureProgram) return;
 
-    // Calculate hex radius and positions for export
-    const exportHexRadius = calculateExportHexRadius(exportSize, gridWidth, gridHeight, scale);
-    const exportHexPositions = calculateExportHexPositions(exportHexRadius, gridWidth, gridHeight, exportSize, scale);
+    // Calculate hex radius and positions based on base size (without numbering padding)
+    const exportHexRadius = calculateExportHexRadius(baseExportSize, gridWidth, gridHeight, scale);
+    const baseHexPositions = calculateExportHexPositions(exportHexRadius, gridWidth, gridHeight, baseExportSize, scale);
+    
+    // Offset hex positions to account for numbering padding
+    const exportHexPositions = baseHexPositions.map(pos => ({
+      ...pos,
+      x: pos.x + numberingPadding.left,
+      y: pos.y + numberingPadding.top
+    }));
 
     // Collect all unique textures needed for export
     const texturesNeeded = new Set<string>();
@@ -542,6 +720,11 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
       // Render icons on top of everything
       if (getHexIcon) {
         await renderIcons(compositingCanvas, exportHexPositions, exportHexRadius, getHexIcon, scale);
+      }
+      
+      // Render numbering on top of everything else
+      if (numberingMode && numberingMode !== 'off') {
+        renderNumberingForExport(compositingCanvas, exportHexPositions, exportHexRadius, numberingMode, scale);
       }
       
       // Use the compositing canvas for final export

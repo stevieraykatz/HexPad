@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, f
 import { GRID_CONFIG, DEFAULT_COLORS } from './config';
 import type { RGB, IconItem } from './config';
 import type { ColoredIcon } from './config/iconsConfig';
+import type { NumberingMode } from './GridSizeControls';
 
 import { initializeWebGLContext, createShaderPrograms, loadTexture } from '../utils/webglUtils';
 import { 
@@ -15,6 +16,16 @@ import {
 } from '../utils/hexagonUtils';
 import { calculateZoomToPoint, constrainPanOffset } from '../utils/zoomPanUtils';
 import { exportAsPNG as exportUtility, type HexStyle } from '../utils/exportUtils';
+import {
+  columnToLetter,
+  rowToNumber,
+  getHexCoordinate,
+  renderOutlinedText,
+  calculateEdgeFontSize,
+  calculateInHexFontSize,
+  calculateGeneralFontSize,
+} from "../utils/numberingUtils";
+import { NUMBERING_CONFIG } from './config';
 import { useBorderInteraction } from '../hooks/useBorderInteraction';
 import { useBorderRendering } from '../hooks/useBorderRendering';
 import { useIconPositioning } from '../hooks/useIconPositioning';
@@ -45,6 +56,7 @@ interface HexGridProps {
   bordersVersion?: number;
   activeTab?: 'paint' | 'icons' | 'borders' | 'settings';
   selectedIcon?: IconItem | null;
+  numberingMode?: NumberingMode;
 }
 
 export interface HexGridRef {
@@ -65,10 +77,12 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   borders,
   bordersVersion = 0,
   activeTab = 'paint',
-  selectedIcon = null
+  selectedIcon = null,
+  numberingMode = 'off'
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bordersCanvasRef = useRef<HTMLCanvasElement>(null);
+  const numberingCanvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const colorProgramRef = useRef<WebGLProgram | null>(null);
   const textureProgramRef = useRef<WebGLProgram | null>(null);
@@ -135,9 +149,10 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       backgroundColor,
       getHexagonStyle: (row: number, col: number) => getHexagonStyle(row, col),
       borders,
-      getHexIcon
+      getHexIcon,
+      numberingMode
     });
-  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, borders, getHexIcon]);
+  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, borders, getHexIcon, numberingMode]);
 
   useImperativeHandle(ref, () => ({
     exportAsPNG
@@ -469,7 +484,158 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       bordersCanvas.width = canvasSize.width;
       bordersCanvas.height = canvasSize.height;
     }
+    
+    const numberingCanvas = numberingCanvasRef.current;
+    if (numberingCanvas) {
+      numberingCanvas.width = canvasSize.width;
+      numberingCanvas.height = canvasSize.height;
+    }
   }, [canvasSize]);
+
+  // Edge numbering renderer
+  const renderEdgeNumbering = useCallback((
+    ctx: CanvasRenderingContext2D,
+    canvas: HTMLCanvasElement,
+    hexPositions: HexPosition[],
+    hexRadius: number
+  ) => {
+    const fontSize = calculateEdgeFontSize(hexRadius);
+    ctx.font = `${fontSize}px Arial`;
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = NUMBERING_CONFIG.OUTLINE_WIDTH;
+    
+    // Find the actual visual bounds of the rendered grid
+    const visibleHexes = hexPositions.filter(pos => 
+      pos.x >= -hexRadius && pos.x <= canvas.width + hexRadius &&
+      pos.y >= -hexRadius && pos.y <= canvas.height + hexRadius
+    );
+    
+    if (visibleHexes.length === 0) return;
+    
+    // Calculate the actual rendered grid boundaries
+    const leftmostX = Math.min(...visibleHexes.map(p => p.x - hexRadius));
+    const rightmostX = Math.max(...visibleHexes.map(p => p.x + hexRadius));
+    const topmostY = Math.min(...visibleHexes.map(p => p.y - hexRadius));
+    const bottommostY = Math.max(...visibleHexes.map(p => p.y + hexRadius));
+    
+    // Ensure the bounds are within the viewport
+    const actualLeft = Math.max(leftmostX, 0);
+    const actualRight = Math.min(rightmostX, canvas.width);
+    const actualTop = Math.max(topmostY, 0);
+    const actualBottom = Math.min(bottommostY, canvas.height);
+    
+    // Group hexes by column and row for efficient rendering
+    const hexesByCol = new Map<number, HexPosition[]>();
+    const hexesByRow = new Map<number, HexPosition[]>();
+    
+    visibleHexes.forEach(hex => {
+      if (!hexesByCol.has(hex.col)) hexesByCol.set(hex.col, []);
+      if (!hexesByRow.has(hex.row)) hexesByRow.set(hex.row, []);
+      hexesByCol.get(hex.col)!.push(hex);
+      hexesByRow.get(hex.row)!.push(hex);
+    });
+    
+    // Render column letters relative to grid edges
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const columnOffset = hexRadius * 0.6; // Distance from grid edge
+    
+    hexesByCol.forEach((hexes, col) => {
+      const letter = columnToLetter(col);
+      const avgX = hexes.reduce((sum, hex) => sum + hex.x, 0) / hexes.length;
+      
+      // Only render if column is visible
+      if (avgX >= actualLeft - hexRadius && avgX <= actualRight + hexRadius) {
+        // Top of grid
+        if (actualTop > 0) {
+          ctx.strokeText(letter, avgX, actualTop - columnOffset);
+          ctx.fillText(letter, avgX, actualTop - columnOffset);
+        }
+        
+        // Bottom of grid
+        if (actualBottom < canvas.height) {
+          ctx.strokeText(letter, avgX, actualBottom + columnOffset);
+          ctx.fillText(letter, avgX, actualBottom + columnOffset);
+        }
+      }
+    });
+    
+    // Render row numbers relative to grid edges (closer to grid)
+    const rowOffset = hexRadius * 0.3; // Closer to grid than columns
+    
+    hexesByRow.forEach((hexes, row) => {
+      const number = rowToNumber(row);
+      const avgY = hexes.reduce((sum, hex) => sum + hex.y, 0) / hexes.length;
+      
+      // Only render if row is visible
+      if (avgY >= actualTop - hexRadius && avgY <= actualBottom + hexRadius) {
+        // Left of grid
+        if (actualLeft > 0) {
+          ctx.strokeText(number, actualLeft - rowOffset, avgY);
+          ctx.fillText(number, actualLeft - rowOffset, avgY);
+        }
+        
+        // Right of grid
+        if (actualRight < canvas.width) {
+          ctx.strokeText(number, actualRight + rowOffset, avgY);
+          ctx.fillText(number, actualRight + rowOffset, avgY);
+        }
+      }
+    });
+  }, []);
+  
+  // In-hex numbering renderer
+  const renderInHexNumbering = useCallback((
+    ctx: CanvasRenderingContext2D,
+    hexPositions: HexPosition[],
+    hexRadius: number
+  ) => {
+    const fontSize = calculateInHexFontSize(hexRadius);
+    ctx.font = `${fontSize}px Arial`;
+    
+    hexPositions.forEach(pos => {
+      const coordinate = getHexCoordinate(pos.row, pos.col);
+      const textX = pos.x; // Centered horizontally
+      const textY = pos.y + hexRadius * NUMBERING_CONFIG.VERTICAL_OFFSET; // Bottom edge of hex
+      
+      renderOutlinedText(
+        ctx, 
+        coordinate, 
+        textX, 
+        textY, 
+        'white', 
+        'black', 
+        NUMBERING_CONFIG.OUTLINE_WIDTH, 
+        'center', 
+        'middle'
+      );
+    });
+  }, []);
+
+  // Numbering rendering function
+  const renderNumbering = useCallback(() => {
+    const canvas = numberingCanvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (numberingMode === 'off') return;
+    
+    const hexRadius = hexRadiusRef.current;
+    const hexPositions = hexPositionsRef.current;
+    
+    if (hexRadius <= 0 || hexPositions.length === 0) return;
+    
+    ctx.font = `${calculateGeneralFontSize(hexRadius)}px Arial`;
+    
+    if (numberingMode === 'edge') {
+      renderEdgeNumbering(ctx, canvas, hexPositions, hexRadius);
+    } else if (numberingMode === 'in-hex') {
+      renderInHexNumbering(ctx, hexPositions, hexRadius);
+    }
+  }, [numberingMode, renderEdgeNumbering, renderInHexNumbering]);
 
   useEffect(() => {
     if (glRef.current && colorProgramRef.current && textureProgramRef.current) {
@@ -481,13 +647,14 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     if (hexPositionsRef.current.length > 0 && hexRadiusRef.current > 0) {
       renderBordersThrottled();
       updateIconPositionsThrottled();
+      renderNumbering();
     }
 
     return () => {
       cancelPendingRenders();
       cancelPendingIconUpdates();
     };
-  }, [bordersVersion, borders, renderBordersThrottled, canvasSize, zoomLevel, panOffset, cancelPendingRenders, updateIconPositionsThrottled, cancelPendingIconUpdates]);
+  }, [bordersVersion, borders, renderBordersThrottled, canvasSize, zoomLevel, panOffset, numberingMode, renderNumbering, cancelPendingRenders, updateIconPositionsThrottled, cancelPendingIconUpdates]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -551,6 +718,22 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           height: '100%',
           pointerEvents: 'none', // Allow clicks to pass through
           zIndex: 2
+        }} 
+        width={canvasSize.width}
+        height={canvasSize.height}
+      />
+      
+      {/* Numbering Canvas Overlay */}
+      <canvas 
+        ref={numberingCanvasRef}
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none', // Allow clicks to pass through
+          zIndex: 3
         }} 
         width={canvasSize.width}
         height={canvasSize.height}

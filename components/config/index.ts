@@ -18,6 +18,9 @@
  *    - PAINT_OPTIONS: All available paint options (colors and textures) in a flat array
  *    - DEFAULT_COLORS: Fallback and initial states
  *
+ * 🔢 numberingConfig.ts - Grid numbering display and styling
+ *    - NUMBERING_CONFIG: Font sizes, margins, and styling for grid numbering
+ *
  */
 
 export { GRID_CONFIG, HEX_GEOMETRY } from './gridConfig';
@@ -49,6 +52,9 @@ export type {
 
 export { ICON_OPTIONS } from './iconsConfig';
 export type { IconItem } from './iconsConfig';
+
+export { NUMBERING_CONFIG } from './numberingConfig';
+export type { NumberingConfig } from './numberingConfig';
 
 // Additional types used by components
 export interface HexTexture {

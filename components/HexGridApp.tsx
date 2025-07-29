@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import HexGrid, { HexGridRef } from './HexGrid';
 import { UI_CONFIG, PAINT_OPTIONS, BACKGROUND_COLORS, ICON_OPTIONS } from './config';
 import type { BackgroundColor, IconItem, HexTexture } from './config';
+import type { NumberingMode } from './GridSizeControls';
 
 import TopCornerLinks from './TopCornerLinks';
 import MenuToggleButton from './MenuToggleButton';
@@ -38,6 +39,7 @@ const HexGridApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'paint' | 'icons' | 'borders' | 'settings'>('paint');
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [selectedBackgroundColor, setSelectedBackgroundColor] = useState<BackgroundColor>(BACKGROUND_COLORS[0]);
+  const [numberingMode, setNumberingMode] = useState<NumberingMode>('off');
   const hexGridRef = useRef<HexGridRef>(null);
   
   const [encodingMap, setEncodingMap] = useState<EncodingMap | null>(null);
@@ -207,11 +209,13 @@ const HexGridApp: React.FC = () => {
           gridWidth={gridWidth}
           gridHeight={gridHeight}
           selectedBackgroundColor={selectedBackgroundColor}
+          numberingMode={numberingMode}
           selectedTexture={selectedTexture}
           selectedColor={selectedColor}
           onWidthChange={setGridWidth}
           onHeightChange={setGridHeight}
           onBackgroundColorChange={setSelectedBackgroundColor}
+          onNumberingModeChange={setNumberingMode}
           onTextureSelect={handleTextureSelect}
           onColorSelect={setSelectedColor}
           onTextureClear={handleTextureClear}
@@ -238,6 +242,7 @@ const HexGridApp: React.FC = () => {
           ref={hexGridRef}
           gridWidth={gridWidth} 
           gridHeight={gridHeight}
+          numberingMode={numberingMode}
           onHexClick={paintHex}
           onEdgeClick={placeBorder}
           getHexColor={getHexColor}

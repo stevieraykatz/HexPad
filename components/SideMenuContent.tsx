@@ -6,6 +6,7 @@ import GridSizeControls from './GridSizeControls';
 import BackgroundColorSelector from './BackgroundColorSelector';
 import { UI_CONFIG } from './config';
 import type { BackgroundColor, TextureItem, HexTexture, IconItem } from './config';
+import type { NumberingMode } from './GridSizeControls';
 
 interface SideMenuContentProps {
   activeTab: 'paint' | 'icons' | 'borders' | 'settings';
@@ -27,9 +28,11 @@ interface SideMenuContentProps {
   gridWidth: number;
   gridHeight: number;
   selectedBackgroundColor: BackgroundColor;
+  numberingMode: NumberingMode;
   onWidthChange: (width: number) => void;
   onHeightChange: (height: number) => void;
   onBackgroundColorChange: (color: BackgroundColor) => void;
+  onNumberingModeChange: (mode: NumberingMode) => void;
 }
 
 const SideMenuContent: React.FC<SideMenuContentProps> = ({ 
@@ -52,9 +55,11 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
   gridWidth,
   gridHeight,
   selectedBackgroundColor,
+  numberingMode,
   onWidthChange,
   onHeightChange,
-  onBackgroundColorChange
+  onBackgroundColorChange,
+  onNumberingModeChange
 }) => {
   const sectionTitleStyle = {
     color: UI_CONFIG.COLORS.TEXT_SECONDARY,
@@ -118,8 +123,10 @@ const SideMenuContent: React.FC<SideMenuContentProps> = ({
           <GridSizeControls
             gridWidth={gridWidth}
             gridHeight={gridHeight}
+            numberingMode={numberingMode}
             onWidthChange={onWidthChange}
             onHeightChange={onHeightChange}
+            onNumberingModeChange={onNumberingModeChange}
           />
 
           <BackgroundColorSelector
