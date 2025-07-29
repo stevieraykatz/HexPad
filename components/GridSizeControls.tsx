@@ -97,9 +97,6 @@ const GridSizeControls: React.FC<GridSizeControlsProps> = ({
           marginTop: UI_CONFIG.SPACING.SMALL,
           lineHeight: '1.4'
         }}>
-          {numberingMode === 'off' && 'No grid numbering displayed'}
-          {numberingMode === 'edge' && 'Letters (A, B, C...) for columns, numbers (1, 2, 3...) for rows around grid edges'}
-          {numberingMode === 'in-hex' && 'Coordinate labels in bottom-left corner of each hex'}
         </div>
       </div>
     </div>

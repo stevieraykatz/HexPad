@@ -129,7 +129,7 @@ const HexGridApp: React.FC = () => {
         setBorders(savedState.borders);
       }
     }
-      }, [encodingMap, gridWidth, gridHeight, loadFromLocalStorage, setHexColors, setHexIcons, setBorders]); // Only run when encoding map is first available
+      }, [encodingMap, gridWidth, gridHeight, loadFromLocalStorage, setHexColors, setHexIcons, setBorders, setGridWidth, setGridHeight]); // Only run when encoding map is first available
 
 
 
