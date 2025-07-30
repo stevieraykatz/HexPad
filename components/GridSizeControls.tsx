@@ -1,18 +1,24 @@
 import React from 'react';
 import { GRID_CONFIG, UI_CONFIG } from './config';
 
+export type NumberingMode = 'off' | 'edge' | 'in-hex';
+
 interface GridSizeControlsProps {
   gridWidth: number;
   gridHeight: number;
+  numberingMode: NumberingMode;
   onWidthChange: (width: number) => void;
   onHeightChange: (height: number) => void;
+  onNumberingModeChange: (mode: NumberingMode) => void;
 }
 
 const GridSizeControls: React.FC<GridSizeControlsProps> = ({
   gridWidth,
   gridHeight,
+  numberingMode,
   onWidthChange,
-  onHeightChange
+  onHeightChange,
+  onNumberingModeChange
 }) => {
   const sliderStyle = {
     width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
@@ -28,6 +34,18 @@ const GridSizeControls: React.FC<GridSizeControlsProps> = ({
     marginBottom: UI_CONFIG.SPACING.SMALL,
     color: UI_CONFIG.COLORS.TEXT_TERTIARY,
     fontSize: UI_CONFIG.FONT_SIZE.NORMAL
+  };
+
+  const selectStyle = {
+    width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
+    padding: UI_CONFIG.SPACING.MEDIUM,
+    borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
+    border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
+    background: UI_CONFIG.COLORS.BUTTON_BACKGROUND,
+    color: UI_CONFIG.COLORS.TEXT_PRIMARY,
+    fontSize: UI_CONFIG.FONT_SIZE.NORMAL,
+    cursor: 'pointer',
+    outline: 'none'
   };
 
   return (
@@ -46,7 +64,7 @@ const GridSizeControls: React.FC<GridSizeControlsProps> = ({
         />
       </div>
       
-      <div>
+      <div style={{ marginBottom: UI_CONFIG.SPACING.LARGE }}>
         <label style={labelStyle}>
           Height: {gridHeight}
         </label>
@@ -58,6 +76,28 @@ const GridSizeControls: React.FC<GridSizeControlsProps> = ({
           onChange={(e) => onHeightChange(parseInt(e.target.value))}
           style={sliderStyle}
         />
+      </div>
+
+      <div>
+        <label style={labelStyle}>
+          Grid Numbering
+        </label>
+        <select
+          value={numberingMode}
+          onChange={(e) => onNumberingModeChange(e.target.value as NumberingMode)}
+          style={selectStyle}
+        >
+          <option value="off">Off</option>
+          <option value="edge">Edge Numbering</option>
+          <option value="in-hex">In-Hex Numbering</option>
+        </select>
+        <div style={{
+          fontSize: UI_CONFIG.FONT_SIZE.SMALL,
+          color: UI_CONFIG.COLORS.TEXT_MUTED,
+          marginTop: UI_CONFIG.SPACING.SMALL,
+          lineHeight: '1.4'
+        }}>
+        </div>
       </div>
     </div>
   );

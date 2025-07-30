@@ -6,6 +6,7 @@ import GridSizeControls from './GridSizeControls';
 import BackgroundColorSelector from './BackgroundColorSelector';
 import { UI_CONFIG } from './config';
 import type { BackgroundColor, TextureItem, HexTexture, IconItem } from './config';
+import type { NumberingMode } from './GridSizeControls';
 
 interface DesignMenuContentProps {
   activeTab: 'paint' | 'icons' | 'borders' | 'settings';
@@ -27,11 +28,13 @@ interface DesignMenuContentProps {
   gridWidth: number;
   gridHeight: number;
   selectedBackgroundColor: BackgroundColor;
+  numberingMode: NumberingMode;
   onWidthChange: (width: number) => void;
   onHeightChange: (height: number) => void;
   onBackgroundColorChange: (color: BackgroundColor) => void;
   // Mobile layout
   isMobile?: boolean; // Optional mobile detection for layout adjustments
+  onNumberingModeChange: (mode: NumberingMode) => void;
 }
 
 const DesignMenuContent: React.FC<DesignMenuContentProps> = ({ 
@@ -54,11 +57,13 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
   gridWidth,
   gridHeight,
   selectedBackgroundColor,
+  numberingMode,
   onWidthChange,
   onHeightChange,
   onBackgroundColorChange,
   // Mobile layout
-  isMobile = false
+  isMobile = false,
+  onNumberingModeChange
 }) => {
   const sectionTitleStyle = {
     color: UI_CONFIG.COLORS.TEXT_SECONDARY,
@@ -124,16 +129,17 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
           <div className={isMobile ? 'mobile-section' : ''} style={{ ...sectionTitleStyle, textAlign: 'center', marginBottom: UI_CONFIG.SPACING.XLARGE }}>
             Grid Settings
           </div>
-
           <div className={isMobile ? 'mobile-section' : ''}>
-            <GridSizeControls
-              gridWidth={gridWidth}
-              gridHeight={gridHeight}
-              onWidthChange={onWidthChange}
-              onHeightChange={onHeightChange}
-            />
-          </div>
 
+          <GridSizeControls
+            gridWidth={gridWidth}
+            gridHeight={gridHeight}
+            numberingMode={numberingMode}
+            onWidthChange={onWidthChange}
+            onHeightChange={onHeightChange}
+            onNumberingModeChange={onNumberingModeChange}
+          />
+          </div>
           <div className={isMobile ? 'mobile-section' : ''}>
             <BackgroundColorSelector
               selectedBackgroundColor={selectedBackgroundColor}

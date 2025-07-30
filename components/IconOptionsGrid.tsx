@@ -49,7 +49,7 @@ const IconOptionsGrid: React.FC<IconOptionsGridProps> = ({
           background: 'rgba(255, 255, 255, 0.1)',
           position: 'relative'
         }}>
-          {selectedIcon ? (
+          {selectedIcon && selectedIcon.name !== 'eraser' ? (
             <div style={{
               width: '60px',
               height: '60px',
@@ -92,7 +92,8 @@ const IconOptionsGrid: React.FC<IconOptionsGridProps> = ({
             color: UI_CONFIG.COLORS.TEXT_SECONDARY,
             fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM
           }}>
-            {selectedIcon ? selectedIcon.displayName : 'No icon selected'}
+            {selectedIcon && selectedIcon.name !== 'eraser' ? selectedIcon.displayName : 
+             selectedIcon?.name === 'eraser' ? 'Eraser tool active' : 'No icon selected'}
           </div>
         </div>
       </div>
