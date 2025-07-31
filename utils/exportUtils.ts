@@ -42,7 +42,7 @@ export interface ExportOptions {
   gridHeight: number;
   canvasSize: CanvasSize;
   backgroundColor?: { rgb: RGB };
-  getHexagonStyle: (row: number, col: number) => HexStyle;
+  getHexagonStyle: (row: number, col: number) => HexStyle | undefined;
   borders?: Record<string, BorderEdge>;
   getHexIcon?: (row: number, col: number) => ColoredIcon | undefined;
   numberingMode?: NumberingMode;
@@ -643,7 +643,7 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
     
     exportHexPositions.forEach((pos) => {
       const style = getHexagonStyle(pos.row, pos.col);
-      if (style.type === 'texture' && style.path && style.name) {
+      if (style && style.type === 'texture' && style.path && style.name) {
         texturesNeeded.add(style.name);
         textureStyles.set(style.name, { path: style.path, name: style.name });
       }
@@ -685,17 +685,20 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
     exportHexPositions.forEach((pos) => {
       const style = getHexagonStyle(pos.row, pos.col);
       
-      if (style.type === 'color' && style.rgb) {
-        renderColorHexagon(exportGL, colorProgram, pos, style, exportHexRadius, exportSize);
-      } else if (style.type === 'texture' && style.path && style.name) {
-        const texture = exportTextures.get(style.name);
-        if (texture) {
-          renderTextureHexagon(exportGL, textureProgram, pos, style, exportHexRadius, exportSize, texture);
-        } else {
-          // Fallback to colored rendering if texture failed to load
-          renderFallbackHexagon(exportGL, colorProgram, pos, exportHexRadius, exportSize);
+      if (style) {
+        if (style.type === 'color' && style.rgb) {
+          renderColorHexagon(exportGL, colorProgram, pos, style, exportHexRadius, exportSize);
+        } else if (style.type === 'texture' && style.path && style.name) {
+          const texture = exportTextures.get(style.name);
+          if (texture) {
+            renderTextureHexagon(exportGL, textureProgram, pos, style, exportHexRadius, exportSize, texture);
+          } else {
+            // Fallback to colored rendering if texture failed to load
+            renderFallbackHexagon(exportGL, colorProgram, pos, exportHexRadius, exportSize);
+          }
         }
       }
+      // Note: If style is undefined, only background layer will show (handled by canvas background color)
     });
 
     // Create a 2D canvas for compositing borders and icons

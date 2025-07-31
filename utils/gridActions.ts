@@ -22,8 +22,10 @@ interface GridActionHelpers {
   setActiveTab: (tab: 'paint' | 'icons' | 'borders' | 'settings') => void;
   setHexIcons: (icons: Record<string, ColoredIcon>) => void;
   setHexColors: (colors: HexColorsMap) => void;
+  setHexBackgroundColors: (colors: Record<string, string>) => void;
   setBorders: (borders: BordersMap) => void;
   setIsExporting: (exporting: boolean) => void;
+  setBackgroundPaintingMode: (mode: boolean) => void;
 }
 
 interface ExportHelpers {
@@ -57,6 +59,9 @@ export function createTextureSelectHandler(helpers: GridActionHelpers) {
     
     // Clear eraser state when selecting a texture
     helpers.setSelectedIcon(null);
+    
+    // Deactivate background painting mode when selecting a texture
+    helpers.setBackgroundPaintingMode(false);
   };
 }
 
@@ -163,6 +168,22 @@ export function createCopyUrlHandler(urlHelpers: CopyUrlHelpers) {
       console.log(`Encoded ${borderCount} borders with ${uniqueColors} unique colors`);
     } catch (error) {
       console.error('Failed to copy URL:', error);
+    }
+  };
+}
+
+// Background painting mode toggle handler
+export function createBackgroundPaintingModeToggleHandler(
+  currentBackgroundPaintingMode: boolean,
+  helpers: GridActionHelpers
+) {
+  return (): void => {
+    const newMode = !currentBackgroundPaintingMode;
+    helpers.setBackgroundPaintingMode(newMode);
+    
+    // Clear selected texture when activating background painting mode
+    if (newMode) {
+      helpers.setSelectedTexture(null);
     }
   };
 } 

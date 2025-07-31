@@ -22,13 +22,13 @@ import { useMobileDetection } from '../hooks/useMobileDetection';
 import { useSwipeDetection } from '../hooks/useSwipeDetection';
 import {
   createTextureSelectHandler,
-  createTextureClearHandler,
   createIconSelectHandler,
   createMenuToggleHandler,
   createTabChangeHandler,
   createEraserToggleHandler,
   createExportPNGHandler,
-  createCopyUrlHandler
+  createCopyUrlHandler,
+  createBackgroundPaintingModeToggleHandler
 } from '../utils/gridActions';
 
 const HexGridApp: React.FC = () => {
@@ -37,6 +37,8 @@ const HexGridApp: React.FC = () => {
   const [selectedIcon, setSelectedIcon] = useState<IconItem | null>(null);
   const [selectedBorderColor, setSelectedBorderColor] = useState<string>('#FF1A00');
   const [selectedIconColor, setSelectedIconColor] = useState<string>('#FFFFFF');
+  const [selectedBackgroundShaderColor, setSelectedBackgroundShaderColor] = useState<string>('#3B4252');
+  const [backgroundPaintingMode, setBackgroundPaintingMode] = useState<boolean>(false);
   const [menuOpen, setMenuOpen] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'paint' | 'icons' | 'borders' | 'settings'>('paint');
   const [isExporting, setIsExporting] = useState<boolean>(false);
@@ -112,17 +114,21 @@ const HexGridApp: React.FC = () => {
     hexIcons,
     borders,
     hexColorsVersion,
+    hexBackgroundColorsVersion,
     hexIconsVersion,
     bordersVersion,
     setGridWidth,
     setGridHeight,
     setHexColors,
+    setHexBackgroundColors,
     setHexIcons,
     setBorders,
     paintHex,
+    paintBackgroundHex,
     placeBorder,
     clearGrid,
     getHexColor,
+    getHexBackgroundColor,
     getHexIcon,
     hasUndoHistory,
     handleUndo
@@ -132,6 +138,7 @@ const HexGridApp: React.FC = () => {
     selectedIcon,
     selectedIconColor,
     selectedBorderColor,
+    selectedBackgroundColor: selectedBackgroundShaderColor,
     activeTab,
     onPaintStart: handlePaintStart
   });
@@ -145,6 +152,17 @@ const HexGridApp: React.FC = () => {
     gridHeight,
     isUndoing: false
   });
+
+  // Initialize grid with grey background colors on first load
+  useEffect(() => {
+    const greyBackgroundColors: Record<string, string> = {};
+    for (let row = 0; row < gridHeight; row++) {
+      for (let col = 0; col < gridWidth; col++) {
+        greyBackgroundColors[`${row}-${col}`] = '#6B7280'; // Default grey hex color
+      }
+    }
+    setHexBackgroundColors(greyBackgroundColors);
+  }, [gridWidth, gridHeight, setHexBackgroundColors]);
 
   const handleClearGrid = (): void => {
     clearGrid();
@@ -196,16 +214,21 @@ const HexGridApp: React.FC = () => {
     setActiveTab,
     setHexIcons,
     setHexColors,
+    setHexBackgroundColors,
     setBorders,
-    setIsExporting
+    setIsExporting,
+    setBackgroundPaintingMode
   };
 
   const handleTextureSelect = createTextureSelectHandler(gridActionHelpers);
-  const handleTextureClear = createTextureClearHandler(gridActionHelpers);
   const handleIconSelect = createIconSelectHandler(gridActionHelpers);
   const handleMenuToggle = createMenuToggleHandler(menuOpen, gridActionHelpers);
   const handleTabChange = createTabChangeHandler(selectedIcon, gridActionHelpers);
   const handleEraserToggle = createEraserToggleHandler(selectedIcon, handleIconSelect);
+  const handleBackgroundPaintingModeToggle = createBackgroundPaintingModeToggleHandler(
+    backgroundPaintingMode,
+    gridActionHelpers
+  );
   
   const handleExportPNG = createExportPNGHandler(
     { hexGridRef, gridWidth, gridHeight, isExporting },
@@ -260,8 +283,8 @@ const HexGridApp: React.FC = () => {
             left: 0,
             right: 0,
             width: '100%',
-            height: menuOpen ? '60vh' : '0',
-            maxHeight: '60vh',
+            height: menuOpen ? '75vh' : '0',
+            maxHeight: '75vh',
             borderTop: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
             borderRadius: `${UI_CONFIG.BORDER_RADIUS.LARGE} ${UI_CONFIG.BORDER_RADIUS.LARGE} 0 0`,
             transform: `translateY(${menuOpen ? '0' : '100%'})`,
@@ -293,20 +316,21 @@ const HexGridApp: React.FC = () => {
           selectedBackgroundColor={selectedBackgroundColor}
           numberingMode={numberingMode}
           selectedTexture={selectedTexture}
-          selectedColor={selectedColor}
           onWidthChange={setGridWidth}
           onHeightChange={setGridHeight}
           onBackgroundColorChange={setSelectedBackgroundColor}
           onNumberingModeChange={setNumberingMode}
           onTextureSelect={handleTextureSelect}
-          onColorSelect={setSelectedColor}
-          onTextureClear={handleTextureClear}
           selectedIcon={selectedIcon}
           selectedIconColor={selectedIconColor}
           onIconSelect={handleIconSelect}
           onIconColorSelect={setSelectedIconColor}
           selectedBorderColor={selectedBorderColor}
           onBorderColorSelect={setSelectedBorderColor}
+          selectedBackgroundShaderColor={selectedBackgroundShaderColor}
+          backgroundPaintingMode={backgroundPaintingMode}
+          onBackgroundShaderColorSelect={setSelectedBackgroundShaderColor}
+          onBackgroundPaintingModeToggle={handleBackgroundPaintingModeToggle}
           isMobile={isMobile}
         />
       </div>
@@ -326,11 +350,13 @@ const HexGridApp: React.FC = () => {
           gridWidth={gridWidth} 
           gridHeight={gridHeight}
           numberingMode={numberingMode}
-          onHexClick={paintHex}
+          onHexClick={backgroundPaintingMode ? paintBackgroundHex : paintHex}
           onEdgeClick={placeBorder}
           getHexColor={getHexColor}
+          getHexBackgroundColor={getHexBackgroundColor}
           getHexIcon={getHexIcon}
           hexColorsVersion={hexColorsVersion}
+          hexBackgroundColorsVersion={hexBackgroundColorsVersion}
           hexIconsVersion={hexIconsVersion}
           backgroundColor={selectedBackgroundColor}
           borders={borders}

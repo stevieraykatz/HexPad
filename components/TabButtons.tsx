@@ -37,12 +37,13 @@ const TabButtons: React.FC<TabButtonsProps> = ({
         boxShadow = UI_CONFIG.BOX_SHADOW.SELECTED;
       } else {
         // Subtle active styling when menu is closed
-        background = tab === 'paint' || tab === 'borders'
-          ? 'rgba(59, 130, 246, 0.2)' // Subtle blue tint
-          : 'rgba(168, 85, 247, 0.2)'; // Subtle purple tint
-        border = `2px solid ${tab === 'paint' || tab === 'borders' 
-          ? 'rgba(59, 130, 246, 0.6)' 
-          : 'rgba(168, 85, 247, 0.6)'}`;
+        if (tab === 'paint' || tab === 'borders') {
+          background = 'rgba(59, 130, 246, 0.2)'; // Subtle blue tint
+          border = '2px solid rgba(59, 130, 246, 0.6)';
+        } else {
+          background = 'rgba(168, 85, 247, 0.2)'; // Subtle purple tint for icons/settings
+          border = '2px solid rgba(168, 85, 247, 0.6)';
+        }
         boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
       }
     }

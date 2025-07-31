@@ -103,6 +103,15 @@ export interface PaintOptionsConfig {
   readonly ZOOM_SCALE_PERCENTAGE: string; // Scale percentage for zooming texture images
   readonly ZOOM_OFFSET_PERCENTAGE: string; // Offset percentage for zoomed texture positioning
   readonly MAX_HEIGHT: string; // Maximum height for scrollable paint options
+  readonly MAX_HEIGHT_MOBILE: string; // Maximum height for mobile paint options
+  readonly BACKGROUND_PREVIEW_SIZE: string; // Size of background preview tile
+  readonly BACKGROUND_BORDER_NORMAL: string; // Border width for normal background preview
+  readonly BACKGROUND_BORDER_SELECTED: string; // Border width for selected background preview
+  readonly COLOR_PICKER_SIZE_MOBILE: string; // Color picker size on mobile
+  readonly COLOR_PICKER_SIZE_DESKTOP: string; // Color picker size on desktop
+  readonly ACTIVE_SCALE: string; // Scale factor for active state
+  readonly TEXT_SHADOW: string; // Text shadow for preview text
+  readonly ICON_GRID_MAX_HEIGHT_MOBILE: string; // Maximum height for mobile icon grid
 }
 
 export interface MenuConfig {
@@ -269,7 +278,7 @@ export const UI_CONFIG: UIConfig = {
   // Paint options
   PAINT_OPTIONS: {
     GRID_COLUMNS: 3, // Number of columns in paint options grid
-    TILE_SIZE: '80px', // Size of each paint option tile
+    TILE_SIZE: '65px', // Size of each paint option tile
     TILE_GAP: '4px', // Gap between paint option tiles
     TILE_PADDING: '2px', // Padding inside each tile
     TILE_BORDER_WIDTH_NORMAL: '2px', // Border width for normal tiles
@@ -277,6 +286,15 @@ export const UI_CONFIG: UIConfig = {
     ZOOM_SCALE_PERCENTAGE: '130%', // Scale percentage for zooming texture images
     ZOOM_OFFSET_PERCENTAGE: '-15%', // Offset percentage for zoomed texture positioning
     MAX_HEIGHT: '400px', // Maximum height for scrollable paint options
+    MAX_HEIGHT_MOBILE: '200px', // Maximum height for mobile paint options
+    BACKGROUND_PREVIEW_SIZE: '60px', // Size of background preview tile
+    BACKGROUND_BORDER_NORMAL: '2px', // Border width for normal background preview
+    BACKGROUND_BORDER_SELECTED: '3px', // Border width for selected background preview
+    COLOR_PICKER_SIZE_MOBILE: '120px', // Color picker size on mobile
+    COLOR_PICKER_SIZE_DESKTOP: '140px', // Color picker size on desktop
+    ACTIVE_SCALE: '1.05', // Scale factor for active state
+    TEXT_SHADOW: '0 1px 2px rgba(0,0,0,0.7)', // Text shadow for preview text
+    ICON_GRID_MAX_HEIGHT_MOBILE: '220px', // Maximum height for mobile icon grid
   },
   
   // Menu configuration

@@ -1,158 +1,170 @@
 import React from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { UI_CONFIG, PAINT_OPTIONS } from './config';
-import type { AssetItem, TextureItem, HexTexture } from './config';
+import type { TextureItem, HexTexture } from './config';
 
 interface PaintOptionsGridProps {
   selectedTexture: HexTexture | null;
-  selectedColor: string;
+  selectedBackgroundColor: string;
+  backgroundPaintingMode: boolean;
   onTextureSelect: (texture: TextureItem) => void;
-  onColorSelect: (color: string) => void;
-  onTextureClear?: () => void;
+  onBackgroundColorSelect: (color: string) => void;
+  onBackgroundPaintingModeToggle: () => void;
   isMobile?: boolean; // Optional mobile detection for layout optimizations
+
 }
 
 const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({ 
   selectedTexture,
-  selectedColor,
+  selectedBackgroundColor,
+  backgroundPaintingMode,
   onTextureSelect,
-  onColorSelect,
-  onTextureClear,
+  onBackgroundColorSelect,
+  onBackgroundPaintingModeToggle,
   isMobile = false
 }) => {
   // Filter out color items, only show textures
   const textureOptions = PAINT_OPTIONS.filter(item => item.type === 'texture');
 
-  // Check if color painting is active (no texture selected)
-  const isColorPaintingActive = selectedTexture === null;
-
-  // Handle color preview click - activate color painting mode
-  const handleColorPreviewClick = () => {
-    // Clear texture selection to activate color painting
-    if (onTextureClear) {
-      onTextureClear();
-    }
-  };
-
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      gap: UI_CONFIG.SPACING.LARGE,
+      gap: UI_CONFIG.SPACING.MEDIUM,
       width: '100%'
     }}>
-      {/* Color Picker */}
+      {/* Background Shader Section */}
       <div style={{
         background: UI_CONFIG.COLORS.OVERLAY_BACKGROUND,
         backdropFilter: UI_CONFIG.BLUR.LIGHT,
         border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
         borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-        padding: UI_CONFIG.SPACING.MEDIUM,
+        padding: UI_CONFIG.SPACING.SMALL,
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center'
+        flexDirection: 'column',
+        gap: UI_CONFIG.SPACING.SMALL
       }}>
-        <HexColorPicker
-          className="mobile-color-picker"
-          color={selectedColor}
-          onChange={onColorSelect}
-          style={{
-            width: '180px',
-            height: '180px',
-            borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM
-          }}
-        />
+        {/* Background Shader Title */}
+        <div style={{
+          color: UI_CONFIG.COLORS.TEXT_SECONDARY,
+          fontSize: UI_CONFIG.FONT_SIZE.MEDIUM,
+          fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
+          textAlign: 'center'
+        }}>
+        </div>
+        
+        {/* Background Color Preview and Picker */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: UI_CONFIG.SPACING.MEDIUM
+        }}>
+          {/* Background Preview tile - clickable to toggle painting mode */}
+          <button
+            onClick={onBackgroundPaintingModeToggle}
+            style={{
+              width: UI_CONFIG.PAINT_OPTIONS.BACKGROUND_PREVIEW_SIZE,
+              height: UI_CONFIG.PAINT_OPTIONS.BACKGROUND_PREVIEW_SIZE,
+              borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
+              border: backgroundPaintingMode 
+                ? `${UI_CONFIG.PAINT_OPTIONS.BACKGROUND_BORDER_SELECTED} solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` 
+                : `${UI_CONFIG.PAINT_OPTIONS.BACKGROUND_BORDER_NORMAL} solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+              backgroundColor: selectedBackgroundColor,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: backgroundPaintingMode 
+                ? UI_CONFIG.BOX_SHADOW.SELECTED 
+                : UI_CONFIG.BOX_SHADOW.LIGHT,
+              cursor: 'pointer',
+              transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+              transform: backgroundPaintingMode ? `scale(${UI_CONFIG.PAINT_OPTIONS.ACTIVE_SCALE})` : 'scale(1)'
+            }}
+            title={backgroundPaintingMode 
+              ? "Background painting active - click hexes to paint backgrounds" 
+              : "Click to activate background painting mode"}
+          >
+          </button>
+
+          {/* Background Color Picker */}
+          <HexColorPicker
+            className="mobile-color-picker"
+            color={selectedBackgroundColor}
+            onChange={onBackgroundColorSelect}
+            style={{
+              width: isMobile ? UI_CONFIG.PAINT_OPTIONS.COLOR_PICKER_SIZE_MOBILE : UI_CONFIG.PAINT_OPTIONS.COLOR_PICKER_SIZE_DESKTOP,
+              height: isMobile ? UI_CONFIG.PAINT_OPTIONS.COLOR_PICKER_SIZE_MOBILE : UI_CONFIG.PAINT_OPTIONS.COLOR_PICKER_SIZE_DESKTOP,
+              borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM
+            }}
+          />
+        </div>
       </div>
 
-      {/* Combined Color Tile and Texture Options */}
+      {/* Texture Options Section */}
       <div style={{
         background: UI_CONFIG.COLORS.OVERLAY_BACKGROUND,
         backdropFilter: UI_CONFIG.BLUR.LIGHT,
         border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
         borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-        padding: UI_CONFIG.SPACING.MEDIUM
+        padding: UI_CONFIG.SPACING.SMALL,
       }}>
+        {/* Texture Section Title */}
         <div 
           className={isMobile ? 'mobile-paint-grid' : ''}
           style={{ 
             display: 'grid',
             gridTemplateColumns: isMobile ? `repeat(3, 1fr)` : `repeat(${UI_CONFIG.PAINT_OPTIONS.GRID_COLUMNS}, 1fr)`,
             gap: isMobile ? UI_CONFIG.SPACING.SMALL : UI_CONFIG.PAINT_OPTIONS.TILE_GAP,
-            maxHeight: isMobile ? '300px' : UI_CONFIG.PAINT_OPTIONS.MAX_HEIGHT,
-            overflowY: 'auto',
+            maxHeight: isMobile ? UI_CONFIG.PAINT_OPTIONS.MAX_HEIGHT_MOBILE : 'none',
+            overflowY: 'visible',
             justifyContent: 'center',
             justifyItems: 'center'
           }}
         >
-          {/* Color Tile (First Option) */}
-          <button
-            onClick={handleColorPreviewClick}
-            style={{
-              width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-              height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-              padding: UI_CONFIG.PAINT_OPTIONS.TILE_PADDING,
-              background: isColorPaintingActive ? UI_CONFIG.COLORS.SELECTED_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-              border: isColorPaintingActive ? `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_SELECTED} solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` : `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_NORMAL} solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
-              borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-              cursor: 'pointer',
-              transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-              boxShadow: isColorPaintingActive ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
-            }}
-            title={isColorPaintingActive ? "Color painting active - click on hexes to paint" : "Click to activate color painting"}
-          >
-            <div style={{
-              width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
-              height: UI_CONFIG.APP_LAYOUT.FULL_HEIGHT_PERCENTAGE,
-              borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-              border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-              backgroundColor: selectedColor,
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-            </div>
-          </button>
-
           {/* Texture Options */}
-          {textureOptions.map((item: AssetItem) => (
-            <button
-              key={item.name}
-              onClick={() => onTextureSelect(item)}
-              style={{
-                width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
-                padding: UI_CONFIG.PAINT_OPTIONS.TILE_PADDING,
-                background: selectedTexture?.name === item.name ? UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
-                border: selectedTexture?.name === item.name ? `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_SELECTED} solid ${UI_CONFIG.COLORS.SELECTED_ALT_BORDER}` : `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_NORMAL} solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
-                borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-                cursor: 'pointer',
-                transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-                boxShadow: selectedTexture?.name === item.name ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
-              }}
-              title={item.displayName}
-            >
-              <div style={{
-                width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
-                height: UI_CONFIG.APP_LAYOUT.FULL_HEIGHT_PERCENTAGE,
-                borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-                border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-                overflow: 'hidden',
-                position: 'relative'
-              }}>
+          {textureOptions.map((texture) => {
+            const isSelected = selectedTexture?.name === texture.name;
+            return (
+              <button
+                key={texture.name}
+                onClick={() => onTextureSelect(texture as TextureItem)}
+                style={{
+                  width: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
+                  height: UI_CONFIG.PAINT_OPTIONS.TILE_SIZE,
+                  padding: UI_CONFIG.PAINT_OPTIONS.TILE_PADDING,
+                  background: isSelected ? UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND : UI_CONFIG.COLORS.BUTTON_BACKGROUND,
+                  border: isSelected ? `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_SELECTED} solid ${UI_CONFIG.COLORS.SELECTED_ALT_BORDER}` : `${UI_CONFIG.PAINT_OPTIONS.TILE_BORDER_WIDTH_NORMAL} solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
+                  borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
+                  cursor: 'pointer',
+                  transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+                  boxShadow: isSelected ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
+                }}
+                title={texture.displayName}
+              >
                 <div style={{
-                  width: UI_CONFIG.PAINT_OPTIONS.ZOOM_SCALE_PERCENTAGE,
-                  height: UI_CONFIG.PAINT_OPTIONS.ZOOM_SCALE_PERCENTAGE,
-                  position: 'absolute',
-                  top: UI_CONFIG.PAINT_OPTIONS.ZOOM_OFFSET_PERCENTAGE,
-                  left: UI_CONFIG.PAINT_OPTIONS.ZOOM_OFFSET_PERCENTAGE,
-                  backgroundImage: `url(${(item as TextureItem).path})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }} />
-              </div>
-            </button>
-          ))}
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
+                  border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+                  overflow: 'hidden',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    width: UI_CONFIG.PAINT_OPTIONS.ZOOM_SCALE_PERCENTAGE,
+                    height: UI_CONFIG.PAINT_OPTIONS.ZOOM_SCALE_PERCENTAGE,
+                    position: 'absolute',
+                    top: UI_CONFIG.PAINT_OPTIONS.ZOOM_OFFSET_PERCENTAGE,
+                    left: UI_CONFIG.PAINT_OPTIONS.ZOOM_OFFSET_PERCENTAGE,
+                    backgroundImage: `url(${(texture as TextureItem).path})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }} />
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

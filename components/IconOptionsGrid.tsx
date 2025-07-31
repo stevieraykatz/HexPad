@@ -137,8 +137,8 @@ const IconOptionsGrid: React.FC<IconOptionsGridProps> = ({
             display: 'grid',
             gridTemplateColumns: isMobile ? `repeat(3, 1fr)` : `repeat(${UI_CONFIG.PAINT_OPTIONS.GRID_COLUMNS}, 1fr)`,
             gap: isMobile ? '8px' : UI_CONFIG.PAINT_OPTIONS.TILE_GAP,
-            maxHeight: isMobile ? '300px' : UI_CONFIG.PAINT_OPTIONS.MAX_HEIGHT,
-            overflowY: 'auto',
+            maxHeight: isMobile ? UI_CONFIG.PAINT_OPTIONS.ICON_GRID_MAX_HEIGHT_MOBILE : 'none',
+            overflowY: 'visible',
             justifyContent: 'center',
             justifyItems: 'center'
           }}>

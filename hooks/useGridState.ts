@@ -6,6 +6,7 @@ import { GRID_CONFIG, DEFAULT_COLORS } from '../components/config';
 // Type definitions for hex colors and textures
 type HexColor = string;
 type HexColorsMap = Record<string, HexColor | HexTexture>;
+type HexBackgroundColorsMap = Record<string, HexColor>; // Background colors are always solid colors
 
 // Border placement between hex tiles
 interface BorderEdge {
@@ -20,8 +21,9 @@ type BordersMap = Record<string, BorderEdge>; // key format: "fromRow-fromCol_to
 interface HistoryEntry {
   iconState: Record<string, ColoredIcon>;
   colorState: HexColorsMap;
+  backgroundColorState: HexBackgroundColorsMap;
   borderState: BordersMap;
-  changedType: 'icons' | 'colors' | 'borders'; // What actually changed in this entry
+  changedType: 'icons' | 'colors' | 'backgrounds' | 'borders'; // What actually changed in this entry
 }
 
 interface UseGridStateProps {
@@ -30,6 +32,7 @@ interface UseGridStateProps {
   selectedIcon: IconItem | null;
   selectedIconColor: string;
   selectedBorderColor: string;
+  selectedBackgroundColor: string;
   activeTab: 'paint' | 'icons' | 'borders' | 'settings';
   onPaintStart?: () => void; // Optional callback for when painting starts
 }
@@ -39,9 +42,11 @@ interface UseGridStateReturn {
   gridWidth: number;
   gridHeight: number;
   hexColors: HexColorsMap;
+  hexBackgroundColors: HexBackgroundColorsMap;
   hexIcons: Record<string, ColoredIcon>;
   borders: BordersMap;
   hexColorsVersion: number;
+  hexBackgroundColorsVersion: number;
   hexIconsVersion: number;
   bordersVersion: number;
   unifiedHistory: HistoryEntry[];
@@ -50,16 +55,19 @@ interface UseGridStateReturn {
   setGridWidth: (width: number) => void;
   setGridHeight: (height: number) => void;
   setHexColors: (colors: HexColorsMap) => void;
+  setHexBackgroundColors: (colors: HexBackgroundColorsMap) => void;
   setHexIcons: (icons: Record<string, ColoredIcon>) => void;
   setBorders: (borders: BordersMap) => void;
   
   // Operations
   paintHex: (row: number, col: number) => void;
+  paintBackgroundHex: (row: number, col: number) => void;
   placeBorder: (fromHex: string, toHex: string) => void;
   clearGrid: () => void;
   
   // Helpers
   getHexColor: (row: number, col: number) => HexColor | HexTexture | undefined;
+  getHexBackgroundColor: (row: number, col: number) => HexColor | undefined;
   getHexIcon: (row: number, col: number) => ColoredIcon | undefined;
   hasUndoHistory: () => boolean;
   handleUndo: () => void;
@@ -74,6 +82,7 @@ export function useGridState({
   selectedIcon,
   selectedIconColor,
   selectedBorderColor,
+  selectedBackgroundColor,
   activeTab,
   onPaintStart
 }: UseGridStateProps): UseGridStateReturn {
@@ -82,11 +91,13 @@ export function useGridState({
   const [gridWidth, setGridWidth] = useState<number>(GRID_CONFIG.DEFAULT_WIDTH);
   const [gridHeight, setGridHeight] = useState<number>(GRID_CONFIG.DEFAULT_HEIGHT);
   const [hexColors, setHexColors] = useState<HexColorsMap>({});
+  const [hexBackgroundColors, setHexBackgroundColors] = useState<HexBackgroundColorsMap>({});
   const [hexIcons, setHexIcons] = useState<Record<string, ColoredIcon>>({});
   const [borders, setBorders] = useState<BordersMap>({});
   
   // Version counters for triggering re-renders
   const [hexColorsVersion, setHexColorsVersion] = useState<number>(0);
+  const [hexBackgroundColorsVersion, setHexBackgroundColorsVersion] = useState<number>(0);
   const [hexIconsVersion, setHexIconsVersion] = useState<number>(0);
   const [bordersVersion, setBordersVersion] = useState<number>(0);
   
@@ -96,42 +107,48 @@ export function useGridState({
   // Track previous state for undo functionality
   const prevHexIconsRef = useRef<Record<string, ColoredIcon>>({});
   const prevHexColorsRef = useRef<HexColorsMap>({});
+  const prevHexBackgroundColorsRef = useRef<HexBackgroundColorsMap>({});
   const prevBordersRef = useRef<BordersMap>({});
   const isUndoingRef = useRef<boolean>(false);
 
-  // Save previous state to unified history when icons, colors, or borders change (but not during undo operations)
+  // Save previous state to unified history when icons, colors, background colors, or borders change (but not during undo operations)
   useEffect(() => {
     // Skip saving to history if we're currently undoing
     if (isUndoingRef.current) {
       isUndoingRef.current = false; // Reset the flag
       prevHexIconsRef.current = { ...hexIcons }; // Update refs to current state
       prevHexColorsRef.current = { ...hexColors };
+      prevHexBackgroundColorsRef.current = { ...hexBackgroundColors };
       prevBordersRef.current = { ...borders };
       return;
     }
     
     const prevIconState = prevHexIconsRef.current;
     const prevColorState = prevHexColorsRef.current;
+    const prevBackgroundColorState = prevHexBackgroundColorsRef.current;
     const prevBorderState = prevBordersRef.current;
     const currentIconState = hexIcons;
     const currentColorState = hexColors;
+    const currentBackgroundColorState = hexBackgroundColors;
     const currentBorderState = borders;
     
     // Check what changed
     const iconsChanged = JSON.stringify(prevIconState) !== JSON.stringify(currentIconState);
     const colorsChanged = JSON.stringify(prevColorState) !== JSON.stringify(currentColorState);
+    const backgroundColorsChanged = JSON.stringify(prevBackgroundColorState) !== JSON.stringify(currentBackgroundColorState);
     const bordersChanged = JSON.stringify(prevBorderState) !== JSON.stringify(currentBorderState);
     
     // Only save to history if something actually changed and it's not the initial state
-    if (iconsChanged || colorsChanged || bordersChanged) {
-      const hasInitialState = Object.keys(prevIconState).length > 0 || Object.keys(prevColorState).length > 0 || Object.keys(prevBorderState).length > 0;
+    if (iconsChanged || colorsChanged || backgroundColorsChanged || bordersChanged) {
+      const hasInitialState = Object.keys(prevIconState).length > 0 || Object.keys(prevColorState).length > 0 || Object.keys(prevBackgroundColorState).length > 0 || Object.keys(prevBorderState).length > 0;
       
       if (hasInitialState) {
         const historyEntry: HistoryEntry = {
           iconState: { ...prevIconState },
           colorState: { ...prevColorState },
+          backgroundColorState: { ...prevBackgroundColorState },
           borderState: { ...prevBorderState },
-          changedType: iconsChanged ? 'icons' : colorsChanged ? 'colors' : 'borders'
+          changedType: iconsChanged ? 'icons' : colorsChanged ? 'colors' : backgroundColorsChanged ? 'backgrounds' : 'borders'
         };
         
         setUnifiedHistory(prev => [...prev.slice(-99), historyEntry]); // Keep last 100 states
@@ -141,8 +158,9 @@ export function useGridState({
     // Update the refs to current state for next comparison
     prevHexIconsRef.current = { ...currentIconState };
     prevHexColorsRef.current = { ...currentColorState };
+    prevHexBackgroundColorsRef.current = { ...currentBackgroundColorState };
     prevBordersRef.current = { ...currentBorderState };
-  }, [hexIcons, hexColors, borders]);
+  }, [hexIcons, hexColors, hexBackgroundColors, borders]);
 
   // Paint hex operation
   const paintHex = useCallback((row: number, col: number): void => {
@@ -253,7 +271,19 @@ export function useGridState({
       }));
       setHexColorsVersion(prev => prev + 1);
     }
-  }, [selectedColor, selectedTexture, selectedIcon, selectedIconColor, activeTab, hexIcons, hexColors, onPaintStart]);
+  }, [selectedColor, selectedTexture, selectedIcon, selectedIconColor, selectedBackgroundColor, activeTab, hexIcons, hexColors, hexBackgroundColors, onPaintStart]);
+
+  // Paint background hex operation
+  const paintBackgroundHex = useCallback((row: number, col: number): void => {
+    const hexKey = `${row}-${col}`;
+    
+    // Handle background color painting
+    setHexBackgroundColors(prev => ({
+      ...prev,
+      [hexKey]: selectedBackgroundColor
+    }));
+    setHexBackgroundColorsVersion(prev => prev + 1);
+  }, [selectedBackgroundColor]);
 
   // Place border operation
   const placeBorder = useCallback((fromHex: string, toHex: string): void => {
@@ -326,15 +356,19 @@ export function useGridState({
 
   // Clear grid operation
   const clearGrid = useCallback((): void => {
-    // Set all hexes to default grey instead of clearing them
-    const greyColors: HexColorsMap = {};
+    // Clear main texture layer completely
+    setHexColors({});
+    setHexColorsVersion(prev => prev + 1);
+    
+    // Set all hexes to have grey background colors instead
+    const greyBackgroundColors: HexBackgroundColorsMap = {};
     for (let row = 0; row < gridHeight; row++) {
       for (let col = 0; col < gridWidth; col++) {
-        greyColors[`${row}-${col}`] = DEFAULT_COLORS.SELECTED; // Keep as string since getHexagonStyle handles this special case
+        greyBackgroundColors[`${row}-${col}`] = '#6B7280'; // Default grey hex color
       }
     }
-    setHexColors(greyColors);
-    setHexColorsVersion(prev => prev + 1);
+    setHexBackgroundColors(greyBackgroundColors);
+    setHexBackgroundColorsVersion(prev => prev + 1);
     
     // Also clear all icons, borders, and unified history
     setHexIcons({});
@@ -357,6 +391,11 @@ export function useGridState({
     return hexIcons[hexKey];
   }, [hexIcons]);
 
+  const getHexBackgroundColor = useCallback((row: number, col: number): HexColor | undefined => {
+    const hexKey = `${row}-${col}`;
+    return hexBackgroundColors[hexKey];
+  }, [hexBackgroundColors]);
+
   const hasUndoHistory = useCallback((): boolean => {
     return unifiedHistory.length > 0;
   }, [unifiedHistory.length]);
@@ -369,15 +408,17 @@ export function useGridState({
       // Set flag to prevent useEffect from saving this state change to history
       isUndoingRef.current = true;
       
-      // Restore icon, color, and border states from the history entry
+      // Restore icon, color, background color, and border states from the history entry
       setHexIcons(previousEntry.iconState);
       setHexColors(previousEntry.colorState);
+      setHexBackgroundColors(previousEntry.backgroundColorState);
       setBorders(previousEntry.borderState);
       setUnifiedHistory(newHistory);
       
       // Update version counters to trigger re-renders
       setHexIconsVersion(prev => prev + 1);
       setHexColorsVersion(prev => prev + 1);
+      setHexBackgroundColorsVersion(prev => prev + 1);
       setBordersVersion(prev => prev + 1);
     }
   }, [unifiedHistory]);
@@ -387,9 +428,11 @@ export function useGridState({
     gridWidth,
     gridHeight,
     hexColors,
+    hexBackgroundColors,
     hexIcons,
     borders,
     hexColorsVersion,
+    hexBackgroundColorsVersion,
     hexIconsVersion,
     bordersVersion,
     unifiedHistory,
@@ -398,16 +441,19 @@ export function useGridState({
     setGridWidth,
     setGridHeight,
     setHexColors,
+    setHexBackgroundColors,
     setHexIcons,
     setBorders,
     
     // Operations
     paintHex,
+    paintBackgroundHex,
     placeBorder,
     clearGrid,
     
     // Helpers
     getHexColor,
+    getHexBackgroundColor,
     getHexIcon,
     hasUndoHistory,
     handleUndo,

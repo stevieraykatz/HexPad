@@ -2,6 +2,7 @@ import React from 'react';
 import PaintOptionsGrid from './PaintOptionsGrid';
 import IconOptionsGrid from './IconOptionsGrid';
 import BorderOptionsGrid from './BorderOptionsGrid';
+
 import GridSizeControls from './GridSizeControls';
 import BackgroundColorSelector from './BackgroundColorSelector';
 import { UI_CONFIG } from './config';
@@ -12,10 +13,7 @@ interface DesignMenuContentProps {
   activeTab: 'paint' | 'icons' | 'borders' | 'settings';
   // Paint tab props
   selectedTexture: HexTexture | null;
-  selectedColor: string;
   onTextureSelect: (texture: TextureItem) => void;
-  onColorSelect: (color: string) => void;
-  onTextureClear: () => void;
   // Icons tab props
   selectedIcon: IconItem | null;
   selectedIconColor: string;
@@ -24,6 +22,11 @@ interface DesignMenuContentProps {
   // Borders tab props
   selectedBorderColor: string;
   onBorderColorSelect: (color: string) => void;
+  // Background shader props (used in paint tab)
+  selectedBackgroundShaderColor: string;
+  backgroundPaintingMode: boolean;
+  onBackgroundShaderColorSelect: (color: string) => void;
+  onBackgroundPaintingModeToggle: () => void;
   // Settings tab props
   gridWidth: number;
   gridHeight: number;
@@ -41,10 +44,7 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
   activeTab,
   // Paint props
   selectedTexture,
-  selectedColor,
   onTextureSelect,
-  onColorSelect,
-  onTextureClear,
   // Icons props
   selectedIcon,
   selectedIconColor,
@@ -53,6 +53,11 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
   // Borders props
   selectedBorderColor,
   onBorderColorSelect,
+  // Backgrounds props
+  selectedBackgroundShaderColor,
+  backgroundPaintingMode,
+  onBackgroundShaderColorSelect,
+  onBackgroundPaintingModeToggle,
   // Settings props
   gridWidth,
   gridHeight,
@@ -88,10 +93,11 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
           <div className={isMobile ? 'mobile-section' : ''} style={sectionWrapperStyle}>
             <PaintOptionsGrid 
               selectedTexture={selectedTexture}
-              selectedColor={selectedColor}
+              selectedBackgroundColor={selectedBackgroundShaderColor}
+              backgroundPaintingMode={backgroundPaintingMode}
               onTextureSelect={onTextureSelect}
-              onColorSelect={onColorSelect}
-              onTextureClear={onTextureClear}
+              onBackgroundColorSelect={onBackgroundShaderColorSelect}
+              onBackgroundPaintingModeToggle={onBackgroundPaintingModeToggle}
               isMobile={isMobile}
             />
           </div>

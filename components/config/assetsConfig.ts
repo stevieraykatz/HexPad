@@ -65,6 +65,30 @@ export const PAINT_OPTIONS: readonly AssetItem[] = [
     path: "/assets/terrain/coast.png",
   },
   {
+    name: "coast-2",
+    displayName: "Coast2",
+    type: "texture",
+    path: "/assets/terrain/coast/02.png",
+  },
+  {
+    name: "coast-3",
+    displayName: "Coast3",
+    type: "texture",
+    path: "/assets/terrain/coast/03.png",
+  },
+  {
+    name: "coast-4",
+    displayName: "Coast4",
+    type: "texture",
+    path: "/assets/terrain/coast/04.png",
+  },
+  {
+    name: "coast-5",
+    displayName: "Coast5",
+    type: "texture",
+    path: "/assets/terrain/coast/05.png",
+  },
+  {
     name: "desert",
     displayName: "Desert",
     type: "texture",

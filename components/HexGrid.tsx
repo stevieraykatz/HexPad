@@ -47,9 +47,11 @@ interface HexGridProps {
   onHexClick?: (row: number, col: number) => void;
   onEdgeClick?: (fromHex: string, toHex: string) => void;
   getHexColor?: (row: number, col: number) => HexColor | HexTexture | undefined;
+  getHexBackgroundColor?: (row: number, col: number) => HexColor | undefined;
   getHexIcon?: (row: number, col: number) => ColoredIcon | undefined;
 
   hexColorsVersion?: number;
+  hexBackgroundColorsVersion?: number;
   hexIconsVersion?: number;
   backgroundColor?: { rgb: RGB };
   borders?: Record<string, BorderEdge>;
@@ -70,9 +72,11 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   onHexClick, 
   onEdgeClick,
   getHexColor, 
+  getHexBackgroundColor,
   getHexIcon,
 
   hexColorsVersion = 0,
+  hexBackgroundColorsVersion = 0,
   hexIconsVersion = 0,
   backgroundColor,
   borders,
@@ -154,13 +158,31 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       getHexIcon,
       numberingMode
     });
-  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, borders, getHexIcon, numberingMode]);
+  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, getHexBackgroundColor, borders, getHexIcon, numberingMode]);
 
   useImperativeHandle(ref, () => ({
     exportAsPNG
   }), [exportAsPNG]);
 
-  const getHexagonStyle = useCallback((row: number, col: number): HexStyle => {
+  // Helper function to convert hex color strings to RGB arrays
+  const hexToRgb = useCallback((hex: string): [number, number, number] | null => {
+    if (!hex.startsWith('#') || hex.length !== 7) {
+      return null;
+    }
+    
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    
+    if (isNaN(r) || isNaN(g) || isNaN(b)) {
+      return null;
+    }
+    
+    // Convert to WebGL 0-1 range
+    return [r / 255, g / 255, b / 255];
+  }, []);
+
+  const getHexagonStyle = useCallback((row: number, col: number): HexStyle | undefined => {
     const userTexture = getHexColor && getHexColor(row, col);
     
     if (userTexture) {
@@ -181,7 +203,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       }
     }
     
-    return { type: 'color', rgb: DEFAULT_COLORS.GREY_RGB };
+    // Return undefined when there's no main texture - let background layer handle the color
+    return undefined;
   }, [getHexColor]);
 
   const handleWheel = useCallback((event: WheelEvent): void => {
@@ -268,16 +291,29 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     const hexPositions = hexPositionsRef.current;
 
     hexPositions.forEach((pos) => {
+      // First layer: Render background color if it exists
+      const backgroundColorHex = getHexBackgroundColor && getHexBackgroundColor(pos.row, pos.col);
+      if (backgroundColorHex) {
+        const backgroundRgb = hexToRgb(backgroundColorHex);
+        if (backgroundRgb) {
+          const backgroundStyle = { type: 'color' as const, rgb: backgroundRgb };
+          renderColorHexagon(gl, colorProgram, pos, backgroundStyle, hexRadius, canvas);
+        }
+      }
+      
+      // Second layer: Render main texture/color on top (only if it exists)
       const style = getHexagonStyle(pos.row, pos.col);
       
-      if (style.type === 'color' && style.rgb) {
-        renderColorHexagon(gl, colorProgram, pos, style, hexRadius, canvas);
-      } else if (style.type === 'texture' && style.path && style.name) {
-        renderTextureHexagon(gl, textureProgram, pos, style, hexRadius, canvas);
+      if (style) {
+        if (style.type === 'color' && style.rgb) {
+          renderColorHexagon(gl, colorProgram, pos, style, hexRadius, canvas);
+        } else if (style.type === 'texture' && style.path && style.name) {
+          renderTextureHexagon(gl, textureProgram, pos, style, hexRadius, canvas);
+        }
       }
     });
 
-  }, [getHexagonStyle, backgroundColor]);
+  }, [getHexagonStyle, getHexBackgroundColor, backgroundColor, hexToRgb]);
 
   // Shared painting logic for both mouse and touch events
   const handlePaintAtPosition = useCallback((clientX: number, clientY: number): void => {
@@ -681,7 +717,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     if (glRef.current && colorProgramRef.current && textureProgramRef.current) {
       renderGrid();
     }
-  }, [hexColorsVersion, hexIconsVersion, renderGrid]);
+  }, [hexColorsVersion, hexBackgroundColorsVersion, hexIconsVersion, renderGrid]);
 
   useEffect(() => {
     if (hexPositionsRef.current.length > 0 && hexRadiusRef.current > 0) {
