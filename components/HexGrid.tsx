@@ -57,6 +57,7 @@ interface HexGridProps {
   activeTab?: 'paint' | 'icons' | 'borders' | 'settings';
   selectedIcon?: IconItem | null;
   numberingMode?: NumberingMode;
+  onCanvasInteraction?: () => void; // Callback for when user interacts with canvas
 }
 
 export interface HexGridRef {
@@ -78,7 +79,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   bordersVersion = 0,
   activeTab = 'paint',
   selectedIcon = null,
-  numberingMode = 'off'
+  numberingMode = 'off',
+  onCanvasInteraction
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bordersCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -297,6 +299,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   const handleMouseDown = useCallback((event: MouseEvent): void => {
     event.preventDefault();
     
+    // Notify parent of canvas interaction for menu closing
+    onCanvasInteraction?.();
+    
     if (event.button === 1) { // Middle mouse button for panning
       setIsPanning(true);
       setLastPanPosition({ x: event.clientX, y: event.clientY });
@@ -306,7 +311,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       clearPaintedBorders();
       handlePaintAtPosition(event.clientX, event.clientY);
     }
-  }, [handlePaintAtPosition, clearPaintedBorders]);
+  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction]);
 
   const handleMouseMove = useCallback((event: MouseEvent): void => {
     if (isPanning && lastPanPosition) {
@@ -362,12 +367,15 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     const touch = event.touches[0];
     if (!touch) return;
     
+    // Notify parent of canvas interaction for menu closing
+    onCanvasInteraction?.();
+    
     setIsDragging(true);
     paintedDuringDragRef.current.clear();
     clearPaintedBorders();
     
     handlePaintAtPosition(touch.clientX, touch.clientY);
-  }, [handlePaintAtPosition, clearPaintedBorders]);
+  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction]);
 
   const handleTouchMove = useCallback((event: TouchEvent): void => {
     event.preventDefault(); // Prevent page scrolling

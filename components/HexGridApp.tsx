@@ -19,6 +19,7 @@ import type { EncodingMap } from '../utils/gridEncoding';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { useGridState } from '../hooks/useGridState';
 import { useMobileDetection } from '../hooks/useMobileDetection';
+import { useSwipeDetection } from '../hooks/useSwipeDetection';
 import {
   createTextureSelectHandler,
   createTextureClearHandler,
@@ -42,11 +43,35 @@ const HexGridApp: React.FC = () => {
   const [selectedBackgroundColor, setSelectedBackgroundColor] = useState<BackgroundColor>(BACKGROUND_COLORS[0]);
   const [numberingMode, setNumberingMode] = useState<NumberingMode>('off');
   const hexGridRef = useRef<HexGridRef>(null);
+  const appContainerRef = useRef<HTMLDivElement>(null);
   
   const [encodingMap, setEncodingMap] = useState<EncodingMap | null>(null);
   
   // Mobile detection
   const { isMobile } = useMobileDetection();
+
+  // Swipe gesture handlers for mobile
+  const handleSwipeUp = useCallback(() => {
+    if (isMobile && !menuOpen) {
+      setMenuOpen(true);
+    }
+  }, [isMobile, menuOpen]);
+
+  const handleSwipeDown = useCallback(() => {
+    if (isMobile && menuOpen) {
+      setMenuOpen(false);
+    }
+  }, [isMobile, menuOpen]);
+
+  // Set up swipe detection for mobile
+  useSwipeDetection(appContainerRef, {
+    onSwipeUp: handleSwipeUp,
+    onSwipeDown: handleSwipeDown,
+    touchStartRegion: 'bottom', // Only detect swipes starting from bottom region
+    regionSize: 100, // 100px from bottom edge
+    minSwipeDistance: 50,
+    maxSwipeTime: 500
+  });
 
   // Auto-minimize menu when painting starts on mobile
   const handlePaintStart = useCallback(() => {
@@ -57,6 +82,13 @@ const HexGridApp: React.FC = () => {
 
   // Close menu when clicking outside on mobile
   const handleBackgroundClick = useCallback(() => {
+    if (isMobile && menuOpen) {
+      setMenuOpen(false);
+    }
+  }, [isMobile, menuOpen]);
+
+  // Close menu when interacting with canvas on mobile
+  const handleCanvasInteraction = useCallback(() => {
     if (isMobile && menuOpen) {
       setMenuOpen(false);
     }
@@ -193,6 +225,7 @@ const HexGridApp: React.FC = () => {
 
   return (
     <div 
+      ref={appContainerRef}
       className="App" 
       style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}
       onClick={handleBackgroundClick}
@@ -305,6 +338,7 @@ const HexGridApp: React.FC = () => {
           bordersVersion={bordersVersion}
           activeTab={activeTab}
           selectedIcon={selectedIcon}
+          onCanvasInteraction={handleCanvasInteraction}
         />
       </div>
 
