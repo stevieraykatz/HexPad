@@ -19,30 +19,60 @@ const TabButtons: React.FC<TabButtonsProps> = ({
   onMenuToggle,
   isMobile = false
 }) => {
-  const createTabButtonStyle = (tab: 'paint' | 'icons' | 'borders' | 'settings', isActive: boolean) => ({
-    width: (isActive && menuOpen) ? '60px' : '50px',
-    height: (isActive && menuOpen) ? '60px' : '50px',
-    background: (isActive && menuOpen) 
-      ? (tab === 'paint' || tab === 'borders' ? UI_CONFIG.COLORS.SELECTED_BACKGROUND : UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND)
-      : UI_CONFIG.COLORS.OVERLAY_BACKGROUND,
-    backdropFilter: UI_CONFIG.BLUR.LIGHT,
-    border: (isActive && menuOpen) 
-      ? `2px solid ${tab === 'paint' || tab === 'borders' ? UI_CONFIG.COLORS.SELECTED_BORDER : UI_CONFIG.COLORS.SELECTED_ALT_BORDER}`
-      : `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-    borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
-    color: UI_CONFIG.COLORS.TEXT_PRIMARY,
-    cursor: 'pointer',
-    fontSize: (isActive && menuOpen) ? '24px' : '20px',
-    transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-    boxShadow: (isActive && menuOpen) ? UI_CONFIG.BOX_SHADOW.SELECTED : UI_CONFIG.BOX_SHADOW.LIGHT,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  });
+  const createTabButtonStyle = (tab: 'paint' | 'icons' | 'borders' | 'settings', isActive: boolean) => {
+    // Determine background based on active state and menu state
+    let background = UI_CONFIG.COLORS.OVERLAY_BACKGROUND;
+    let border = `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`;
+    let boxShadow = UI_CONFIG.BOX_SHADOW.LIGHT;
+    
+    if (isActive) {
+      if (menuOpen) {
+        // Full active styling when menu is open
+        background = tab === 'paint' || tab === 'borders' 
+          ? UI_CONFIG.COLORS.SELECTED_BACKGROUND 
+          : UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND;
+        border = `2px solid ${tab === 'paint' || tab === 'borders' 
+          ? UI_CONFIG.COLORS.SELECTED_BORDER 
+          : UI_CONFIG.COLORS.SELECTED_ALT_BORDER}`;
+        boxShadow = UI_CONFIG.BOX_SHADOW.SELECTED;
+      } else {
+        // Subtle active styling when menu is closed
+        background = tab === 'paint' || tab === 'borders'
+          ? 'rgba(59, 130, 246, 0.2)' // Subtle blue tint
+          : 'rgba(168, 85, 247, 0.2)'; // Subtle purple tint
+        border = `2px solid ${tab === 'paint' || tab === 'borders' 
+          ? 'rgba(59, 130, 246, 0.6)' 
+          : 'rgba(168, 85, 247, 0.6)'}`;
+        boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+      }
+    }
+    
+    return {
+      width: (isActive && menuOpen) ? '60px' : '50px',
+      height: (isActive && menuOpen) ? '60px' : '50px',
+      background,
+      backdropFilter: UI_CONFIG.BLUR.LIGHT,
+      border,
+      borderRadius: UI_CONFIG.BORDER_RADIUS.LARGE,
+      color: isActive ? '#ffffff' : UI_CONFIG.COLORS.TEXT_PRIMARY,
+      cursor: 'pointer',
+      fontSize: (isActive && menuOpen) ? '24px' : '20px',
+      transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+      boxShadow,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    };
+  };
 
-  const handleTabClick = (tab: 'paint' | 'icons' | 'borders' | 'settings') => {
+  const handleTabClick = (tab: 'paint' | 'icons' | 'borders' | 'settings', event?: React.MouseEvent) => {
+    // Prevent event from bubbling up to parent handlers
+    event?.stopPropagation();
+    
     onTabChange(tab);
-    if (!menuOpen) onMenuToggle();
+    if (!menuOpen) {
+      onMenuToggle();
+    }
     
     // Clear eraser state when switching to paint tab
     if (tab === 'paint' && selectedIcon?.name === 'eraser') {
@@ -81,7 +111,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({
       {/* Paint Menu Button */}
       <button
         className="mobile-tab-button"
-        onClick={() => handleTabClick('paint')}
+        onClick={(e) => handleTabClick('paint', e)}
         style={createTabButtonStyle('paint', activeTab === 'paint')}
         title="Paint Tools"
       >
@@ -91,7 +121,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({
       {/* Icons Menu Button */}
       <button
         className="mobile-tab-button"
-        onClick={() => handleTabClick('icons')}
+        onClick={(e) => handleTabClick('icons', e)}
         style={createTabButtonStyle('icons', activeTab === 'icons')}
         title="Icon Overlays"
       >
@@ -101,7 +131,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({
       {/* Borders Menu Button */}
       <button
         className="mobile-tab-button"
-        onClick={() => handleTabClick('borders')}
+        onClick={(e) => handleTabClick('borders', e)}
         style={createTabButtonStyle('borders', activeTab === 'borders')}
         title="Border Tools"
       >
@@ -111,7 +141,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({
       {/* Settings Menu Button */}
       <button
         className="mobile-tab-button"
-        onClick={() => handleTabClick('settings')}
+        onClick={(e) => handleTabClick('settings', e)}
         style={createTabButtonStyle('settings', activeTab === 'settings')}
         title="Grid Settings"
       >

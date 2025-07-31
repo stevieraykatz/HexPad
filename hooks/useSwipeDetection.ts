@@ -68,7 +68,21 @@ export const useSwipeDetection = (
           break;
       }
 
-      if (!isInRegion) return;
+      if (!isInRegion) {
+        console.log('Touch not in region:', touchStartRegion, 'position:', touchX, touchY, 'regionSize:', regionSize);
+        return;
+      }
+
+      // Only exclude canvas interactions since they have their own painting logic
+      const target = e.target as HTMLElement;
+      const isCanvas = target && (
+        target.tagName === 'CANVAS' ||
+        target.closest('canvas')
+      );
+      
+      if (isCanvas) {
+        return; // Don't interfere with canvas painting
+      }
 
       touchDataRef.current = {
         startX: touch.clientX,
@@ -80,7 +94,9 @@ export const useSwipeDetection = (
 
     const handleTouchEnd = (e: TouchEvent) => {
       const touchData = touchDataRef.current;
-      if (!touchData) return;
+      if (!touchData) {
+        return;
+      }
 
       const touch = e.changedTouches[0];
       if (!touch) return;
@@ -106,27 +122,65 @@ export const useSwipeDetection = (
       }
 
       // Determine swipe direction (prioritize the larger delta)
+      let swipeDetected = false;
+      
       if (absDeltaY > absDeltaX) {
         // Vertical swipe
         if (deltaY < 0 && onSwipeUp) {
-          e.preventDefault();
           onSwipeUp();
+          swipeDetected = true;
         } else if (deltaY > 0 && onSwipeDown) {
-          e.preventDefault();
           onSwipeDown();
+          swipeDetected = true;
         }
       } else {
         // Horizontal swipe
         if (deltaX < 0 && onSwipeLeft) {
-          e.preventDefault();
           onSwipeLeft();
+          swipeDetected = true;
         } else if (deltaX > 0 && onSwipeRight) {
-          e.preventDefault();
           onSwipeRight();
+          swipeDetected = true;
+        }
+      }
+      
+      // If we detected a swipe, prevent default behavior (like button clicks)
+      if (swipeDetected) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+        e.stopPropagation();
+        
+        // Also prevent any pending button clicks by checking the original touch target
+        const target = document.elementFromPoint(touchData.startX, touchData.startY) as HTMLElement;
+        if (target && (target.tagName === 'BUTTON' || target.closest('button'))) {
+          // Blur the button to prevent any focus-related side effects
+          if (target.blur) target.blur();
         }
       }
 
       touchDataRef.current = null;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touchData = touchDataRef.current;
+      if (!touchData) return;
+
+      const touch = e.touches[0];
+      if (!touch) return;
+
+      const deltaX = touch.clientX - touchData.startX;
+      const deltaY = touch.clientY - touchData.startY;
+      const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+      // If we've moved significantly, this is likely a swipe gesture
+      // Prevent default to stop any button hover effects or other interactions
+      if (totalMovement > 20) { // 20px threshold for movement
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+        e.stopPropagation();
+      }
     };
 
     const handleTouchCancel = () => {
@@ -135,11 +189,13 @@ export const useSwipeDetection = (
 
     // Add event listeners
     element.addEventListener('touchstart', handleTouchStart, { passive: true });
+    element.addEventListener('touchmove', handleTouchMove, { passive: false });
     element.addEventListener('touchend', handleTouchEnd, { passive: false });
     element.addEventListener('touchcancel', handleTouchCancel, { passive: true });
 
     return () => {
       element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchmove', handleTouchMove);
       element.removeEventListener('touchend', handleTouchEnd);
       element.removeEventListener('touchcancel', handleTouchCancel);
     };

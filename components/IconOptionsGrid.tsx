@@ -15,14 +15,16 @@ const IconOptionsGrid: React.FC<IconOptionsGridProps> = ({
   selectedIcon, 
   selectedIconColor,
   onIconSelect,
-  onIconColorSelect
+  onIconColorSelect,
+  isMobile = false
 }) => {
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
       gap: UI_CONFIG.SPACING.LARGE,
-      width: '100%'
+      width: '100%',
+      paddingBottom: isMobile ? UI_CONFIG.SPACING.LARGE : UI_CONFIG.SPACING.XLARGE
     }}>
       {/* Icon Preview */}
       <div style={{
@@ -129,15 +131,17 @@ const IconOptionsGrid: React.FC<IconOptionsGridProps> = ({
         borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
         padding: UI_CONFIG.SPACING.MEDIUM
       }}>
-        <div style={{ 
-          display: 'grid',
-          gridTemplateColumns: `repeat(${UI_CONFIG.PAINT_OPTIONS.GRID_COLUMNS}, 1fr)`,
-          gap: UI_CONFIG.PAINT_OPTIONS.TILE_GAP,
-          maxHeight: UI_CONFIG.PAINT_OPTIONS.MAX_HEIGHT,
-          overflowY: 'auto',
-          justifyContent: 'center',
-          justifyItems: 'center'
-        }}>
+        <div 
+          className={isMobile ? 'mobile-paint-grid' : ''}
+          style={{ 
+            display: 'grid',
+            gridTemplateColumns: isMobile ? `repeat(3, 1fr)` : `repeat(${UI_CONFIG.PAINT_OPTIONS.GRID_COLUMNS}, 1fr)`,
+            gap: isMobile ? '8px' : UI_CONFIG.PAINT_OPTIONS.TILE_GAP,
+            maxHeight: isMobile ? '300px' : UI_CONFIG.PAINT_OPTIONS.MAX_HEIGHT,
+            overflowY: 'auto',
+            justifyContent: 'center',
+            justifyItems: 'center'
+          }}>
           {ICON_OPTIONS.map((icon: IconItem) => (
             <button
               key={icon.name}

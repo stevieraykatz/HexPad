@@ -63,14 +63,13 @@ const HexGridApp: React.FC = () => {
     }
   }, [isMobile, menuOpen]);
 
-  // Set up swipe detection for mobile
+  // Set up swipe detection for mobile (only when menu is closed or for closing)
   useSwipeDetection(appContainerRef, {
     onSwipeUp: handleSwipeUp,
     onSwipeDown: handleSwipeDown,
-    touchStartRegion: 'bottom', // Only detect swipes starting from bottom region
-    regionSize: 100, // 100px from bottom edge
-    minSwipeDistance: 50,
-    maxSwipeTime: 500
+    touchStartRegion: 'all', // Allow swipes from anywhere except canvas
+    minSwipeDistance: 50, // Reduced threshold for easier triggering
+    maxSwipeTime: 800 // Increased time allowance
   });
 
   // Auto-minimize menu when painting starts on mobile
