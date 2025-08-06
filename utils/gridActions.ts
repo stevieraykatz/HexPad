@@ -1,18 +1,11 @@
 import type { TextureItem, IconItem, HexTexture } from '../components/config';
 import type { ColoredIcon } from '../components/config/iconsConfig';
 import type { EncodingMap, CompleteGridState } from './gridEncoding';
-import { PAINT_OPTIONS, GRID_CONFIG } from '../components/config';
+import { GRID_CONFIG } from '../components/config';
 import { generateGridUrl } from './gridEncoding';
 
 type HexColorsMap = Record<string, string | HexTexture>;
 type BordersMap = Record<string, { fromHex: string; toHex: string; color: string }>;
-
-interface HistoryEntry {
-  iconState: Record<string, ColoredIcon>;
-  colorState: HexColorsMap;
-  borderState: BordersMap;
-  changedType: 'icons' | 'colors' | 'borders';
-}
 
 interface GridActionHelpers {
   setSelectedTexture: (texture: HexTexture | null) => void;
