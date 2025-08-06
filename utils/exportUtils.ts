@@ -20,6 +20,7 @@ export interface HexStyle {
   rgb?: RGB;
   path?: string;
   name?: string;
+  rotation?: number; // Rotation in 1/6th increments (0-5)
 }
 
 export interface BorderEdge {
@@ -121,9 +122,15 @@ export const renderTextureHexagon = (
   const texCoordAttributeLocation = gl.getAttribLocation(textureProgram, 'a_texCoord');
   const resolutionUniformLocation = gl.getUniformLocation(textureProgram, 'u_resolution');
   const translationUniformLocation = gl.getUniformLocation(textureProgram, 'u_translation');
+  const rotationUniformLocation = gl.getUniformLocation(textureProgram, 'u_rotation');
   const textureUniformLocation = gl.getUniformLocation(textureProgram, 'u_texture');
   
   gl.uniform2f(resolutionUniformLocation, canvasSize.width, canvasSize.height);
+  
+  // Convert rotation from 1/6th increments to radians
+  // Each increment is 60 degrees = π/3 radians
+  const rotationRadians = (style.rotation || 0) * (Math.PI / 3);
+  gl.uniform1f(rotationUniformLocation, rotationRadians);
   
   const { vertices, texCoords } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, true);
   

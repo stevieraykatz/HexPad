@@ -37,9 +37,18 @@ interface HexTexture {
   displayName: string;
   rgb?: RGB;
   path?: string;
+  rotation?: number; // Rotation in 1/6th increments (0-5)
 }
 
 type HexColor = string;
+
+// Button regions for tile manipulation
+type ButtonRegion = 'center' | 'left' | 'right' | null;
+
+interface TileHoverState {
+  hex: HexPosition | null;
+  buttonRegion: ButtonRegion;
+}
 
 interface HexGridProps {
   gridWidth?: number;
@@ -60,6 +69,9 @@ interface HexGridProps {
   selectedIcon?: IconItem | null;
   numberingMode?: NumberingMode;
   onCanvasInteraction?: () => void; // Callback for when user interacts with canvas
+  // Tile manipulation props
+  menuOpen?: boolean;
+  onTileTextureAction?: (row: number, col: number, action: 'cycle' | 'rotate-left' | 'rotate-right') => void;
 }
 
 export interface HexGridRef {
@@ -84,7 +96,10 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   activeTab = 'paint',
   selectedIcon = null,
   numberingMode = 'off',
-  onCanvasInteraction
+  onCanvasInteraction,
+  // Tile manipulation props
+  menuOpen = false,
+  onTileTextureAction
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bordersCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -107,6 +122,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   const hexRadiusRef = useRef<number>(0);
   const paintedDuringDragRef = useRef<Set<string>>(new Set());
   const texturesRef = useRef<Map<string, WebGLTexture>>(new Map());
+  
+  // Tile manipulation state
+  const [tileHoverState, setTileHoverState] = useState<TileHoverState>({ hex: null, buttonRegion: null });
 
   // Border interaction hook
   const {
@@ -182,6 +200,33 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     return [r / 255, g / 255, b / 255];
   }, []);
 
+  // Helper function to determine which button region the mouse is in within a hex
+  const getButtonRegion = useCallback((mouseX: number, mouseY: number, hexPos: HexPosition, hexRadius: number): ButtonRegion => {
+    const deltaX = mouseX - hexPos.x;
+    const deltaY = mouseY - hexPos.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // Only detect button regions if within the hex
+    if (distance > hexRadius * 0.8) return null;
+    
+    // Divide hex into three vertical zones for left, center, right
+    const hexWidth = hexRadius * 1.5; // Approximate hex width
+    const zoneWidth = hexWidth / 3;
+    
+    if (deltaX < -zoneWidth / 2) return 'left';
+    if (deltaX > zoneWidth / 2) return 'right';
+    return 'center';
+  }, []);
+
+  // Helper function to handle tile manipulation clicks
+  const handleTileManipulation = useCallback((hex: HexPosition, buttonRegion: ButtonRegion): void => {
+    if (!menuOpen || !onTileTextureAction || !buttonRegion) return;
+    
+    const action = buttonRegion === 'center' ? 'cycle' : 
+                   buttonRegion === 'left' ? 'rotate-right' : 'rotate-left';
+    onTileTextureAction(hex.row, hex.col, action);
+  }, [menuOpen, onTileTextureAction]);
+
   const getHexagonStyle = useCallback((row: number, col: number): HexStyle | undefined => {
     const userTexture = getHexColor && getHexColor(row, col);
     
@@ -199,7 +244,12 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       }
       
       if (typeof userTexture === 'object' && userTexture.type === 'texture') {
-        return { type: 'texture', path: userTexture.path, name: userTexture.name };
+        return { 
+          type: 'texture', 
+          path: userTexture.path, 
+          name: userTexture.name,
+          rotation: userTexture.rotation || 0
+        };
       }
     }
     
@@ -341,13 +391,35 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     if (event.button === 1) { // Middle mouse button for panning
       setIsPanning(true);
       setLastPanPosition({ x: event.clientX, y: event.clientY });
-    } else if (event.button === 0) { // Left mouse button for painting
+    } else if (event.button === 0) { // Left mouse button
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        // Check for tile manipulation if menu is open and there's a hex texture
+        // BUT: Always allow eraser to work regardless of tile manipulation
+        if (menuOpen && tileHoverState.hex && tileHoverState.buttonRegion && selectedIcon?.name !== 'eraser') {
+          const clickedHex = getHexFromMousePos(x, y, hexPositionsRef.current, hexRadiusRef.current);
+          if (clickedHex && clickedHex.row === tileHoverState.hex.row && clickedHex.col === tileHoverState.hex.col) {
+            const currentTexture = getHexColor && getHexColor(clickedHex.row, clickedHex.col);
+            // Only allow manipulation on textured tiles
+            if (currentTexture && typeof currentTexture === 'object' && currentTexture.type === 'texture') {
+              handleTileManipulation(clickedHex, tileHoverState.buttonRegion);
+              return; // Don't proceed with normal painting
+            }
+          }
+        }
+      }
+      
+      // Normal painting behavior
       setIsDragging(true);
       paintedDuringDragRef.current.clear();
       clearPaintedBorders();
       handlePaintAtPosition(event.clientX, event.clientY);
     }
-  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction]);
+  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction, menuOpen, tileHoverState, getHexColor, handleTileManipulation]);
 
   const handleMouseMove = useCallback((event: MouseEvent): void => {
     if (isPanning && lastPanPosition) {
@@ -375,8 +447,30 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     } else if (isDragging) {
       // Handle painting
       handlePaintAtPosition(event.clientX, event.clientY);
+    } else if (menuOpen && !isDragging && !isPanning) {
+      // Track hover state for tile manipulation when menu is open
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        const hoveredHex = getHexFromMousePos(x, y, hexPositionsRef.current, hexRadiusRef.current);
+        if (hoveredHex) {
+          const currentTexture = getHexColor && getHexColor(hoveredHex.row, hoveredHex.col);
+          // Only show button regions for textured tiles
+          if (currentTexture && typeof currentTexture === 'object' && currentTexture.type === 'texture') {
+            const buttonRegion = getButtonRegion(x, y, hoveredHex, hexRadiusRef.current);
+            setTileHoverState({ hex: hoveredHex, buttonRegion });
+          } else {
+            setTileHoverState({ hex: null, buttonRegion: null });
+          }
+        } else {
+          setTileHoverState({ hex: null, buttonRegion: null });
+        }
+      }
     }
-  }, [isDragging, isPanning, lastPanPosition, panOffset, gridWidth, gridHeight, canvasSize, handlePaintAtPosition]);
+  }, [isDragging, isPanning, lastPanPosition, panOffset, gridWidth, gridHeight, canvasSize, handlePaintAtPosition, menuOpen, getHexColor, getButtonRegion]);
 
   const handleMouseUp = useCallback((event: MouseEvent): void => {
     if (event.button === 1) { // Middle mouse button
@@ -395,6 +489,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     setLastPanPosition(null);
     paintedDuringDragRef.current.clear();
     clearPaintedBorders();
+    // Clear tile hover state when mouse leaves canvas
+    setTileHoverState({ hex: null, buttonRegion: null });
   }, [clearPaintedBorders]);
 
   // Touch event handlers
@@ -496,9 +592,15 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         const texCoordAttributeLocation = gl.getAttribLocation(textureProgram, 'a_texCoord');
         const resolutionUniformLocation = gl.getUniformLocation(textureProgram, 'u_resolution');
         const translationUniformLocation = gl.getUniformLocation(textureProgram, 'u_translation');
+        const rotationUniformLocation = gl.getUniformLocation(textureProgram, 'u_rotation');
         const textureUniformLocation = gl.getUniformLocation(textureProgram, 'u_texture');
         
         gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
+        
+        // Convert rotation from 1/6th increments to radians
+        // Each increment is 60 degrees = π/3 radians
+        const rotationRadians = (style.rotation || 0) * (Math.PI / 3);
+        gl.uniform1f(rotationUniformLocation, rotationRadians);
         
     const { vertices, texCoords } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, true);
         
@@ -883,6 +985,86 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Tile Manipulation Button Regions Overlay */}
+      {menuOpen && tileHoverState.hex && tileHoverState.buttonRegion && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 4
+        }}>
+          {(() => {
+            const hex = tileHoverState.hex;
+            const buttonRegion = tileHoverState.buttonRegion;
+            const hexRadius = throttledRadius;
+            
+            // Define button region dimensions
+            const regionWidth = hexRadius * 0.6;
+            const regionHeight = hexRadius * 1.2;
+            
+            // Calculate positions for different button regions
+            let regionX = hex.x;
+            let regionY = hex.y - regionHeight / 2;
+            
+            if (buttonRegion === 'left') {
+              regionX = hex.x - hexRadius * 0.5;
+            } else if (buttonRegion === 'right') {
+              regionX = hex.x + hexRadius * 0.5;
+            }
+            
+            // Center the region
+            regionX -= regionWidth / 2;
+            
+            // Different visual styles for different button regions
+            const getRegionColor = () => {
+              if (buttonRegion === 'center') return 'rgba(100, 200, 255, 0.3)';
+              if (buttonRegion === 'left') return 'rgba(255, 150, 100, 0.3)';
+              if (buttonRegion === 'right') return 'rgba(100, 255, 150, 0.3)';
+              return 'rgba(255, 255, 255, 0.2)';
+            };
+            
+            const getBrightColor = () => {
+              if (buttonRegion === 'center') return 'rgba(100, 200, 255, 0.6)';
+              if (buttonRegion === 'left') return 'rgba(255, 150, 100, 0.6)';
+              if (buttonRegion === 'right') return 'rgba(100, 255, 150, 0.6)';
+              return 'rgba(255, 255, 255, 0.4)';
+            };
+
+            return (
+              <div
+                key={`${hex.row}-${hex.col}-${buttonRegion}`}
+                style={{
+                  position: 'absolute',
+                  left: regionX,
+                  top: regionY,
+                  width: regionWidth,
+                  height: regionHeight,
+                  backgroundColor: getBrightColor(),
+                  border: `2px solid ${getBrightColor()}`,
+                  borderRadius: '8px',
+                  pointerEvents: 'none',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: `${hexRadius * 0.2}px`,
+                  color: 'white',
+                  fontWeight: 'bold',
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
+                }}
+              >
+                {buttonRegion === 'center' && '↻'}
+                {buttonRegion === 'left' && '↻'}
+                {buttonRegion === 'right' && '↺'}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

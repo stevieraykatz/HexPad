@@ -92,24 +92,24 @@ export function createMenuToggleHandler(menuOpen: boolean, helpers: GridActionHe
 export function createTabChangeHandler(selectedIcon: IconItem | null, helpers: GridActionHelpers) {
   return (tab: 'paint' | 'icons' | 'borders' | 'settings'): void => {
     helpers.setActiveTab(tab);
-    // Clear eraser state when switching to paint tab
-    if (tab === 'paint' && selectedIcon?.name === 'eraser') {
-      helpers.setSelectedIcon(null);
-    }
+    // Don't clear eraser state when switching tabs - eraser should work in all tabs
+    // if (tab === 'paint' && selectedIcon?.name === 'eraser') {
+    //   helpers.setSelectedIcon(null);
+    // }
   };
 }
 
 // Eraser toggle handler
 export function createEraserToggleHandler(
   selectedIcon: IconItem | null,
-  handleIconSelect: (icon: IconItem) => void
+  helpers: GridActionHelpers
 ) {
   return (): void => {
     // Toggle eraser - deselect if already selected, select if not
     if (selectedIcon?.name === 'eraser') {
-      handleIconSelect(null as any); // Will be handled by setSelectedIcon(null)
+      helpers.setSelectedIcon(null);
     } else {
-      handleIconSelect({ name: 'eraser', displayName: 'Eraser', type: 'icon', path: '' } as IconItem);
+      helpers.setSelectedIcon({ name: 'eraser', displayName: 'Eraser', type: 'icon', path: '' } as IconItem);
     }
   };
 }

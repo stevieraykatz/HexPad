@@ -41,6 +41,7 @@ export const SHADER_SOURCES = {
     attribute vec2 a_texCoord;
     uniform vec2 u_resolution;
     uniform vec2 u_translation;
+    uniform float u_rotation; // Rotation in radians
     varying vec2 v_texCoord;
     
     void main() {
@@ -49,7 +50,19 @@ export const SHADER_SOURCES = {
       vec2 zeroToTwo = zeroToOne * 2.0;
       vec2 clipSpace = zeroToTwo - 1.0;
       gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-      v_texCoord = a_texCoord;
+      
+      // Apply rotation to texture coordinates around center (0.5, 0.5)
+      vec2 centeredCoord = a_texCoord - 0.5;
+      float cosAngle = cos(u_rotation);
+      float sinAngle = sin(u_rotation);
+      
+      // 2D rotation matrix
+      vec2 rotatedCoord = vec2(
+        centeredCoord.x * cosAngle - centeredCoord.y * sinAngle,
+        centeredCoord.x * sinAngle + centeredCoord.y * cosAngle
+      );
+      
+      v_texCoord = rotatedCoord + 0.5;
     }
   `,
 

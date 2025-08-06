@@ -63,4 +63,5 @@ export interface HexTexture {
   displayName: string;
   rgb?: [number, number, number];
   path?: string;
+  rotation?: number; // Rotation in 1/6th increments (0-5)
 } 

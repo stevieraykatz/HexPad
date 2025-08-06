@@ -224,7 +224,7 @@ const HexGridApp: React.FC = () => {
   const handleIconSelect = createIconSelectHandler(gridActionHelpers);
   const handleMenuToggle = createMenuToggleHandler(menuOpen, gridActionHelpers);
   const handleTabChange = createTabChangeHandler(selectedIcon, gridActionHelpers);
-  const handleEraserToggle = createEraserToggleHandler(selectedIcon, handleIconSelect);
+  const handleEraserToggle = createEraserToggleHandler(selectedIcon, gridActionHelpers);
   const handleBackgroundPaintingModeToggle = createBackgroundPaintingModeToggleHandler(
     backgroundPaintingMode,
     gridActionHelpers
@@ -244,6 +244,69 @@ const HexGridApp: React.FC = () => {
     gridHeight,
     clearAutosave
   });
+
+  // Tile texture manipulation handler
+  const handleTileTextureAction = useCallback((row: number, col: number, action: 'cycle' | 'rotate-left' | 'rotate-right') => {
+    const hexKey = `${row}-${col}`;
+    const currentTexture = hexColors[hexKey] as HexTexture;
+    
+    if (!currentTexture || typeof currentTexture !== 'object' || currentTexture.type !== 'texture') {
+      return; // Only manipulate texture tiles
+    }
+    
+    if (action === 'cycle') {
+      // Find the next texture variant
+      const baseTextureName = currentTexture.name.split('-')[0]; // e.g., "coast" from "coast-2"
+      
+      // Find all variants of this texture in PAINT_OPTIONS
+      const variants = PAINT_OPTIONS.filter(option => 
+        option.name.startsWith(baseTextureName) && option.name !== baseTextureName
+      ).sort((a, b) => {
+        // Sort by variant number
+        const aNum = parseInt(a.name.split('-')[1] || '1');
+        const bNum = parseInt(b.name.split('-')[1] || '1');
+        return aNum - bNum;
+      });
+      
+      // Include the base texture as variant 1
+      const allVariants = [
+        PAINT_OPTIONS.find(option => option.name === baseTextureName),
+        ...variants
+      ].filter(Boolean);
+      
+      if (allVariants.length > 1) {
+        // Find current index and get next variant
+        const currentIndex = allVariants.findIndex(variant => variant?.name === currentTexture.name);
+        const nextIndex = (currentIndex + 1) % allVariants.length;
+        const nextVariant = allVariants[nextIndex];
+        
+        if (nextVariant) {
+          setHexColors({
+            ...hexColors,
+            [hexKey]: {
+              ...currentTexture,
+              name: nextVariant.name,
+              displayName: nextVariant.displayName,
+              path: nextVariant.path
+            }
+          });
+        }
+      }
+    } else if (action === 'rotate-left' || action === 'rotate-right') {
+      // Handle rotation (for future directional textures)
+      const currentRotation = currentTexture.rotation || 0;
+      const rotationDelta = action === 'rotate-right' ? 1 : -1;
+      const newRotation = (currentRotation + rotationDelta + 6) % 6; // 6 sides in hexagon
+      
+      setHexColors({
+        ...hexColors,
+        [hexKey]: {
+          ...currentTexture,
+          rotation: newRotation
+        }
+      });
+    }
+  }, [hexColors, setHexColors]);
 
   return (
     <div 
@@ -364,6 +427,8 @@ const HexGridApp: React.FC = () => {
           activeTab={activeTab}
           selectedIcon={selectedIcon}
           onCanvasInteraction={handleCanvasInteraction}
+          menuOpen={menuOpen}
+          onTileTextureAction={handleTileTextureAction}
         />
       </div>
 
