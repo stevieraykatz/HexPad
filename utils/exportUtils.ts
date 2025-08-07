@@ -21,6 +21,7 @@ export interface HexStyle {
   path?: string;
   name?: string;
   rotation?: number; // Rotation in 1/6th increments (0-5)
+  highlight?: boolean; // For region highlighting
 }
 
 export interface BorderEdge {

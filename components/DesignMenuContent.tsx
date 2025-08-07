@@ -38,6 +38,8 @@ interface DesignMenuContentProps {
   // Mobile layout
   isMobile?: boolean; // Optional mobile detection for layout adjustments
   onNumberingModeChange: (mode: NumberingMode) => void;
+
+
 }
 
 const DesignMenuContent: React.FC<DesignMenuContentProps> = ({ 
@@ -66,9 +68,9 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
   onWidthChange,
   onHeightChange,
   onBackgroundColorChange,
+  onNumberingModeChange,
   // Mobile layout
-  isMobile = false,
-  onNumberingModeChange
+  isMobile = false
 }) => {
   const sectionTitleStyle = {
     color: UI_CONFIG.COLORS.TEXT_SECONDARY,
@@ -127,6 +129,7 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
               isMobile={isMobile}
             />
           </div>
+
         </>
       )}
       

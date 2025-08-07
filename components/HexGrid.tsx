@@ -54,6 +54,7 @@ interface HexGridProps {
   gridWidth?: number;
   gridHeight?: number;
   onHexClick?: (row: number, col: number) => void;
+  onHexHover?: (row: number | null, col: number | null) => void;
   onEdgeClick?: (fromHex: string, toHex: string) => void;
   getHexColor?: (row: number, col: number) => HexColor | HexTexture | undefined;
   getHexBackgroundColor?: (row: number, col: number) => HexColor | undefined;
@@ -72,6 +73,11 @@ interface HexGridProps {
   // Tile manipulation props
   menuOpen?: boolean;
   onTileTextureAction?: (row: number, col: number, action: 'cycle' | 'rotate-left' | 'rotate-right') => void;
+  // Region highlighting props
+  hoveredRegion?: string | null;
+  getRegionForHex?: (hexCoord: string) => string | null;
+  canApplyRegionBorders?: (regionId: string) => boolean;
+  applyRegionBorders?: (regionId: string) => Promise<void>;
 }
 
 export interface HexGridRef {
@@ -82,6 +88,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   gridWidth = GRID_CONFIG.DEFAULT_WIDTH, 
   gridHeight = GRID_CONFIG.DEFAULT_HEIGHT, 
   onHexClick, 
+  onHexHover,
   onEdgeClick,
   getHexColor, 
   getHexBackgroundColor,
@@ -99,7 +106,12 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   onCanvasInteraction,
   // Tile manipulation props
   menuOpen = false,
-  onTileTextureAction
+  onTileTextureAction,
+  // Region highlighting props
+  hoveredRegion,
+  getRegionForHex,
+  canApplyRegionBorders,
+  applyRegionBorders
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bordersCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -125,6 +137,16 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   
   // Tile manipulation state
   const [tileHoverState, setTileHoverState] = useState<TileHoverState>({ hex: null, buttonRegion: null });
+  
+  // Hover tracking for region detection
+  const [hoveredHex, setHoveredHex] = useState<{ row: number; col: number } | null>(null);
+  
+  // Region border button state
+  const [regionButtonState, setRegionButtonState] = useState<{
+    regionId: string;
+    position: HexPosition;
+    canApply: boolean;
+  } | null>(null);
 
   // Border interaction hook
   const {
@@ -227,20 +249,47 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     onTileTextureAction(hex.row, hex.col, action);
   }, [menuOpen, onTileTextureAction]);
 
+  // Helper function to handle region border application
+  const handleRegionBorderApplication = useCallback(async (regionId: string): Promise<void> => {
+    if (!applyRegionBorders) return;
+    
+    try {
+      await applyRegionBorders(regionId);
+      // Clear the button state after successful application
+      setRegionButtonState(null);
+    } catch (error) {
+      console.error('Failed to apply region borders:', error);
+    }
+  }, [applyRegionBorders]);
+
   const getHexagonStyle = useCallback((row: number, col: number): HexStyle | undefined => {
     const userTexture = getHexColor && getHexColor(row, col);
     
+    // Check if this hex is part of the hovered region for highlighting
+    const hexCoord = `${row}-${col}`;
+    const hexRegionId = getRegionForHex && getRegionForHex(hexCoord);
+    const isHoveredRegion = hoveredRegion && hexRegionId === hoveredRegion;
+    
     if (userTexture) {
       if (userTexture === DEFAULT_COLORS.SELECTED) {
-        return { type: 'color', rgb: DEFAULT_COLORS.GREY_RGB };
+        const rgb = isHoveredRegion 
+          ? [0.52, 0.55, 0.6] as RGB // Slightly brighter for hovered region
+          : DEFAULT_COLORS.GREY_RGB;
+        return { type: 'color', rgb };
       }
       
       if (typeof userTexture === 'object' && userTexture.type === 'color') {
         if (userTexture.rgb) {
-          return { type: 'color', rgb: userTexture.rgb };
+          const rgb = isHoveredRegion 
+            ? [Math.min(1, userTexture.rgb[0] + 0.1), Math.min(1, userTexture.rgb[1] + 0.1), Math.min(1, userTexture.rgb[2] + 0.1)] as RGB
+            : userTexture.rgb;
+          return { type: 'color', rgb };
         }
         // Fallback for color objects without RGB (shouldn't happen with new system)
-        return { type: 'color', rgb: DEFAULT_COLORS.GREY_RGB };
+        const rgb = isHoveredRegion 
+          ? [0.52, 0.55, 0.6] as RGB 
+          : DEFAULT_COLORS.GREY_RGB;
+        return { type: 'color', rgb };
       }
       
       if (typeof userTexture === 'object' && userTexture.type === 'texture') {
@@ -248,14 +297,20 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           type: 'texture', 
           path: userTexture.path, 
           name: userTexture.name,
-          rotation: userTexture.rotation || 0
+          rotation: userTexture.rotation || 0,
+          highlight: !!isHoveredRegion // Add highlight flag for region highlighting
         };
       }
     }
     
+    // If no texture but it's part of hovered region, add a subtle highlight
+    if (isHoveredRegion) {
+      return { type: 'color', rgb: [0.2, 0.3, 0.4] as RGB }; // Subtle blue highlight
+    }
+    
     // Return undefined when there's no main texture - let background layer handle the color
     return undefined;
-  }, [getHexColor]);
+  }, [getHexColor, hoveredRegion, getRegionForHex]);
 
   const handleWheel = useCallback((event: WheelEvent): void => {
     event.preventDefault();
@@ -398,6 +453,15 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
         
+        // Check for region border button click first
+        if (regionButtonState && activeTab === 'borders') {
+          const clickedHex = getHexFromMousePos(x, y, hexPositionsRef.current, hexRadiusRef.current);
+          if (clickedHex && clickedHex.row === regionButtonState.position.row && clickedHex.col === regionButtonState.position.col) {
+            handleRegionBorderApplication(regionButtonState.regionId);
+            return; // Don't proceed with normal actions
+          }
+        }
+
         // Check for tile manipulation if menu is open and there's a hex texture
         // BUT: Always allow eraser to work regardless of tile manipulation
         if (menuOpen && tileHoverState.hex && tileHoverState.buttonRegion && selectedIcon?.name !== 'eraser') {
@@ -419,7 +483,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       clearPaintedBorders();
       handlePaintAtPosition(event.clientX, event.clientY);
     }
-  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction, menuOpen, tileHoverState, getHexColor, handleTileManipulation]);
+  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction, menuOpen, tileHoverState, getHexColor, handleTileManipulation, regionButtonState, activeTab, handleRegionBorderApplication]);
 
   const handleMouseMove = useCallback((event: MouseEvent): void => {
     if (isPanning && lastPanPosition) {
@@ -447,30 +511,65 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     } else if (isDragging) {
       // Handle painting
       handlePaintAtPosition(event.clientX, event.clientY);
-    } else if (menuOpen && !isDragging && !isPanning) {
-      // Track hover state for tile manipulation when menu is open
+    } else if (!isDragging && !isPanning) {
+      // Track hover state for tile manipulation and region detection
       const canvas = canvasRef.current;
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
         
-        const hoveredHex = getHexFromMousePos(x, y, hexPositionsRef.current, hexRadiusRef.current);
-        if (hoveredHex) {
-          const currentTexture = getHexColor && getHexColor(hoveredHex.row, hoveredHex.col);
-          // Only show button regions for textured tiles
-          if (currentTexture && typeof currentTexture === 'object' && currentTexture.type === 'texture') {
-            const buttonRegion = getButtonRegion(x, y, hoveredHex, hexRadiusRef.current);
-            setTileHoverState({ hex: hoveredHex, buttonRegion });
+        const currentHoveredHex = getHexFromMousePos(x, y, hexPositionsRef.current, hexRadiusRef.current);
+        
+        // Update hovered hex state and call callback
+        if (currentHoveredHex) {
+          // Only update if it's a different hex
+          if (!hoveredHex || hoveredHex.row !== currentHoveredHex.row || hoveredHex.col !== currentHoveredHex.col) {
+            setHoveredHex(currentHoveredHex);
+            onHexHover?.(currentHoveredHex.row, currentHoveredHex.col);
+          }
+          
+          // Region border button logic (only on borders tab)
+          if (activeTab === 'borders' && hoveredRegion && getRegionForHex) {
+            const hexCoord = `${currentHoveredHex.row}-${currentHoveredHex.col}`;
+            const regionId = getRegionForHex(hexCoord);
+            
+            if (regionId === hoveredRegion && canApplyRegionBorders && canApplyRegionBorders(regionId)) {
+              setRegionButtonState({
+                regionId,
+                position: currentHoveredHex,
+                canApply: true
+              });
+            } else {
+              setRegionButtonState(null);
+            }
           } else {
-            setTileHoverState({ hex: null, buttonRegion: null });
+            setRegionButtonState(null);
+          }
+          
+          // Tile manipulation logic (only when menu is open)
+          if (menuOpen) {
+            const currentTexture = getHexColor && getHexColor(currentHoveredHex.row, currentHoveredHex.col);
+            // Only show button regions for textured tiles
+            if (currentTexture && typeof currentTexture === 'object' && currentTexture.type === 'texture') {
+              const buttonRegion = getButtonRegion(x, y, currentHoveredHex, hexRadiusRef.current);
+              setTileHoverState({ hex: currentHoveredHex, buttonRegion });
+            } else {
+              setTileHoverState({ hex: null, buttonRegion: null });
+            }
           }
         } else {
+          // No hex hovered
+          if (hoveredHex) {
+            setHoveredHex(null);
+            onHexHover?.(null, null);
+          }
           setTileHoverState({ hex: null, buttonRegion: null });
+          setRegionButtonState(null);
         }
       }
     }
-  }, [isDragging, isPanning, lastPanPosition, panOffset, gridWidth, gridHeight, canvasSize, handlePaintAtPosition, menuOpen, getHexColor, getButtonRegion]);
+  }, [isDragging, isPanning, lastPanPosition, panOffset, gridWidth, gridHeight, canvasSize, handlePaintAtPosition, menuOpen, getHexColor, getButtonRegion, hoveredHex, onHexHover, activeTab, hoveredRegion, getRegionForHex, canApplyRegionBorders]);
 
   const handleMouseUp = useCallback((event: MouseEvent): void => {
     if (event.button === 1) { // Middle mouse button
@@ -491,7 +590,14 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     clearPaintedBorders();
     // Clear tile hover state when mouse leaves canvas
     setTileHoverState({ hex: null, buttonRegion: null });
-  }, [clearPaintedBorders]);
+    // Clear hex hover for region detection
+    if (hoveredHex) {
+      setHoveredHex(null);
+      onHexHover?.(null, null);
+    }
+    // Clear region button state
+    setRegionButtonState(null);
+  }, [clearPaintedBorders, hoveredHex, onHexHover]);
 
   // Touch event handlers
   const handleTouchStart = useCallback((event: TouchEvent): void => {
@@ -819,7 +925,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     if (glRef.current && colorProgramRef.current && textureProgramRef.current) {
       renderGrid();
     }
-  }, [hexColorsVersion, hexBackgroundColorsVersion, hexIconsVersion, renderGrid]);
+  }, [hexColorsVersion, hexBackgroundColorsVersion, hexIconsVersion, hoveredRegion, renderGrid]);
 
   useEffect(() => {
     if (hexPositionsRef.current.length > 0 && hexRadiusRef.current > 0) {
@@ -1062,6 +1168,69 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
                 {buttonRegion === 'center' && '↻'}
                 {buttonRegion === 'left' && '↻'}
                 {buttonRegion === 'right' && '↺'}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Region Border Button Overlay */}
+      {regionButtonState && activeTab === 'borders' && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'auto', // Allow clicks on this button
+          zIndex: 5
+        }}>
+          {(() => {
+            const hex = regionButtonState.position;
+            const hexRadius = throttledRadius;
+            
+            // Button dimensions - make it larger and more visible
+            const buttonWidth = hexRadius * 1.8;
+            const buttonHeight = hexRadius * 0.8;
+            
+            // Center the button on the hex
+            const buttonX = hex.x - buttonWidth / 2;
+            const buttonY = hex.y - buttonHeight / 2;
+
+            return (
+              <div
+                onClick={() => handleRegionBorderApplication(regionButtonState.regionId)}
+                style={{
+                  position: 'absolute',
+                  left: buttonX,
+                  top: buttonY,
+                  width: buttonWidth,
+                  height: buttonHeight,
+                  backgroundColor: 'rgba(59, 130, 246, 0.9)', // Blue background
+                  border: '2px solid rgba(59, 130, 246, 1)',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: `${Math.max(12, hexRadius * 0.15)}px`,
+                  color: 'white',
+                  fontWeight: 'bold',
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+                  userSelect: 'none',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 1)';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.9)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                Add Borders
               </div>
             );
           })()}

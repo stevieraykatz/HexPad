@@ -41,14 +41,49 @@ export type {
   ZIndexConfig 
 } from './uiConfig';
 
-export { DEFAULT_COLORS, PAINT_OPTIONS, BACKGROUND_COLORS } from './assetsConfig';
+// Dynamic asset configuration
+export { 
+  DEFAULT_COLORS, 
+  BACKGROUND_COLORS,
+  getPaintOptions,
+  getTextureItem,
+  getTexturesByType,
+  getTexturesWithVariants,
+  getSimpleTextures,
+  refreshPaintOptions
+} from './dynamicAssetsConfig';
+
 export type { 
   RGB, 
-  TextureItem, 
-  AssetItem,
   DefaultColors, 
-  BackgroundColor
-} from './assetsConfig';
+  BackgroundColor,
+  DynamicTextureItem as TextureItem,
+  AssetItem
+} from './dynamicAssetsConfig';
+
+// Asset loader exports for advanced usage
+export {
+  getTerrainIndex,
+  getTerrainInfo,
+  loadTerrainManifest,
+  getAllTerrainTypes,
+  getComplexTerrains,
+  getSimpleTerrains,
+  getTerrainBasePath,
+  getRandomTerrainVariant,
+  preloadAllManifests
+} from './assetLoader';
+
+export type {
+  AssetVariant,
+  AssetManifest,
+  TerrainInfo,
+  TerrainIndex
+} from './assetLoader';
+
+// Legacy compatibility export
+import { getPaintOptions } from './dynamicAssetsConfig';
+export const PAINT_OPTIONS = getPaintOptions();
 
 export { ICON_OPTIONS } from './iconsConfig';
 export type { IconItem } from './iconsConfig';

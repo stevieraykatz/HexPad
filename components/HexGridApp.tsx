@@ -131,7 +131,13 @@ const HexGridApp: React.FC = () => {
     getHexBackgroundColor,
     getHexIcon,
     hasUndoHistory,
-    handleUndo
+    handleUndo,
+    // Region functionality
+    hoveredRegion,
+    setHoveredRegion,
+    applyRegionBorders,
+    canApplyRegionBorders,
+    getRegionForHex
   } = useGridState({
     selectedColor,
     selectedTexture,
@@ -308,6 +314,18 @@ const HexGridApp: React.FC = () => {
     }
   }, [hexColors, setHexColors]);
 
+  // Handle hex hover for region detection
+  const handleHexHover = useCallback((row: number | null, col: number | null) => {
+    if (row === null || col === null) {
+      setHoveredRegion(null);
+      return;
+    }
+    
+    const hexCoord = `${row}-${col}`;
+    const regionId = getRegionForHex(hexCoord);
+    setHoveredRegion(regionId);
+  }, [getRegionForHex, setHoveredRegion]);
+
   return (
     <div 
       ref={appContainerRef}
@@ -414,6 +432,7 @@ const HexGridApp: React.FC = () => {
           gridHeight={gridHeight}
           numberingMode={numberingMode}
           onHexClick={backgroundPaintingMode ? paintBackgroundHex : paintHex}
+          onHexHover={handleHexHover}
           onEdgeClick={placeBorder}
           getHexColor={getHexColor}
           getHexBackgroundColor={getHexBackgroundColor}
@@ -429,6 +448,10 @@ const HexGridApp: React.FC = () => {
           onCanvasInteraction={handleCanvasInteraction}
           menuOpen={menuOpen}
           onTileTextureAction={handleTileTextureAction}
+          hoveredRegion={hoveredRegion}
+          getRegionForHex={getRegionForHex}
+          canApplyRegionBorders={canApplyRegionBorders}
+          applyRegionBorders={applyRegionBorders}
         />
       </div>
 

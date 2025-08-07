@@ -2,6 +2,9 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { IconItem, HexTexture } from '../components/config';
 import type { ColoredIcon } from '../components/config/iconsConfig';
 import { GRID_CONFIG, DEFAULT_COLORS } from '../components/config';
+import { useRegionState } from './useRegionState';
+import { useRegionBorders } from './useRegionBorders';
+import type { RegionMap } from '../utils/regionUtils';
 
 // Type definitions for hex colors and textures
 type HexColor = string;
@@ -35,6 +38,8 @@ interface UseGridStateProps {
   selectedBackgroundColor: string;
   activeTab: 'paint' | 'icons' | 'borders' | 'settings';
   onPaintStart?: () => void; // Optional callback for when painting starts
+  enableRegions?: boolean; // Enable region tracking (default: true)
+  enableRegionBorders?: boolean; // Enable region border functionality (default: true)
 }
 
 interface UseGridStateReturn {
@@ -50,6 +55,15 @@ interface UseGridStateReturn {
   hexIconsVersion: number;
   bordersVersion: number;
   unifiedHistory: HistoryEntry[];
+  
+  // Region state
+  regionMap: RegionMap;
+  regionStats: {
+    totalRegions: number;
+    regionsByTerrain: Record<string, number>;
+    averageRegionSize: number;
+    largestRegion: { id: string; size: number; terrainType: string } | null;
+  };
   
   // Setters
   setGridWidth: (width: number) => void;
@@ -72,6 +86,17 @@ interface UseGridStateReturn {
   hasUndoHistory: () => boolean;
   handleUndo: () => void;
   
+  // Region helpers
+  getRegionForHex: (hexCoord: string) => string | null;
+  getRegionData: (regionId: string) => any;
+  rebuildAllRegions: () => void;
+  
+  // Region border functionality
+  hoveredRegion: string | null;
+  setHoveredRegion: (regionId: string | null) => void;
+  applyRegionBorders: (regionId: string) => Promise<void>;
+  canApplyRegionBorders: (regionId: string) => boolean;
+  
   // Refs for external use
   isUndoingRef: React.MutableRefObject<boolean>;
 }
@@ -84,7 +109,9 @@ export function useGridState({
   selectedBorderColor,
   selectedBackgroundColor,
   activeTab,
-  onPaintStart
+  onPaintStart,
+  enableRegions = true,
+  enableRegionBorders = true
 }: UseGridStateProps): UseGridStateReturn {
   
   // Core grid state
@@ -94,6 +121,35 @@ export function useGridState({
   const [hexBackgroundColors, setHexBackgroundColors] = useState<HexBackgroundColorsMap>({});
   const [hexIcons, setHexIcons] = useState<Record<string, ColoredIcon>>({});
   const [borders, setBorders] = useState<BordersMap>({});
+  
+  // Region state management
+  const {
+    regionMap,
+    regionStats,
+    updateRegionsForHexChange,
+    rebuildAllRegions,
+    getRegionForHex,
+    getRegionData
+  } = useRegionState({
+    hexColors,
+    gridWidth,
+    gridHeight,
+    enabled: enableRegions
+  });
+  
+  // Region border management
+  const {
+    hoveredRegion,
+    setHoveredRegion,
+    applyRegionBorders: applyBorders,
+    canApplyBorders
+  } = useRegionBorders({
+    regionMap,
+    hexColors,
+    gridWidth,
+    gridHeight,
+    enabled: enableRegionBorders && enableRegions
+  });
   
   // Version counters for triggering re-renders
   const [hexColorsVersion, setHexColorsVersion] = useState<number>(0);
@@ -166,6 +222,9 @@ export function useGridState({
   const paintHex = useCallback((row: number, col: number): void => {
     const hexKey = `${row}-${col}`;
     
+    // Capture old value for region updates
+    const oldValue = hexColors[hexKey];
+    
     // Trigger paint start callback for auto-minimize functionality
     if (onPaintStart) {
       onPaintStart();
@@ -198,6 +257,9 @@ export function useGridState({
             return newColors;
           });
           setHexColorsVersion(prev => prev + 1);
+          
+          // Update regions for eraser removing texture
+          updateRegionsForHexChange(hexKey, oldValue, undefined);
         }
       }
       
@@ -265,13 +327,17 @@ export function useGridState({
         }
       }
       
+      const newValue = textureToUse!;
       setHexColors(prev => ({
         ...prev,
-        [hexKey]: textureToUse!
+        [hexKey]: newValue
       }));
       setHexColorsVersion(prev => prev + 1);
+      
+      // Update regions for new texture/color
+      updateRegionsForHexChange(hexKey, oldValue, newValue);
     }
-  }, [selectedColor, selectedTexture, selectedIcon, selectedIconColor, selectedBackgroundColor, activeTab, hexIcons, hexColors, hexBackgroundColors, onPaintStart]);
+  }, [selectedColor, selectedTexture, selectedIcon, selectedIconColor, selectedBackgroundColor, activeTab, hexIcons, hexColors, hexBackgroundColors, onPaintStart, updateRegionsForHexChange]);
 
   // Paint background hex operation
   const paintBackgroundHex = useCallback((row: number, col: number): void => {
@@ -423,6 +489,24 @@ export function useGridState({
     }
   }, [unifiedHistory]);
 
+  // Wrapper for applying region borders
+  const applyRegionBorders = useCallback(async (regionId: string) => {
+    await applyBorders(regionId, (hexCoord: string, texture: HexTexture) => {
+      const [row, col] = hexCoord.split('-').map(Number);
+      const oldValue = hexColors[hexCoord];
+      
+      // Update hex colors
+      setHexColors(prev => ({
+        ...prev,
+        [hexCoord]: texture
+      }));
+      setHexColorsVersion(prev => prev + 1);
+      
+      // Update regions
+      updateRegionsForHexChange(hexCoord, oldValue, texture);
+    });
+  }, [applyBorders, hexColors, updateRegionsForHexChange]);
+
   return {
     // State
     gridWidth,
@@ -457,6 +541,21 @@ export function useGridState({
     getHexIcon,
     hasUndoHistory,
     handleUndo,
+    
+    // Region state
+    regionMap,
+    regionStats,
+    
+    // Region helpers
+    getRegionForHex,
+    getRegionData,
+    rebuildAllRegions,
+    
+    // Region border functionality
+    hoveredRegion,
+    setHoveredRegion,
+    applyRegionBorders,
+    canApplyRegionBorders: canApplyBorders,
     
     // Refs for external use
     isUndoingRef
