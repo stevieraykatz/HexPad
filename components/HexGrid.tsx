@@ -128,6 +128,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   const [panOffset, setPanOffset] = useState<PanOffset>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isPanning, setIsPanning] = useState<boolean>(false);
+  const [isZooming, setIsZooming] = useState<boolean>(false);
   const [lastPanPosition, setLastPanPosition] = useState<{ x: number; y: number } | null>(null);
   
   const hexPositionsRef = useRef<HexPosition[]>([]);
@@ -317,6 +318,10 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     
     const canvas = canvasRef.current;
     if (!canvas) return;
+    
+    // Set zooming state and clear it after a delay
+    setIsZooming(true);
+    setTimeout(() => setIsZooming(false), 150);
     
     const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
@@ -1095,7 +1100,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       )}
 
       {/* Tile Manipulation Button Regions Overlay */}
-      {menuOpen && tileHoverState.hex && tileHoverState.buttonRegion && (
+      {menuOpen && activeTab === 'paint' && tileHoverState.hex && tileHoverState.buttonRegion && !isPanning && !isDragging && !isZooming && (
         <div style={{
           position: 'absolute',
           top: 0,
@@ -1110,36 +1115,53 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
             const buttonRegion = tileHoverState.buttonRegion;
             const hexRadius = throttledRadius;
             
-            // Define button region dimensions
-            const regionWidth = hexRadius * 0.6;
-            const regionHeight = hexRadius * 1.2;
+            // Define button region dimensions based on button type
+            let regionWidth, regionHeight, regionX, regionY;
             
-            // Calculate positions for different button regions
-            let regionX = hex.x;
-            let regionY = hex.y - regionHeight / 2;
-            
-            if (buttonRegion === 'left') {
-              regionX = hex.x - hexRadius * 0.5;
-            } else if (buttonRegion === 'right') {
-              regionX = hex.x + hexRadius * 0.5;
+            if (buttonRegion === 'center') {
+              // Smaller center button to allow texture placement behind it
+              regionWidth = hexRadius * 0.6;
+              regionHeight = hexRadius * 0.6;
+              regionX = hex.x - regionWidth / 2;
+              regionY = hex.y - regionHeight / 2;
+            } else {
+              // Edge buttons - make them hexagonal and positioned at the edges
+              regionWidth = hexRadius * 0.5;
+              regionHeight = hexRadius * 0.8;
+              
+              if (buttonRegion === 'left') {
+                regionX = hex.x - hexRadius * 0.65 - regionWidth / 2;
+              } else { // right
+                regionX = hex.x + hexRadius * 0.65 - regionWidth / 2;
+              }
+              regionY = hex.y - regionHeight / 2;
             }
-            
-            // Center the region
-            regionX -= regionWidth / 2;
-            
-            // Different visual styles for different button regions
-            const getRegionColor = () => {
-              if (buttonRegion === 'center') return 'rgba(100, 200, 255, 0.3)';
-              if (buttonRegion === 'left') return 'rgba(255, 150, 100, 0.3)';
-              if (buttonRegion === 'right') return 'rgba(100, 255, 150, 0.3)';
-              return 'rgba(255, 255, 255, 0.2)';
-            };
             
             const getBrightColor = () => {
               if (buttonRegion === 'center') return 'rgba(100, 200, 255, 0.6)';
               if (buttonRegion === 'left') return 'rgba(255, 150, 100, 0.6)';
               if (buttonRegion === 'right') return 'rgba(100, 255, 150, 0.6)';
               return 'rgba(255, 255, 255, 0.4)';
+            };
+
+            // Create appropriate shape based on button type
+            const getButtonShape = () => {
+              if (buttonRegion === 'center') {
+                return {
+                  borderRadius: '50%', // Circular center button
+                };
+              } else if (buttonRegion === 'left') {
+                // Hexagonal shape for edge buttons using clip-path
+                return {
+                  clipPath: 'polygon(40% 0%, 100% 0%, 100% 50%, 100% 100%, 45% 100%, 0% 50%)',
+                  borderRadius: '0',
+                };
+              } else { // right
+                return {
+                  clipPath: 'polygon(25% 0%, 60% 0%, 100% 50%, 60% 100%, 0% 100%, 0% 0%)',
+                  borderRadius: '0',
+                };
+              }
             };
 
             return (
@@ -1152,22 +1174,23 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
                   width: regionWidth,
                   height: regionHeight,
                   backgroundColor: getBrightColor(),
-                  border: `2px solid ${getBrightColor()}`,
-                  borderRadius: '8px',
+                  border: buttonRegion === 'center' ? `2px solid ${getBrightColor()}` : 'none',
+                  ...getButtonShape(),
                   pointerEvents: 'none',
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: `${hexRadius * 0.2}px`,
+                  fontSize: `${hexRadius * (buttonRegion === 'center' ? 0.15 : 0.18)}px`,
                   color: 'white',
                   fontWeight: 'bold',
-                  textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+                  boxShadow: buttonRegion !== 'center' ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.2)'
                 }}
               >
-                {buttonRegion === 'center' && '↻'}
-                {buttonRegion === 'left' && '↻'}
-                {buttonRegion === 'right' && '↺'}
+                {buttonRegion === 'center' && '⬤'}
+                {buttonRegion === 'left' && '↺'}
+                {buttonRegion === 'right' && '↻'}
               </div>
             );
           })()}
