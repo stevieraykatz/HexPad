@@ -15,6 +15,7 @@ import {
   type PanOffset
 } from '../utils/hexagonUtils';
 import { calculateZoomToPoint, constrainPanOffset } from '../utils/zoomPanUtils';
+import { getRegionBounds } from '../utils/regionUtils';
 import { exportAsPNG as exportUtility, type HexStyle } from '../utils/exportUtils';
 import {
   columnToLetter,
@@ -76,6 +77,7 @@ interface HexGridProps {
   // Region highlighting props
   hoveredRegion?: string | null;
   getRegionForHex?: (hexCoord: string) => string | null;
+  getRegionData?: (regionId: string) => { terrainType: string; hexes: Set<string>; id: string } | null;
   canApplyRegionBorders?: (regionId: string) => boolean;
   applyRegionBorders?: (regionId: string) => Promise<void>;
 }
@@ -110,6 +112,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   // Region highlighting props
   hoveredRegion,
   getRegionForHex,
+  getRegionData,
   canApplyRegionBorders,
   applyRegionBorders
 }, ref) => {
@@ -142,7 +145,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   // Hover tracking for region detection
   const [hoveredHex, setHoveredHex] = useState<{ row: number; col: number } | null>(null);
   
-  // Region border button state
+  // Region border button state - calculated based on region bounds, not mouse position
   const [regionButtonState, setRegionButtonState] = useState<{
     regionId: string;
     position: HexPosition;
@@ -263,18 +266,73 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     }
   }, [applyRegionBorders]);
 
+  // Update region button position when hoveredRegion changes
+  useEffect(() => {
+    console.log('Region state:', { hoveredRegion, activeTab, isPanning, isDragging, isZooming });
+    
+    if (!hoveredRegion || activeTab !== 'borders' || !getRegionForHex || !canApplyRegionBorders || isPanning || isDragging || isZooming) {
+      setRegionButtonState(null);
+      return;
+    }
+
+    // Check if we can apply borders to this region
+    if (!canApplyRegionBorders(hoveredRegion)) {
+      setRegionButtonState(null);
+      return;
+    }
+
+    // Get region data and calculate button position
+    const regionData = getRegionData?.(hoveredRegion);
+    if (!regionData || !regionData.hexes) {
+      setRegionButtonState(null);
+      return;
+    }
+
+    // Calculate region bounds
+    const bounds = getRegionBounds(regionData.hexes);
+    
+    // Find the hex position for the top-right of the region
+    const topRightRow = bounds.minRow; // Top of region
+    const topRightCol = bounds.maxCol; // Right side of region
+    
+    // Get the actual screen position for this hex
+    const hexPositions = hexPositionsRef.current;
+    const targetHex = hexPositions.find(pos => pos.row === topRightRow && pos.col === topRightCol);
+    
+    if (targetHex) {
+      // Position the button directly on the top-right hex like a file tab
+      const hexRadius = hexRadiusRef.current || 20;
+      const buttonPosition = {
+        row: targetHex.row,
+        col: targetHex.col,
+        x: targetHex.x, // Center on the hex
+        y: targetHex.y - hexRadius * 0.6  // Above the hex
+      };
+      
+      setRegionButtonState({
+        regionId: hoveredRegion,
+        position: buttonPosition,
+        canApply: true
+      });
+    }
+  }, [hoveredRegion, activeTab, getRegionForHex, canApplyRegionBorders, getRegionData, isPanning, isDragging, isZooming]);
+
   const getHexagonStyle = useCallback((row: number, col: number): HexStyle | undefined => {
     const userTexture = getHexColor && getHexColor(row, col);
     
-    // Check if this hex is part of the hovered region for highlighting
+    // Check if this hex is part of the hovered region for highlighting (only in borders tab)
     const hexCoord = `${row}-${col}`;
     const hexRegionId = getRegionForHex && getRegionForHex(hexCoord);
-    const isHoveredRegion = hoveredRegion && hexRegionId === hoveredRegion;
+    const isHoveredRegion = activeTab === 'borders' && hoveredRegion && hexRegionId === hoveredRegion;
+    
+    if (isHoveredRegion) {
+      console.log('Highlighting hex:', hexCoord, 'in region:', hoveredRegion);
+    }
     
     if (userTexture) {
       if (userTexture === DEFAULT_COLORS.SELECTED) {
         const rgb = isHoveredRegion 
-          ? [0.52, 0.55, 0.6] as RGB // Slightly brighter for hovered region
+          ? [0.8, 0.9, 1.0] as RGB // Bright blue glow for hovered region
           : DEFAULT_COLORS.GREY_RGB;
         return { type: 'color', rgb };
       }
@@ -282,7 +340,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       if (typeof userTexture === 'object' && userTexture.type === 'color') {
         if (userTexture.rgb) {
           const rgb = isHoveredRegion 
-            ? [Math.min(1, userTexture.rgb[0] + 0.1), Math.min(1, userTexture.rgb[1] + 0.1), Math.min(1, userTexture.rgb[2] + 0.1)] as RGB
+            ? [Math.min(1, userTexture.rgb[0] + 0.3), Math.min(1, userTexture.rgb[1] + 0.3), Math.min(1, userTexture.rgb[2] + 0.4)] as RGB // Blue glow
             : userTexture.rgb;
           return { type: 'color', rgb };
         }
@@ -294,12 +352,18 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       }
       
       if (typeof userTexture === 'object' && userTexture.type === 'texture') {
+        if (isHoveredRegion) {
+          // For hovered regions, render as bright color instead of texture
+          return { 
+            type: 'color', 
+            rgb: [0.6, 0.8, 1.0] as RGB // Bright blue for region highlighting
+          };
+        }
         return { 
           type: 'texture', 
           path: userTexture.path, 
           name: userTexture.name,
-          rotation: userTexture.rotation || 0,
-          highlight: !!isHoveredRegion // Add highlight flag for region highlighting
+          rotation: userTexture.rotation || 0
         };
       }
     }
@@ -311,7 +375,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     
     // Return undefined when there's no main texture - let background layer handle the color
     return undefined;
-  }, [getHexColor, hoveredRegion, getRegionForHex]);
+  }, [getHexColor, hoveredRegion, getRegionForHex, activeTab]);
 
   const handleWheel = useCallback((event: WheelEvent): void => {
     event.preventDefault();
@@ -534,23 +598,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
             onHexHover?.(currentHoveredHex.row, currentHoveredHex.col);
           }
           
-          // Region border button logic (only on borders tab)
-          if (activeTab === 'borders' && hoveredRegion && getRegionForHex) {
-            const hexCoord = `${currentHoveredHex.row}-${currentHoveredHex.col}`;
-            const regionId = getRegionForHex(hexCoord);
-            
-            if (regionId === hoveredRegion && canApplyRegionBorders && canApplyRegionBorders(regionId)) {
-              setRegionButtonState({
-                regionId,
-                position: currentHoveredHex,
-                canApply: true
-              });
-            } else {
-              setRegionButtonState(null);
-            }
-          } else {
-            setRegionButtonState(null);
-          }
+          // Region button state is now handled by useEffect when hoveredRegion changes
           
           // Tile manipulation logic (only when menu is open)
           if (menuOpen) {
@@ -570,7 +618,6 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
             onHexHover?.(null, null);
           }
           setTileHoverState({ hex: null, buttonRegion: null });
-          setRegionButtonState(null);
         }
       }
     }
@@ -600,8 +647,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       setHoveredHex(null);
       onHexHover?.(null, null);
     }
-    // Clear region button state
-    setRegionButtonState(null);
+    // Region button state is now managed by useEffect
   }, [clearPaintedBorders, hoveredHex, onHexHover]);
 
   // Touch event handlers

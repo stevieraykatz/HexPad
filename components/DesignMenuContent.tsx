@@ -2,7 +2,7 @@ import React from 'react';
 import PaintOptionsGrid from './PaintOptionsGrid';
 import IconOptionsGrid from './IconOptionsGrid';
 import BorderOptionsGrid from './BorderOptionsGrid';
-
+import RegionBorderControls from './RegionBorderControls';
 import GridSizeControls from './GridSizeControls';
 import BackgroundColorSelector from './BackgroundColorSelector';
 import { UI_CONFIG } from './config';
@@ -38,6 +38,17 @@ interface DesignMenuContentProps {
   // Mobile layout
   isMobile?: boolean; // Optional mobile detection for layout adjustments
   onNumberingModeChange: (mode: NumberingMode) => void;
+  // Region props
+  regionStats?: {
+    totalRegions: number;
+    regionsByTerrain: Record<string, number>;
+    averageRegionSize: number;
+    largestRegion: { id: string; size: number; terrainType: string } | null;
+  };
+  hoveredRegion?: string | null;
+  canApplyRegionBorders?: (regionId: string) => boolean;
+  applyRegionBorders?: (regionId: string) => Promise<void>;
+  getRegionData?: (regionId: string) => { terrainType: string; hexes: Set<string>; id: string } | null;
 
 
 }
@@ -69,6 +80,12 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
   onHeightChange,
   onBackgroundColorChange,
   onNumberingModeChange,
+  // Region props
+  regionStats,
+  hoveredRegion,
+  canApplyRegionBorders,
+  applyRegionBorders,
+  getRegionData,
   // Mobile layout
   isMobile = false
 }) => {
@@ -122,6 +139,20 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
       
       {activeTab === 'borders' && (
         <>
+          {/* Region Border Controls */}
+          {regionStats && hoveredRegion !== undefined && canApplyRegionBorders && applyRegionBorders && getRegionData && (
+            <div className={isMobile ? 'mobile-section' : ''} style={sectionWrapperStyle}>
+              <RegionBorderControls
+                regionStats={regionStats}
+                hoveredRegion={hoveredRegion}
+                canApplyRegionBorders={canApplyRegionBorders}
+                applyRegionBorders={applyRegionBorders}
+                getRegionData={getRegionData}
+              />
+            </div>
+          )}
+          
+          {/* Manual Border Controls */}
           <div className={isMobile ? 'mobile-section' : ''} style={sectionWrapperStyle}>
             <BorderOptionsGrid 
               selectedBorderColor={selectedBorderColor}

@@ -374,6 +374,44 @@ export function rebuildRegions(
 }
 
 /**
+ * Calculate the bounding box of a region
+ */
+export function getRegionBounds(regionHexes: Set<string>): {
+  minRow: number;
+  maxRow: number;
+  minCol: number;
+  maxCol: number;
+  centerRow: number;
+  centerCol: number;
+} {
+  if (regionHexes.size === 0) {
+    return { minRow: 0, maxRow: 0, minCol: 0, maxCol: 0, centerRow: 0, centerCol: 0 };
+  }
+
+  let minRow = Infinity;
+  let maxRow = -Infinity;
+  let minCol = Infinity;
+  let maxCol = -Infinity;
+
+  Array.from(regionHexes).forEach(hexCoord => {
+    const [row, col] = hexCoord.split('-').map(Number);
+    minRow = Math.min(minRow, row);
+    maxRow = Math.max(maxRow, row);
+    minCol = Math.min(minCol, col);
+    maxCol = Math.max(maxCol, col);
+  });
+
+  return {
+    minRow,
+    maxRow,
+    minCol,
+    maxCol,
+    centerRow: (minRow + maxRow) / 2,
+    centerCol: (minCol + maxCol) / 2
+  };
+}
+
+/**
  * Gets region statistics
  */
 export function getRegionStats(regionMap: RegionMap): {

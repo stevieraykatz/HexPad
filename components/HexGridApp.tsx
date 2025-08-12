@@ -133,6 +133,8 @@ const HexGridApp: React.FC = () => {
     hasUndoHistory,
     handleUndo,
     // Region functionality
+    regionStats,
+    getRegionData,
     hoveredRegion,
     setHoveredRegion,
     applyRegionBorders,
@@ -323,8 +325,12 @@ const HexGridApp: React.FC = () => {
     
     const hexCoord = `${row}-${col}`;
     const regionId = getRegionForHex(hexCoord);
-    setHoveredRegion(regionId);
-  }, [getRegionForHex, setHoveredRegion]);
+    
+    // Only update if the region actually changed to prevent constant re-renders
+    if (regionId !== hoveredRegion) {
+      setHoveredRegion(regionId);
+    }
+  }, [getRegionForHex, setHoveredRegion, hoveredRegion]);
 
   return (
     <div 
@@ -412,6 +418,12 @@ const HexGridApp: React.FC = () => {
           backgroundPaintingMode={backgroundPaintingMode}
           onBackgroundShaderColorSelect={setSelectedBackgroundShaderColor}
           onBackgroundPaintingModeToggle={handleBackgroundPaintingModeToggle}
+          // Region props
+          regionStats={regionStats}
+          hoveredRegion={hoveredRegion}
+          canApplyRegionBorders={canApplyRegionBorders}
+          applyRegionBorders={applyRegionBorders}
+          getRegionData={getRegionData}
           isMobile={isMobile}
         />
       </div>
@@ -450,6 +462,7 @@ const HexGridApp: React.FC = () => {
           onTileTextureAction={handleTileTextureAction}
           hoveredRegion={hoveredRegion}
           getRegionForHex={getRegionForHex}
+          getRegionData={getRegionData}
           canApplyRegionBorders={canApplyRegionBorders}
           applyRegionBorders={applyRegionBorders}
         />

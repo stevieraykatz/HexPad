@@ -104,34 +104,16 @@ const RegionBorderControls: React.FC<RegionBorderControlsProps> = ({
             {hoveredRegionData.hexes.size} hexes
           </div>
           
-          {/* Apply Borders Button */}
-          {canApplyRegionBorders(hoveredRegion!) && (
-            <button
-              onClick={handleApplyBorders}
-              disabled={isApplying}
-              style={{
-                width: '100%',
-                marginTop: UI_CONFIG.SPACING.SMALL,
-                padding: `${UI_CONFIG.SPACING.SMALL} ${UI_CONFIG.SPACING.SMALL}`,
-                background: isApplying 
-                  ? UI_CONFIG.COLORS.BUTTON_BACKGROUND 
-                  : UI_CONFIG.COLORS.SELECTED_BACKGROUND,
-                color: isApplying 
-                  ? UI_CONFIG.COLORS.TEXT_TERTIARY 
-                  : UI_CONFIG.COLORS.TEXT_PRIMARY,
-                border: `1px solid ${isApplying 
-                  ? UI_CONFIG.COLORS.BORDER_COLOR_LIGHT 
-                  : UI_CONFIG.COLORS.SELECTED_BORDER}`,
-                borderRadius: UI_CONFIG.BORDER_RADIUS.SMALL,
-                fontSize: UI_CONFIG.FONT_SIZE.SMALL,
-                fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM,
-                cursor: isApplying ? 'not-allowed' : 'pointer',
-                transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`
-              }}
-            >
-              {isApplying ? 'Applying Borders...' : 'Apply Terrain Borders'}
-            </button>
-          )}
+          {/* Instructions for applying borders */}
+          <div style={{
+            fontSize: UI_CONFIG.FONT_SIZE.SMALL,
+            color: UI_CONFIG.COLORS.TEXT_TERTIARY,
+            fontStyle: 'italic',
+            marginTop: UI_CONFIG.SPACING.SMALL,
+            textAlign: 'center'
+          }}>
+            Hover over region to see apply button
+          </div>
           
           {!canApplyRegionBorders(hoveredRegion!) && (
             <div style={{
