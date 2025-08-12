@@ -177,25 +177,50 @@ export function addHexToRegions(
   } else if (adjacentRegionIds.size === 1) {
     // One adjacent region - add to it
     const regionId = Array.from(adjacentRegionIds)[0];
-    const existingRegion = newRegions.get(regionId)!;
-    const updatedRegion: Region = {
-      ...existingRegion,
-      hexes: new Set([...Array.from(existingRegion.hexes), hexCoord]),
-      updatedAt: Date.now()
-    };
-    newRegions.set(regionId, updatedRegion);
-    newHexToRegion.set(hexCoord, regionId);
+    const existingRegion = newRegions.get(regionId);
+    if (!existingRegion) {
+      // Region not found, fall back to creating new region
+      const newRegion: Region = {
+        id: crypto.randomUUID(),
+        hexes: new Set([hexCoord]),
+        terrainType: terrainType,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      newRegions.set(newRegion.id, newRegion);
+      newHexToRegion.set(hexCoord, newRegion.id);
+    } else {
+      const updatedRegion: Region = {
+        ...existingRegion,
+        hexes: new Set([...Array.from(existingRegion.hexes), hexCoord]),
+        updatedAt: Date.now()
+      };
+      newRegions.set(regionId, updatedRegion);
+      newHexToRegion.set(hexCoord, regionId);
+    }
   } else {
     // Multiple adjacent regions - merge them
     const regionIds = Array.from(adjacentRegionIds);
     const primaryRegionId = regionIds[0];
-    const primaryRegion = newRegions.get(primaryRegionId)!;
-    
-    // Collect all hexes from all regions to be merged
-    const allHexes = new Set([...Array.from(primaryRegion.hexes), hexCoord]);
-    
-    for (let i = 1; i < regionIds.length; i++) {
-      const regionToMerge = newRegions.get(regionIds[i])!;
+    const primaryRegion = newRegions.get(primaryRegionId);
+    if (!primaryRegion) {
+      // Primary region not found, fall back to creating new region
+      const newRegion: Region = {
+        id: crypto.randomUUID(),
+        hexes: new Set([hexCoord]),
+        terrainType: terrainType,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      newRegions.set(newRegion.id, newRegion);
+      newHexToRegion.set(hexCoord, newRegion.id);
+    } else {
+      // Collect all hexes from all regions to be merged
+      const allHexes = new Set([...Array.from(primaryRegion.hexes), hexCoord]);
+      
+      for (let i = 1; i < regionIds.length; i++) {
+        const regionToMerge = newRegions.get(regionIds[i]);
+        if (!regionToMerge) continue; // Skip missing regions
       
       // Add all hexes from this region to the primary region
       Array.from(regionToMerge.hexes).forEach(hex => {
@@ -215,6 +240,7 @@ export function addHexToRegions(
     };
     newRegions.set(primaryRegionId, updatedPrimaryRegion);
     newHexToRegion.set(hexCoord, primaryRegionId);
+    }
   }
   
   return {
@@ -238,7 +264,16 @@ export function removeHexFromRegions(
     return regionMap; // Hex not in any region
   }
   
-  const region = regionMap.regions.get(regionId)!;
+  const region = regionMap.regions.get(regionId);
+  if (!region) {
+    // Region not found - clean up the orphaned mapping and return
+    const newHexToRegion = new Map(regionMap.hexToRegion);
+    newHexToRegion.delete(hexCoord);
+    return {
+      ...regionMap,
+      hexToRegion: newHexToRegion
+    };
+  }
   const newRegions = new Map(regionMap.regions);
   const newHexToRegion = new Map(regionMap.hexToRegion);
   

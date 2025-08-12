@@ -78,7 +78,8 @@ export type {
   AssetVariant,
   AssetManifest,
   TerrainInfo,
-  TerrainIndex
+  TerrainIndex,
+  MenuConfig
 } from './assetLoader';
 
 // Legacy compatibility export

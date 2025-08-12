@@ -69,7 +69,8 @@ const ActionButton: React.FC<ActionButtonProps> = ({
       case 'danger':
         return {
           ...baseStyle,
-          background: UI_CONFIG.HOVER.DANGER_BACKGROUND,
+          background: 'rgba(239, 68, 68, 0.4)', // More visible than hover (0.3)
+          border: `1px solid ${UI_CONFIG.COLORS.DANGER_BORDER}`,
           color: UI_CONFIG.COLORS.TEXT_PRIMARY
         };
       case 'secondary':

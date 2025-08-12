@@ -92,9 +92,11 @@ export function useBorderInteraction({
     
     if (!paintedBordersSet.has(edgeKey)) {
       paintedBordersSet.add(edgeKey);
+      
+      // If eraser is active, this will erase the border, otherwise it will paint
       onEdgeClick(clickedEdge.fromHex, clickedEdge.toHex);
     }
-  }, [onEdgeClick, activeTab, getEdgeFromMousePos]);
+  }, [onEdgeClick, activeTab, getEdgeFromMousePos, selectedIcon]);
 
   /**
    * Clear the painted borders tracking set

@@ -1,0 +1,52 @@
+{
+  "name": "hills",
+  "generated": "2025-08-12T05:41:15.819Z",
+  "totalAssets": 3,
+  "assets": {
+    "byAngle": {},
+    "bySide": {},
+    "bySpecial": {},
+    "all": {
+      "base": [
+        {
+          "filename": "hills_1.png",
+          "name": "hills_1",
+          "baseName": "hills",
+          "variant": 1
+        },
+        {
+          "filename": "hills_2.png",
+          "name": "hills_2",
+          "baseName": "hills",
+          "variant": 2
+        },
+        {
+          "filename": "hills_3.png",
+          "name": "hills_3",
+          "baseName": "hills",
+          "variant": 3
+        }
+      ]
+    }
+  },
+  "rawAssets": [
+    {
+      "filename": "hills_1.png",
+      "name": "hills_1",
+      "baseName": "hills",
+      "variant": 1
+    },
+    {
+      "filename": "hills_2.png",
+      "name": "hills_2",
+      "baseName": "hills",
+      "variant": 2
+    },
+    {
+      "filename": "hills_3.png",
+      "name": "hills_3",
+      "baseName": "hills",
+      "variant": 3
+    }
+  ]
+}

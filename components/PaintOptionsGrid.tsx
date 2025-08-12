@@ -1,7 +1,7 @@
 import React from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { UI_CONFIG, PAINT_OPTIONS } from './config';
-import type { TextureItem, HexTexture } from './config';
+import type { TextureItem, HexTexture, AssetItem } from './config';
 
 interface PaintOptionsGridProps {
   selectedTexture: HexTexture | null;
@@ -24,7 +24,7 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
   isMobile = false
 }) => {
   // Filter out color items, only show textures
-  const textureOptions = PAINT_OPTIONS.filter(item => item.type === 'texture');
+  const textureOptions = PAINT_OPTIONS.filter((item: AssetItem) => item.type === 'texture');
 
   return (
     <div style={{
@@ -124,7 +124,7 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
           }}
         >
           {/* Texture Options */}
-          {textureOptions.map((texture) => {
+          {textureOptions.map((texture: TextureItem) => {
             const isSelected = selectedTexture?.name === texture.name;
             return (
               <button
@@ -141,7 +141,7 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
                   transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
                   boxShadow: isSelected ? UI_CONFIG.BOX_SHADOW.SELECTED : 'none'
                 }}
-                title={texture.displayName}
+                title={(texture as TextureItem).description || texture.displayName}
               >
                 <div style={{
                   width: '100%',
@@ -149,7 +149,8 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
                   borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
                   border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
                   overflow: 'hidden',
-                  position: 'relative'
+                  position: 'relative',
+                  backgroundColor: (texture as TextureItem).previewBackgroundColor || UI_CONFIG.COLORS.BUTTON_BACKGROUND
                 }}>
                   <div style={{
                     width: UI_CONFIG.PAINT_OPTIONS.ZOOM_SCALE_PERCENTAGE,

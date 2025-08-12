@@ -1,122 +1,209 @@
 /**
  * Dynamic Assets Configuration
- *
- * This file replaces the static asset definitions with a dynamic system
- * that loads assets from manifest files.
+ * 
+ * This module provides dynamic paint options based on the terrain index,
+ * using the first asset from each terrain folder as the icon.
  */
 
 import { 
-  getAllTerrainTypes, 
-  getTerrainBasePath,
-  type TerrainInfo,
+  getTerrainIndex, 
+  getTerrainInfo, 
+  loadTerrainManifest, 
+  getAllTerrainTypes,
 } from './assetLoader';
 
-// Re-export existing types and constants that don't change
-export type { RGB, DefaultColors, BackgroundColor } from './assetsConfig';
-export { DEFAULT_COLORS, BACKGROUND_COLORS } from './assetsConfig';
+export type RGB = [number, number, number];
 
-// Extended texture item interface that supports dynamic variants
 export interface DynamicTextureItem {
   readonly name: string;
   readonly displayName: string;
   readonly type: "texture";
   readonly path: string;
-  readonly terrainType: 'simple' | 'complex';
-  readonly hasVariants: boolean;
-  readonly variantCount: number;
-  readonly terrainInfo: TerrainInfo;
+  readonly hasVariants?: boolean;
+  readonly assetCount?: number;
+  readonly previewBackgroundColor?: string;
+  readonly description?: string;
 }
 
 export type AssetItem = DynamicTextureItem;
 
+export interface DefaultColors {
+  readonly SELECTED: string;
+  readonly DEFAULT_RGB: RGB;
+}
+
+export const DEFAULT_COLORS: DefaultColors = {
+  SELECTED: "manila",
+  DEFAULT_RGB: [0.95, 0.91, 0.76], // Manila paper color RGB values (243, 232, 194 in 255 scale)
+};
+
+export interface BackgroundColor {
+  readonly name: string;
+  readonly displayName: string;
+  readonly rgb: RGB; // RGB values in 0-1 range for WebGL
+  readonly cssColor: string;
+}
+
+export const BACKGROUND_COLORS: readonly BackgroundColor[] = [
+  {
+    name: "grey",
+    displayName: "Dark Grey",
+    rgb: [0.1, 0.1, 0.1],
+    cssColor: "#1a1a1a",
+  },
+  {
+    name: "manila",
+    displayName: "Manila",
+    rgb: [0.95, 0.91, 0.76],
+    cssColor: "#F3E8C2",
+  },
+  {
+    name: "white",
+    displayName: "White",
+    rgb: [1.0, 1.0, 1.0],
+    cssColor: "#ffffff",
+  },
+];
+
 /**
- * Generates paint options dynamically from the terrain index
+ * Gets the preview asset path for a terrain (using menu config if available)
  */
-export function generatePaintOptions(): readonly DynamicTextureItem[] {
-  const allTerrains = getAllTerrainTypes();
+function getPreviewAssetPath(terrain: any): string {
+  // Check if terrain has menu configuration with a preview path
+  if (terrain.menuConfig && terrain.menuConfig.previewPath) {
+    return terrain.menuConfig.previewPath;
+  }
   
-  const paintOptions: DynamicTextureItem[] = [];
+  // For terrains with a base path, use that
+  if (terrain.basePath) {
+    return terrain.basePath;
+  }
   
-  allTerrains.forEach(terrain => {
-    const basePath = getTerrainBasePath(terrain.name);
-    
-    if (basePath) {
-      // Add the base terrain option
-      paintOptions.push({
-        name: terrain.name,
-        displayName: terrain.displayName,
-        type: 'texture',
-        path: basePath,
-        terrainType: terrain.type,
-        hasVariants: terrain.hasVariants,
-        variantCount: terrain.assetCount,
-        terrainInfo: terrain
-      });
+  // For complex terrains with manifest, get first asset
+  if (terrain.type === 'complex' && terrain.manifestPath) {
+    try {
+      const manifest = loadTerrainManifest(terrain.name);
+      if (manifest && manifest.rawAssets.length > 0) {
+        // Get the first asset (they should be sorted by variant)
+        const firstAsset = manifest.rawAssets[0];
+        return `/assets/terrain/${terrain.name}/${firstAsset.filename}`;
+      }
+    } catch (error) {
+      console.warn(`Could not load manifest for ${terrain.name}:`, error);
     }
+  }
+  
+  // For terrains without manifest, try to use a simple numbered asset
+  if (terrain.assetCount > 0) {
+    // Try common patterns for first asset
+    const commonPatterns = [
+      `${terrain.name}_1.png`,
+      `${terrain.name}_01.png`,
+      `${terrain.name}.png`
+    ];
     
-    // For complex terrains, we could add specific variants here
-    // but for now we'll let the rendering logic handle variant selection
-    // This keeps the paint options clean while allowing dynamic variants
-  });
+    for (const pattern of commonPatterns) {
+      const path = `/assets/terrain/${terrain.name}/${pattern}`;
+      // We can't check if file exists in this context, so just use the first pattern
+      return path;
+    }
+  }
   
-  // Sort by display name for consistent ordering
-  paintOptions.sort((a, b) => a.displayName.localeCompare(b.displayName));
-  
-  return paintOptions;
+  // Fallback to a basic path
+  return `/assets/terrain/${terrain.name}.png`;
 }
 
 /**
- * Gets paint options with lazy evaluation
+ * Generates paint options from all available terrain types
  */
-let cachedPaintOptions: readonly DynamicTextureItem[] | null = null;
-
 export function getPaintOptions(): readonly DynamicTextureItem[] {
-  if (!cachedPaintOptions) {
-    cachedPaintOptions = generatePaintOptions();
-  }
-  return cachedPaintOptions;
+  const terrainTypes = getAllTerrainTypes();
+  const options: DynamicTextureItem[] = [];
+  
+  // Sort terrain types alphabetically for consistent ordering
+  const sortedTerrains = [...terrainTypes].sort((a, b) => 
+    a.displayName.localeCompare(b.displayName)
+  );
+  
+  sortedTerrains.forEach((terrain) => {
+    const iconPath = getPreviewAssetPath(terrain);
+    
+    options.push({
+      name: terrain.name,
+      displayName: terrain.displayName,
+      type: "texture",
+      path: iconPath,
+      hasVariants: terrain.hasVariants,
+      assetCount: terrain.assetCount,
+      previewBackgroundColor: terrain.menuConfig?.backgroundColor,
+      description: terrain.menuConfig?.description || terrain.displayName
+    });
+  });
+  
+  return options;
 }
 
 /**
  * Gets a specific texture item by name
  */
 export function getTextureItem(name: string): DynamicTextureItem | null {
-  const paintOptions = getPaintOptions();
-  return paintOptions.find(item => item.name === name) || null;
+  const terrain = getTerrainInfo(name);
+  if (!terrain) return null;
+  
+  const iconPath = getPreviewAssetPath(terrain);
+  
+  return {
+    name: terrain.name,
+    displayName: terrain.displayName,
+    type: "texture",
+    path: iconPath,
+    hasVariants: terrain.hasVariants,
+    assetCount: terrain.assetCount,
+    previewBackgroundColor: terrain.menuConfig?.backgroundColor,
+    description: terrain.menuConfig?.description || terrain.displayName
+  };
 }
 
 /**
- * Gets all texture items of a specific terrain type
+ * Gets texture items by type (simple or complex)
  */
-export function getTexturesByType(terrainType: 'simple' | 'complex'): readonly DynamicTextureItem[] {
-  const paintOptions = getPaintOptions();
-  return paintOptions.filter(item => item.terrainType === terrainType);
+export function getTexturesByType(type: 'simple' | 'complex'): readonly DynamicTextureItem[] {
+  const terrainIndex = getTerrainIndex();
+  const terrainsOfType = terrainIndex.byType[type] || [];
+  
+  return terrainsOfType.map((terrain) => {
+    const iconPath = getPreviewAssetPath(terrain);
+    
+    return {
+      name: terrain.name,
+      displayName: terrain.displayName,
+      type: "texture",
+      path: iconPath,
+      hasVariants: terrain.hasVariants,
+      assetCount: terrain.assetCount,
+      previewBackgroundColor: terrain.menuConfig?.backgroundColor,
+      description: terrain.menuConfig?.description || terrain.displayName
+    };
+  });
 }
 
 /**
- * Gets textures that have variants (complex terrain types)
+ * Gets textures that have variants (complex terrains)
  */
 export function getTexturesWithVariants(): readonly DynamicTextureItem[] {
   return getTexturesByType('complex');
 }
 
 /**
- * Gets simple textures (single asset types)
+ * Gets simple textures (single asset terrains)
  */
 export function getSimpleTextures(): readonly DynamicTextureItem[] {
   return getTexturesByType('simple');
 }
 
 /**
- * Legacy compatibility - exports the paint options for existing code
- * This allows existing components to continue working without changes
+ * Refreshes paint options (for dynamic reloading)
  */
-export const PAINT_OPTIONS = getPaintOptions();
-
-/**
- * Clears the cache to force regeneration of paint options
- * Useful when terrain assets are updated
- */
-export function refreshPaintOptions(): void {
-  cachedPaintOptions = null;
+export function refreshPaintOptions(): readonly DynamicTextureItem[] {
+  return getPaintOptions();
 }

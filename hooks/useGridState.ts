@@ -243,27 +243,34 @@ export function useGridState({
         return; // Exit early after removing icon
       }
       
-      // Priority 2: Remove texture if it exists and is not default
+      // Priority 2: Remove texture/asset if it exists
       const currentTexture = hexColors[hexKey];
-      if (currentTexture && currentTexture !== DEFAULT_COLORS.SELECTED) {
-        // Check if it's a non-default texture/color
-        const isNonDefault = typeof currentTexture === 'object' || 
-                           (typeof currentTexture === 'string' && currentTexture !== DEFAULT_COLORS.SELECTED);
+      if (currentTexture) {
+        setHexColors(prev => {
+          const newColors = { ...prev };
+          delete newColors[hexKey]; // Remove the texture, will fall back to default
+          return newColors;
+        });
+        setHexColorsVersion(prev => prev + 1);
         
-        if (isNonDefault) {
-          setHexColors(prev => {
-            const newColors = { ...prev };
-            delete newColors[hexKey]; // Remove the texture, will fall back to default
-            return newColors;
-          });
-          setHexColorsVersion(prev => prev + 1);
-          
-          // Update regions for eraser removing texture
-          updateRegionsForHexChange(hexKey, oldValue, undefined);
-        }
+        // Update regions for eraser removing texture
+        updateRegionsForHexChange(hexKey, oldValue, undefined);
+        return; // Exit early after removing texture
       }
       
-      // Priority 3: Do nothing if tile is empty (no icon and default/no texture)
+      // Priority 3: Remove background color if it exists
+      const currentBackground = hexBackgroundColors[hexKey];
+      if (currentBackground) {
+        setHexBackgroundColors(prev => {
+          const newBackgroundColors = { ...prev };
+          delete newBackgroundColors[hexKey];
+          return newBackgroundColors;
+        });
+        setHexBackgroundColorsVersion(prev => prev + 1);
+        return; // Exit early after removing background
+      }
+      
+      // Priority 4: Borders are erased via placeBorder function when in borders tab
       return;
     }
     
@@ -320,9 +327,9 @@ export function useGridState({
           // Fallback for invalid hex colors
           textureToUse = { 
             type: 'color', 
-            name: '#6B7280', // Default grey hex
-            displayName: '#6B7280',
-            rgb: DEFAULT_COLORS.GREY_RGB
+            name: '#F3E8C2', // Default manila hex
+            displayName: '#F3E8C2',
+            rgb: DEFAULT_COLORS.DEFAULT_RGB
           };
         }
       }
@@ -333,6 +340,13 @@ export function useGridState({
         [hexKey]: newValue
       }));
       setHexColorsVersion(prev => prev + 1);
+      
+      // Automatically apply the background color when placing terrain
+      setHexBackgroundColors(prev => ({
+        ...prev,
+        [hexKey]: selectedBackgroundColor
+      }));
+      setHexBackgroundColorsVersion(prev => prev + 1);
       
       // Update regions for new texture/color
       updateRegionsForHexChange(hexKey, oldValue, newValue);
@@ -426,14 +440,14 @@ export function useGridState({
     setHexColors({});
     setHexColorsVersion(prev => prev + 1);
     
-    // Set all hexes to have grey background colors instead
-    const greyBackgroundColors: HexBackgroundColorsMap = {};
+    // Set all hexes to have manila background colors instead  
+    const defaultBackgroundColors: HexBackgroundColorsMap = {};
     for (let row = 0; row < gridHeight; row++) {
       for (let col = 0; col < gridWidth; col++) {
-        greyBackgroundColors[`${row}-${col}`] = '#6B7280'; // Default grey hex color
+        defaultBackgroundColors[`${row}-${col}`] = '#F3E8C2'; // Manila color (243, 232, 194)
       }
     }
-    setHexBackgroundColors(greyBackgroundColors);
+    setHexBackgroundColors(defaultBackgroundColors);
     setHexBackgroundColorsVersion(prev => prev + 1);
     
     // Also clear all icons, borders, and unified history

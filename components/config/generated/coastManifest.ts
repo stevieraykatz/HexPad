@@ -7,7 +7,7 @@
 
 export const coastManifest = {
   "name": "coast",
-  "generated": "2025-08-06T21:26:53.011Z",
+  "generated": "2025-08-12T05:41:15.815Z",
   "totalAssets": 17,
   "assets": {
     "byAngle": {

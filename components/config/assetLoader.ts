@@ -8,11 +8,21 @@
 import { terrainIndex } from './generated/terrainIndex';
 import { coastManifest } from './generated/coastManifest';
 import { forestManifest } from './generated/forestManifest';
+import { hillsManifest } from './generated/hillsManifest';
+import { mountainManifest } from './generated/mountainManifest';
+import { plainsManifest } from './generated/plainsManifest';
+import { shrublandManifest } from './generated/shrublandManifest';
+import { swampManifest } from './generated/swampManifest';
 
 // Static manifest imports for better performance and type safety
 const staticManifests: Record<string, AssetManifest> = {
   coast: coastManifest,
-  forest: forestManifest
+  forest: forestManifest,
+  hills: hillsManifest,
+  mountain: mountainManifest,
+  plains: plainsManifest,
+  shrubland: shrublandManifest,
+  swamp: swampManifest
 };
 
 // Types for the dynamic asset system
@@ -39,6 +49,14 @@ export interface AssetManifest {
   readonly rawAssets: readonly AssetVariant[];
 }
 
+export interface MenuConfig {
+  readonly previewAsset: string;
+  readonly previewPath: string;
+  readonly backgroundColor: string;
+  readonly description: string;
+  readonly useCustomBackground: boolean;
+}
+
 export interface TerrainInfo {
   readonly name: string;
   readonly displayName: string;
@@ -52,6 +70,7 @@ export interface TerrainInfo {
     readonly hasSides: boolean;
     readonly hasSpecial: boolean;
   };
+  readonly menuConfig?: MenuConfig;
 }
 
 export interface TerrainIndex {

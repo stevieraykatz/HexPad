@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import HexGrid, { HexGridRef } from './HexGrid';
 import { UI_CONFIG, PAINT_OPTIONS, BACKGROUND_COLORS, ICON_OPTIONS } from './config';
 import type { BackgroundColor, IconItem, HexTexture } from './config';
+import { loadTerrainManifest, getTerrainInfo } from './config/assetLoader';
 import type { NumberingMode } from './GridSizeControls';
 
 import TopCornerLinks from './TopCornerLinks';
@@ -25,19 +26,20 @@ import {
   createIconSelectHandler,
   createMenuToggleHandler,
   createTabChangeHandler,
-  createEraserToggleHandler,
   createExportPNGHandler,
   createCopyUrlHandler,
   createBackgroundPaintingModeToggleHandler
 } from '../utils/gridActions';
 
 const HexGridApp: React.FC = () => {
-  const [selectedColor, setSelectedColor] = useState<string>('#6B7280'); // Default grey as hex
+  const [selectedColor, setSelectedColor] = useState<string>('#F3E8C2'); // Default manila as hex
   const [selectedTexture, setSelectedTexture] = useState<HexTexture | null>(null);
   const [selectedIcon, setSelectedIcon] = useState<IconItem | null>(null);
+  
+
   const [selectedBorderColor, setSelectedBorderColor] = useState<string>('#FF1A00');
   const [selectedIconColor, setSelectedIconColor] = useState<string>('#FFFFFF');
-  const [selectedBackgroundShaderColor, setSelectedBackgroundShaderColor] = useState<string>('#3B4252');
+  const [selectedBackgroundShaderColor, setSelectedBackgroundShaderColor] = useState<string>('#F3E8C2');
   const [backgroundPaintingMode, setBackgroundPaintingMode] = useState<boolean>(false);
   const [menuOpen, setMenuOpen] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'paint' | 'icons' | 'borders' | 'settings'>('paint');
@@ -166,7 +168,7 @@ const HexGridApp: React.FC = () => {
     const greyBackgroundColors: Record<string, string> = {};
     for (let row = 0; row < gridHeight; row++) {
       for (let col = 0; col < gridWidth; col++) {
-        greyBackgroundColors[`${row}-${col}`] = '#6B7280'; // Default grey hex color
+        greyBackgroundColors[`${row}-${col}`] = '#F3E8C2'; // Default manila hex color
       }
     }
     setHexBackgroundColors(greyBackgroundColors);
@@ -232,7 +234,14 @@ const HexGridApp: React.FC = () => {
   const handleIconSelect = createIconSelectHandler(gridActionHelpers);
   const handleMenuToggle = createMenuToggleHandler(menuOpen, gridActionHelpers);
   const handleTabChange = createTabChangeHandler(selectedIcon, gridActionHelpers);
-  const handleEraserToggle = createEraserToggleHandler(selectedIcon, gridActionHelpers);
+  const handleEraserToggle = useCallback(() => {
+    // Toggle eraser - deselect if already selected, select if not
+    if (selectedIcon?.name === 'eraser') {
+      setSelectedIcon(null);
+    } else {
+      setSelectedIcon({ name: 'eraser', displayName: 'Eraser', type: 'icon', path: '' } as IconItem);
+    }
+  }, [selectedIcon]);
   const handleBackgroundPaintingModeToggle = createBackgroundPaintingModeToggleHandler(
     backgroundPaintingMode,
     gridActionHelpers
@@ -263,47 +272,63 @@ const HexGridApp: React.FC = () => {
     }
     
     if (action === 'cycle') {
-      // Find the next texture variant
-      const baseTextureName = currentTexture.name.split('-')[0]; // e.g., "coast" from "coast-2"
+      // Extract the terrain name from the current texture
+      // currentTexture.name might be like "coast_120_1" or "forest_180_bottom_1" or "forest-360_B1"
+      let terrainName = currentTexture.name.split('_')[0]; // Get "coast" or "forest" or "forest-360"
       
-      // Find all variants of this texture in PAINT_OPTIONS
-      const variants = PAINT_OPTIONS.filter(option => 
-        option.name.startsWith(baseTextureName) && option.name !== baseTextureName
-      ).sort((a, b) => {
-        // Sort by variant number
-        const aNum = parseInt(a.name.split('-')[1] || '1');
-        const bNum = parseInt(b.name.split('-')[1] || '1');
-        return aNum - bNum;
-      });
-      
-      // Include the base texture as variant 1
-      const allVariants = [
-        PAINT_OPTIONS.find(option => option.name === baseTextureName),
-        ...variants
-      ].filter(Boolean);
-      
-      if (allVariants.length > 1) {
-        // Find current index and get next variant
-        const currentIndex = allVariants.findIndex(variant => variant?.name === currentTexture.name);
-        const nextIndex = (currentIndex + 1) % allVariants.length;
-        const nextVariant = allVariants[nextIndex];
-        
-        if (nextVariant) {
-          setHexColors({
-            ...hexColors,
-            [hexKey]: {
-              ...currentTexture,
-              name: nextVariant.name,
-              displayName: nextVariant.displayName,
-              path: nextVariant.path
-            }
-          });
-        }
+      // Handle cases where terrain name contains hyphens (e.g., "forest-360" -> "forest")
+      if (terrainName.includes('-')) {
+        terrainName = terrainName.split('-')[0];
       }
+      
+      // Get terrain info and manifest
+      const terrainInfo = getTerrainInfo(terrainName);
+      if (!terrainInfo || terrainInfo.type !== 'complex') {
+        return; // Can only cycle complex terrain types
+      }
+      
+      const manifest = loadTerrainManifest(terrainName);
+      if (!manifest || manifest.rawAssets.length <= 1) {
+        return; // Need manifest and multiple assets to cycle
+      }
+      
+      // Get all available assets for this terrain
+      const allAssets = manifest.rawAssets;
+      
+      // Find current asset by matching the filename
+      const currentAssetName = currentTexture.path?.split('/').pop()?.replace('.png', '') || '';
+      const currentIndex = allAssets.findIndex(asset => asset.name === currentAssetName);
+      
+      if (currentIndex === -1) {
+        // If current asset not found, start with first asset
+        const firstAsset = allAssets[0];
+        setHexColors({
+          ...hexColors,
+          [hexKey]: {
+            ...currentTexture,
+            name: firstAsset.name,
+            path: `/assets/terrain/${terrainName}/${firstAsset.filename}`
+          }
+        });
+        return;
+      }
+      
+      // Get the next asset (cycle back to start if at end)
+      const nextIndex = (currentIndex + 1) % allAssets.length;
+      const nextAsset = allAssets[nextIndex];
+      
+      setHexColors({
+        ...hexColors,
+        [hexKey]: {
+          ...currentTexture,
+          name: nextAsset.name,
+          path: `/assets/terrain/${terrainName}/${nextAsset.filename}`
+        }
+      });
     } else if (action === 'rotate-left' || action === 'rotate-right') {
       // Handle rotation (for future directional textures)
       const currentRotation = currentTexture.rotation || 0;
-      const rotationDelta = action === 'rotate-right' ? 1 : -1;
+      const rotationDelta = action === 'rotate-right' ? -1 : 1;
       const newRotation = (currentRotation + rotationDelta + 6) % 6; // 6 sides in hexagon
       
       setHexColors({
@@ -457,6 +482,7 @@ const HexGridApp: React.FC = () => {
           bordersVersion={bordersVersion}
           activeTab={activeTab}
           selectedIcon={selectedIcon}
+          selectedTexture={selectedTexture}
           onCanvasInteraction={handleCanvasInteraction}
           menuOpen={menuOpen}
           onTileTextureAction={handleTileTextureAction}

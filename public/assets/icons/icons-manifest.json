@@ -1,0 +1,88 @@
+{
+  "name": "icons",
+  "generated": "2025-08-12T05:32:26.745Z",
+  "totalAssets": 9,
+  "assets": {
+    "byAngle": {},
+    "bySide": {},
+    "bySpecial": {},
+    "all": {
+      "base": [
+        {
+          "filename": "castle.png",
+          "name": "castle"
+        },
+        {
+          "filename": "church.png",
+          "name": "church"
+        },
+        {
+          "filename": "curse.png",
+          "name": "curse"
+        },
+        {
+          "filename": "huts.png",
+          "name": "huts"
+        },
+        {
+          "filename": "pavillion.png",
+          "name": "pavillion"
+        },
+        {
+          "filename": "ruins.png",
+          "name": "ruins"
+        },
+        {
+          "filename": "sanctum.png",
+          "name": "sanctum"
+        },
+        {
+          "filename": "town.png",
+          "name": "town"
+        },
+        {
+          "filename": "village.png",
+          "name": "village"
+        }
+      ]
+    }
+  },
+  "rawAssets": [
+    {
+      "filename": "castle.png",
+      "name": "castle"
+    },
+    {
+      "filename": "church.png",
+      "name": "church"
+    },
+    {
+      "filename": "curse.png",
+      "name": "curse"
+    },
+    {
+      "filename": "huts.png",
+      "name": "huts"
+    },
+    {
+      "filename": "pavillion.png",
+      "name": "pavillion"
+    },
+    {
+      "filename": "ruins.png",
+      "name": "ruins"
+    },
+    {
+      "filename": "sanctum.png",
+      "name": "sanctum"
+    },
+    {
+      "filename": "town.png",
+      "name": "town"
+    },
+    {
+      "filename": "village.png",
+      "name": "village"
+    }
+  ]
+}

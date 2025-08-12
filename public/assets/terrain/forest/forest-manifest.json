@@ -1,88 +1,119 @@
 {
   "name": "forest",
-  "generated": "2025-08-06T21:26:53.015Z",
-  "totalAssets": 8,
+  "generated": "2025-08-12T05:41:15.817Z",
+  "totalAssets": 15,
   "assets": {
     "byAngle": {
       "120": {
+        "angle_120": [
+          {
+            "filename": "forest_120_bottom-side-top_B1R.png",
+            "name": "forest_120_bottom-side-top_B1R",
+            "baseName": "forest",
+            "angle": 120
+          },
+          {
+            "filename": "forest_120_bottom-side-top_B2.png",
+            "name": "forest_120_bottom-side-top_B2",
+            "baseName": "forest",
+            "angle": 120
+          }
+        ],
         "angle_120_side_bottom-side": [
           {
-            "filename": "forest_120_bottom-side_1.png",
-            "name": "forest_120_bottom-side_1",
+            "filename": "forest_120_bottom-side_B1L.png",
+            "name": "forest_120_bottom-side_B1L",
             "baseName": "forest",
             "angle": 120,
-            "side": "bottom-side",
-            "variant": 1
-          }
-        ],
-        "angle_120_side_bottom": [
-          {
-            "filename": "forest_120_bottom_1.png",
-            "name": "forest_120_bottom_1",
-            "baseName": "forest",
-            "angle": 120,
-            "side": "bottom",
-            "variant": 1
-          }
-        ],
-        "angle_120_side_top-side": [
-          {
-            "filename": "forest_120_top-side_1.png",
-            "name": "forest_120_top-side_1",
-            "baseName": "forest",
-            "angle": 120,
-            "side": "top-side",
-            "variant": 1
-          }
-        ],
-        "angle_120_side_top": [
-          {
-            "filename": "forest_120_top_1.png",
-            "name": "forest_120_top_1",
-            "baseName": "forest",
-            "angle": 120,
-            "side": "top",
-            "variant": 1
+            "side": "bottom-side"
           }
         ]
       },
       "180": {
         "angle_180_side_bottom-side": [
           {
-            "filename": "forest_180_bottom-side_1.png",
-            "name": "forest_180_bottom-side_1",
+            "filename": "forest_180_bottom-side_A1.png",
+            "name": "forest_180_bottom-side_A1",
             "baseName": "forest",
             "angle": 180,
-            "side": "bottom-side",
-            "variant": 1
+            "side": "bottom-side"
           },
           {
-            "filename": "forest_180_bottom-side_2.png",
-            "name": "forest_180_bottom-side_2",
+            "filename": "forest_180_bottom-side_B1L.png",
+            "name": "forest_180_bottom-side_B1L",
             "baseName": "forest",
             "angle": 180,
-            "side": "bottom-side",
-            "variant": 2
+            "side": "bottom-side"
+          },
+          {
+            "filename": "forest_180_bottom-side_B1R.png",
+            "name": "forest_180_bottom-side_B1R",
+            "baseName": "forest",
+            "angle": 180,
+            "side": "bottom-side"
           }
         ],
-        "angle_180_side_side": [
+        "angle_180": [
           {
-            "filename": "forest_180_side_1.png",
-            "name": "forest_180_side_1",
+            "filename": "forest_180_bottomB1.png",
+            "name": "forest_180_bottomB1",
+            "baseName": "forest",
+            "angle": 180
+          }
+        ],
+        "angle_180_side_bottom": [
+          {
+            "filename": "forest_180_bottom_B2.png",
+            "name": "forest_180_bottom_B2",
             "baseName": "forest",
             "angle": 180,
-            "side": "side",
-            "variant": 1
+            "side": "bottom"
           }
         ],
         "angle_180_side_top-side": [
           {
-            "filename": "forest_180_top-side_1.png",
-            "name": "forest_180_top-side_1",
+            "filename": "forest_180_top-side_B1L.png",
+            "name": "forest_180_top-side_B1L",
             "baseName": "forest",
             "angle": 180,
-            "side": "top-side",
-            "variant": 1
+            "side": "top-side"
+          },
+          {
+            "filename": "forest_180_top-side_B1R.png",
+            "name": "forest_180_top-side_B1R",
+            "baseName": "forest",
+            "angle": 180,
+            "side": "top-side"
+          },
+          {
+            "filename": "forest_180_top-side_B2L.png",
+            "name": "forest_180_top-side_B2L",
+            "baseName": "forest",
+            "angle": 180,
+            "side": "top-side"
+          },
+          {
+            "filename": "forest_180_top-side_B2R.png",
+            "name": "forest_180_top-side_B2R",
+            "baseName": "forest",
+            "angle": 180,
+            "side": "top-side"
+          },
+          {
+            "filename": "forest_180_top-side_B3L.png",
+            "name": "forest_180_top-side_B3L",
+            "baseName": "forest",
+            "angle": 180,
+            "side": "top-side"
+          }
+        ],
+        "angle_180_side_top": [
+          {
+            "filename": "forest_180_top_B1.png",
+            "name": "forest_180_top_B1",
+            "baseName": "forest",
+            "angle": 180,
+            "side": "top"
           }
         ]
       }
@@ -91,238 +122,319 @@
       "bottom-side": {
         "angle_120_side_bottom-side": [
           {
-            "filename": "forest_120_bottom-side_1.png",
-            "name": "forest_120_bottom-side_1",
+            "filename": "forest_120_bottom-side_B1L.png",
+            "name": "forest_120_bottom-side_B1L",
             "baseName": "forest",
             "angle": 120,
-            "side": "bottom-side",
-            "variant": 1
+            "side": "bottom-side"
           }
         ],
         "angle_180_side_bottom-side": [
           {
-            "filename": "forest_180_bottom-side_1.png",
-            "name": "forest_180_bottom-side_1",
+            "filename": "forest_180_bottom-side_A1.png",
+            "name": "forest_180_bottom-side_A1",
             "baseName": "forest",
             "angle": 180,
-            "side": "bottom-side",
-            "variant": 1
+            "side": "bottom-side"
           },
           {
-            "filename": "forest_180_bottom-side_2.png",
-            "name": "forest_180_bottom-side_2",
+            "filename": "forest_180_bottom-side_B1L.png",
+            "name": "forest_180_bottom-side_B1L",
             "baseName": "forest",
             "angle": 180,
-            "side": "bottom-side",
-            "variant": 2
+            "side": "bottom-side"
+          },
+          {
+            "filename": "forest_180_bottom-side_B1R.png",
+            "name": "forest_180_bottom-side_B1R",
+            "baseName": "forest",
+            "angle": 180,
+            "side": "bottom-side"
           }
         ]
       },
       "bottom": {
-        "angle_120_side_bottom": [
+        "angle_180_side_bottom": [
           {
-            "filename": "forest_120_bottom_1.png",
-            "name": "forest_120_bottom_1",
+            "filename": "forest_180_bottom_B2.png",
+            "name": "forest_180_bottom_B2",
             "baseName": "forest",
-            "angle": 120,
-            "side": "bottom",
-            "variant": 1
+            "angle": 180,
+            "side": "bottom"
           }
         ]
       },
       "top-side": {
-        "angle_120_side_top-side": [
-          {
-            "filename": "forest_120_top-side_1.png",
-            "name": "forest_120_top-side_1",
-            "baseName": "forest",
-            "angle": 120,
-            "side": "top-side",
-            "variant": 1
-          }
-        ],
         "angle_180_side_top-side": [
           {
-            "filename": "forest_180_top-side_1.png",
-            "name": "forest_180_top-side_1",
+            "filename": "forest_180_top-side_B1L.png",
+            "name": "forest_180_top-side_B1L",
             "baseName": "forest",
             "angle": 180,
-            "side": "top-side",
-            "variant": 1
+            "side": "top-side"
+          },
+          {
+            "filename": "forest_180_top-side_B1R.png",
+            "name": "forest_180_top-side_B1R",
+            "baseName": "forest",
+            "angle": 180,
+            "side": "top-side"
+          },
+          {
+            "filename": "forest_180_top-side_B2L.png",
+            "name": "forest_180_top-side_B2L",
+            "baseName": "forest",
+            "angle": 180,
+            "side": "top-side"
+          },
+          {
+            "filename": "forest_180_top-side_B2R.png",
+            "name": "forest_180_top-side_B2R",
+            "baseName": "forest",
+            "angle": 180,
+            "side": "top-side"
+          },
+          {
+            "filename": "forest_180_top-side_B3L.png",
+            "name": "forest_180_top-side_B3L",
+            "baseName": "forest",
+            "angle": 180,
+            "side": "top-side"
           }
         ]
       },
       "top": {
-        "angle_120_side_top": [
+        "angle_180_side_top": [
           {
-            "filename": "forest_120_top_1.png",
-            "name": "forest_120_top_1",
-            "baseName": "forest",
-            "angle": 120,
-            "side": "top",
-            "variant": 1
-          }
-        ]
-      },
-      "side": {
-        "angle_180_side_side": [
-          {
-            "filename": "forest_180_side_1.png",
-            "name": "forest_180_side_1",
+            "filename": "forest_180_top_B1.png",
+            "name": "forest_180_top_B1",
             "baseName": "forest",
             "angle": 180,
-            "side": "side",
-            "variant": 1
+            "side": "top"
           }
         ]
       }
     },
     "bySpecial": {},
     "all": {
+      "base": [
+        {
+          "filename": "forest-360_B1.png",
+          "name": "forest-360_B1",
+          "baseName": "forest-360"
+        }
+      ],
+      "angle_120": [
+        {
+          "filename": "forest_120_bottom-side-top_B1R.png",
+          "name": "forest_120_bottom-side-top_B1R",
+          "baseName": "forest",
+          "angle": 120
+        },
+        {
+          "filename": "forest_120_bottom-side-top_B2.png",
+          "name": "forest_120_bottom-side-top_B2",
+          "baseName": "forest",
+          "angle": 120
+        }
+      ],
       "angle_120_side_bottom-side": [
         {
-          "filename": "forest_120_bottom-side_1.png",
-          "name": "forest_120_bottom-side_1",
+          "filename": "forest_120_bottom-side_B1L.png",
+          "name": "forest_120_bottom-side_B1L",
           "baseName": "forest",
           "angle": 120,
-          "side": "bottom-side",
-          "variant": 1
-        }
-      ],
-      "angle_120_side_bottom": [
-        {
-          "filename": "forest_120_bottom_1.png",
-          "name": "forest_120_bottom_1",
-          "baseName": "forest",
-          "angle": 120,
-          "side": "bottom",
-          "variant": 1
-        }
-      ],
-      "angle_120_side_top-side": [
-        {
-          "filename": "forest_120_top-side_1.png",
-          "name": "forest_120_top-side_1",
-          "baseName": "forest",
-          "angle": 120,
-          "side": "top-side",
-          "variant": 1
-        }
-      ],
-      "angle_120_side_top": [
-        {
-          "filename": "forest_120_top_1.png",
-          "name": "forest_120_top_1",
-          "baseName": "forest",
-          "angle": 120,
-          "side": "top",
-          "variant": 1
+          "side": "bottom-side"
         }
       ],
       "angle_180_side_bottom-side": [
         {
-          "filename": "forest_180_bottom-side_1.png",
-          "name": "forest_180_bottom-side_1",
+          "filename": "forest_180_bottom-side_A1.png",
+          "name": "forest_180_bottom-side_A1",
           "baseName": "forest",
           "angle": 180,
-          "side": "bottom-side",
-          "variant": 1
+          "side": "bottom-side"
         },
         {
-          "filename": "forest_180_bottom-side_2.png",
-          "name": "forest_180_bottom-side_2",
+          "filename": "forest_180_bottom-side_B1L.png",
+          "name": "forest_180_bottom-side_B1L",
           "baseName": "forest",
           "angle": 180,
-          "side": "bottom-side",
-          "variant": 2
+          "side": "bottom-side"
+        },
+        {
+          "filename": "forest_180_bottom-side_B1R.png",
+          "name": "forest_180_bottom-side_B1R",
+          "baseName": "forest",
+          "angle": 180,
+          "side": "bottom-side"
         }
       ],
-      "angle_180_side_side": [
+      "angle_180": [
         {
-          "filename": "forest_180_side_1.png",
-          "name": "forest_180_side_1",
+          "filename": "forest_180_bottomB1.png",
+          "name": "forest_180_bottomB1",
+          "baseName": "forest",
+          "angle": 180
+        }
+      ],
+      "angle_180_side_bottom": [
+        {
+          "filename": "forest_180_bottom_B2.png",
+          "name": "forest_180_bottom_B2",
           "baseName": "forest",
           "angle": 180,
-          "side": "side",
-          "variant": 1
+          "side": "bottom"
         }
       ],
       "angle_180_side_top-side": [
         {
-          "filename": "forest_180_top-side_1.png",
-          "name": "forest_180_top-side_1",
+          "filename": "forest_180_top-side_B1L.png",
+          "name": "forest_180_top-side_B1L",
           "baseName": "forest",
           "angle": 180,
-          "side": "top-side",
-          "variant": 1
+          "side": "top-side"
+        },
+        {
+          "filename": "forest_180_top-side_B1R.png",
+          "name": "forest_180_top-side_B1R",
+          "baseName": "forest",
+          "angle": 180,
+          "side": "top-side"
+        },
+        {
+          "filename": "forest_180_top-side_B2L.png",
+          "name": "forest_180_top-side_B2L",
+          "baseName": "forest",
+          "angle": 180,
+          "side": "top-side"
+        },
+        {
+          "filename": "forest_180_top-side_B2R.png",
+          "name": "forest_180_top-side_B2R",
+          "baseName": "forest",
+          "angle": 180,
+          "side": "top-side"
+        },
+        {
+          "filename": "forest_180_top-side_B3L.png",
+          "name": "forest_180_top-side_B3L",
+          "baseName": "forest",
+          "angle": 180,
+          "side": "top-side"
+        }
+      ],
+      "angle_180_side_top": [
+        {
+          "filename": "forest_180_top_B1.png",
+          "name": "forest_180_top_B1",
+          "baseName": "forest",
+          "angle": 180,
+          "side": "top"
         }
       ]
     }
   },
   "rawAssets": [
     {
-      "filename": "forest_120_bottom-side_1.png",
-      "name": "forest_120_bottom-side_1",
+      "filename": "forest-360_B1.png",
+      "name": "forest-360_B1",
+      "baseName": "forest-360"
+    },
+    {
+      "filename": "forest_120_bottom-side-top_B1R.png",
+      "name": "forest_120_bottom-side-top_B1R",
+      "baseName": "forest",
+      "angle": 120
+    },
+    {
+      "filename": "forest_120_bottom-side-top_B2.png",
+      "name": "forest_120_bottom-side-top_B2",
+      "baseName": "forest",
+      "angle": 120
+    },
+    {
+      "filename": "forest_120_bottom-side_B1L.png",
+      "name": "forest_120_bottom-side_B1L",
       "baseName": "forest",
       "angle": 120,
-      "side": "bottom-side",
-      "variant": 1
+      "side": "bottom-side"
     },
     {
-      "filename": "forest_120_bottom_1.png",
-      "name": "forest_120_bottom_1",
-      "baseName": "forest",
-      "angle": 120,
-      "side": "bottom",
-      "variant": 1
-    },
-    {
-      "filename": "forest_120_top-side_1.png",
-      "name": "forest_120_top-side_1",
-      "baseName": "forest",
-      "angle": 120,
-      "side": "top-side",
-      "variant": 1
-    },
-    {
-      "filename": "forest_120_top_1.png",
-      "name": "forest_120_top_1",
-      "baseName": "forest",
-      "angle": 120,
-      "side": "top",
-      "variant": 1
-    },
-    {
-      "filename": "forest_180_bottom-side_1.png",
-      "name": "forest_180_bottom-side_1",
+      "filename": "forest_180_bottom-side_A1.png",
+      "name": "forest_180_bottom-side_A1",
       "baseName": "forest",
       "angle": 180,
-      "side": "bottom-side",
-      "variant": 1
+      "side": "bottom-side"
     },
     {
-      "filename": "forest_180_bottom-side_2.png",
-      "name": "forest_180_bottom-side_2",
+      "filename": "forest_180_bottom-side_B1L.png",
+      "name": "forest_180_bottom-side_B1L",
       "baseName": "forest",
       "angle": 180,
-      "side": "bottom-side",
-      "variant": 2
+      "side": "bottom-side"
     },
     {
-      "filename": "forest_180_side_1.png",
-      "name": "forest_180_side_1",
+      "filename": "forest_180_bottom-side_B1R.png",
+      "name": "forest_180_bottom-side_B1R",
       "baseName": "forest",
       "angle": 180,
-      "side": "side",
-      "variant": 1
+      "side": "bottom-side"
     },
     {
-      "filename": "forest_180_top-side_1.png",
-      "name": "forest_180_top-side_1",
+      "filename": "forest_180_bottomB1.png",
+      "name": "forest_180_bottomB1",
+      "baseName": "forest",
+      "angle": 180
+    },
+    {
+      "filename": "forest_180_bottom_B2.png",
+      "name": "forest_180_bottom_B2",
       "baseName": "forest",
       "angle": 180,
-      "side": "top-side",
-      "variant": 1
+      "side": "bottom"
+    },
+    {
+      "filename": "forest_180_top-side_B1L.png",
+      "name": "forest_180_top-side_B1L",
+      "baseName": "forest",
+      "angle": 180,
+      "side": "top-side"
+    },
+    {
+      "filename": "forest_180_top-side_B1R.png",
+      "name": "forest_180_top-side_B1R",
+      "baseName": "forest",
+      "angle": 180,
+      "side": "top-side"
+    },
+    {
+      "filename": "forest_180_top-side_B2L.png",
+      "name": "forest_180_top-side_B2L",
+      "baseName": "forest",
+      "angle": 180,
+      "side": "top-side"
+    },
+    {
+      "filename": "forest_180_top-side_B2R.png",
+      "name": "forest_180_top-side_B2R",
+      "baseName": "forest",
+      "angle": 180,
+      "side": "top-side"
+    },
+    {
+      "filename": "forest_180_top-side_B3L.png",
+      "name": "forest_180_top-side_B3L",
+      "baseName": "forest",
+      "angle": 180,
+      "side": "top-side"
+    },
+    {
+      "filename": "forest_180_top_B1.png",
+      "name": "forest_180_top_B1",
+      "baseName": "forest",
+      "angle": 180,
+      "side": "top"
     }
   ]
 }

@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef, useMemo } from 'react';
 import { GRID_CONFIG, DEFAULT_COLORS } from './config';
 import type { RGB, IconItem } from './config';
 import type { ColoredIcon } from './config/iconsConfig';
 import type { NumberingMode } from './GridSizeControls';
+import HexButton, { isPointInHexButton, type HexButtonType } from './HexButton';
 
 import { initializeWebGLContext, createShaderPrograms, loadTexture } from '../utils/webglUtils';
 import { 
@@ -47,7 +48,7 @@ type HexColor = string;
 type ButtonRegion = 'center' | 'left' | 'right' | null;
 
 interface TileHoverState {
-  hex: HexPosition | null;
+  hexCoord: { row: number; col: number } | null;
   buttonRegion: ButtonRegion;
 }
 
@@ -69,6 +70,7 @@ interface HexGridProps {
   bordersVersion?: number;
   activeTab?: 'paint' | 'icons' | 'borders' | 'settings';
   selectedIcon?: IconItem | null;
+  selectedTexture?: HexTexture | null;
   numberingMode?: NumberingMode;
   onCanvasInteraction?: () => void; // Callback for when user interacts with canvas
   // Tile manipulation props
@@ -104,6 +106,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   bordersVersion = 0,
   activeTab = 'paint',
   selectedIcon = null,
+  selectedTexture = null,
   numberingMode = 'off',
   onCanvasInteraction,
   // Tile manipulation props
@@ -116,6 +119,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   canApplyRegionBorders,
   applyRegionBorders
 }, ref) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bordersCanvasRef = useRef<HTMLCanvasElement>(null);
   const numberingCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -140,7 +144,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   const texturesRef = useRef<Map<string, WebGLTexture>>(new Map());
   
   // Tile manipulation state
-  const [tileHoverState, setTileHoverState] = useState<TileHoverState>({ hex: null, buttonRegion: null });
+  const [tileHoverState, setTileHoverState] = useState<TileHoverState>({ hexCoord: null, buttonRegion: null });
+  const lastButtonHexRef = useRef<string | null>(null);
   
   // Hover tracking for region detection
   const [hoveredHex, setHoveredHex] = useState<{ row: number; col: number } | null>(null);
@@ -228,20 +233,17 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
 
   // Helper function to determine which button region the mouse is in within a hex
   const getButtonRegion = useCallback((mouseX: number, mouseY: number, hexPos: HexPosition, hexRadius: number): ButtonRegion => {
-    const deltaX = mouseX - hexPos.x;
-    const deltaY = mouseY - hexPos.y;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    
-    // Only detect button regions if within the hex
-    if (distance > hexRadius * 0.8) return null;
-    
-    // Divide hex into three vertical zones for left, center, right
-    const hexWidth = hexRadius * 1.5; // Approximate hex width
-    const zoneWidth = hexWidth / 3;
-    
-    if (deltaX < -zoneWidth / 2) return 'left';
-    if (deltaX > zoneWidth / 2) return 'right';
-    return 'center';
+    // Use the unified HexButton detection logic
+    if (isPointInHexButton(mouseX, mouseY, 'center', hexPos.x, hexPos.y, hexRadius)) {
+      return 'center';
+    }
+    if (isPointInHexButton(mouseX, mouseY, 'left', hexPos.x, hexPos.y, hexRadius)) {
+      return 'left';
+    }
+    if (isPointInHexButton(mouseX, mouseY, 'right', hexPos.x, hexPos.y, hexRadius)) {
+      return 'right';
+    }
+    return null;
   }, []);
 
   // Helper function to handle tile manipulation clicks
@@ -249,7 +251,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     if (!menuOpen || !onTileTextureAction || !buttonRegion) return;
     
     const action = buttonRegion === 'center' ? 'cycle' : 
-                   buttonRegion === 'left' ? 'rotate-right' : 'rotate-left';
+                   buttonRegion === 'left' ? 'rotate-left' : 'rotate-right';
     onTileTextureAction(hex.row, hex.col, action);
   }, [menuOpen, onTileTextureAction]);
 
@@ -333,7 +335,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       if (userTexture === DEFAULT_COLORS.SELECTED) {
         const rgb = isHoveredRegion 
           ? [0.8, 0.9, 1.0] as RGB // Bright blue glow for hovered region
-          : DEFAULT_COLORS.GREY_RGB;
+          : DEFAULT_COLORS.DEFAULT_RGB;
         return { type: 'color', rgb };
       }
       
@@ -347,7 +349,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         // Fallback for color objects without RGB (shouldn't happen with new system)
         const rgb = isHoveredRegion 
           ? [0.52, 0.55, 0.6] as RGB 
-          : DEFAULT_COLORS.GREY_RGB;
+          : DEFAULT_COLORS.DEFAULT_RGB;
         return { type: 'color', rgb };
       }
       
@@ -507,6 +509,12 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   }, [paintHexIfNew, paintBorderIfNew, activeTab]);
 
   const handleMouseDown = useCallback((event: MouseEvent): void => {
+    // Check if the click is on a button - if so, don't interfere
+    const target = event.target as HTMLElement;
+    if (target && target.closest('[data-hex-button]')) {
+      return; // Let the button handle the click
+    }
+    
     event.preventDefault();
     
     // Notify parent of canvas interaction for menu closing
@@ -531,19 +539,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           }
         }
 
-        // Check for tile manipulation if menu is open and there's a hex texture
-        // BUT: Always allow eraser to work regardless of tile manipulation
-        if (menuOpen && tileHoverState.hex && tileHoverState.buttonRegion && selectedIcon?.name !== 'eraser') {
-          const clickedHex = getHexFromMousePos(x, y, hexPositionsRef.current, hexRadiusRef.current);
-          if (clickedHex && clickedHex.row === tileHoverState.hex.row && clickedHex.col === tileHoverState.hex.col) {
-            const currentTexture = getHexColor && getHexColor(clickedHex.row, clickedHex.col);
-            // Only allow manipulation on textured tiles
-            if (currentTexture && typeof currentTexture === 'object' && currentTexture.type === 'texture') {
-              handleTileManipulation(clickedHex, tileHoverState.buttonRegion);
-              return; // Don't proceed with normal painting
-            }
-          }
-        }
+        // Note: Tile manipulation is now handled by HexButton components directly
+        // This allows unified visual/clickable areas and removes the need for 
+        // manual click detection here.
       }
       
       // Normal painting behavior
@@ -552,7 +550,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       clearPaintedBorders();
       handlePaintAtPosition(event.clientX, event.clientY);
     }
-  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction, menuOpen, tileHoverState, getHexColor, handleTileManipulation, regionButtonState, activeTab, handleRegionBorderApplication]);
+  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction, menuOpen, getHexColor, handleTileManipulation, regionButtonState, activeTab, handleRegionBorderApplication]);
 
   const handleMouseMove = useCallback((event: MouseEvent): void => {
     if (isPanning && lastPanPosition) {
@@ -600,28 +598,42 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           
           // Region button state is now handled by useEffect when hoveredRegion changes
           
-          // Tile manipulation logic (only when menu is open)
+          // Tile manipulation logic - only update when hex actually changes
           if (menuOpen) {
-            const currentTexture = getHexColor && getHexColor(currentHoveredHex.row, currentHoveredHex.col);
-            // Only show button regions for textured tiles
-            if (currentTexture && typeof currentTexture === 'object' && currentTexture.type === 'texture') {
-              const buttonRegion = getButtonRegion(x, y, currentHoveredHex, hexRadiusRef.current);
-              setTileHoverState({ hex: currentHoveredHex, buttonRegion });
-            } else {
-              setTileHoverState({ hex: null, buttonRegion: null });
+            const currentHexKey = `${currentHoveredHex.row}-${currentHoveredHex.col}`;
+            
+            // Only check texture and update state if we've moved to a different hex
+            if (lastButtonHexRef.current !== currentHexKey) {
+              const currentTexture = getHexColor && getHexColor(currentHoveredHex.row, currentHoveredHex.col);
+              
+              // Show buttons for textured tiles
+              if (currentTexture && typeof currentTexture === 'object' && currentTexture.type === 'texture') {
+                setTileHoverState({ hexCoord: { row: currentHoveredHex.row, col: currentHoveredHex.col }, buttonRegion: 'center' });
+              } else {
+                setTileHoverState({ hexCoord: null, buttonRegion: null });
+              }
+              
+              lastButtonHexRef.current = currentHexKey;
             }
+          } else {
+            // Clear state when menu is closed
+            if (tileHoverState.hexCoord) {
+              setTileHoverState({ hexCoord: null, buttonRegion: null });
+            }
+            lastButtonHexRef.current = null;
           }
         } else {
-          // No hex hovered
+          // No hex hovered - clear state
           if (hoveredHex) {
             setHoveredHex(null);
             onHexHover?.(null, null);
           }
-          setTileHoverState({ hex: null, buttonRegion: null });
+          setTileHoverState({ hexCoord: null, buttonRegion: null });
+          lastButtonHexRef.current = null;
         }
       }
     }
-  }, [isDragging, isPanning, lastPanPosition, panOffset, gridWidth, gridHeight, canvasSize, handlePaintAtPosition, menuOpen, getHexColor, getButtonRegion, hoveredHex, onHexHover, activeTab, hoveredRegion, getRegionForHex, canApplyRegionBorders]);
+  }, [isDragging, isPanning, lastPanPosition, panOffset, gridWidth, gridHeight, canvasSize, handlePaintAtPosition, menuOpen, selectedTexture, getHexColor, getButtonRegion, hoveredHex, onHexHover, activeTab, hoveredRegion, getRegionForHex, canApplyRegionBorders]);
 
   const handleMouseUp = useCallback((event: MouseEvent): void => {
     if (event.button === 1) { // Middle mouse button
@@ -641,7 +653,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     paintedDuringDragRef.current.clear();
     clearPaintedBorders();
     // Clear tile hover state when mouse leaves canvas
-    setTileHoverState({ hex: null, buttonRegion: null });
+    setTileHoverState({ hexCoord: null, buttonRegion: null });
+    lastButtonHexRef.current = null;
     // Clear hex hover for region detection
     if (hoveredHex) {
       setHoveredHex(null);
@@ -976,7 +989,15 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     if (glRef.current && colorProgramRef.current && textureProgramRef.current) {
       renderGrid();
     }
-  }, [hexColorsVersion, hexBackgroundColorsVersion, hexIconsVersion, hoveredRegion, renderGrid]);
+  }, [hexColorsVersion, hexBackgroundColorsVersion, hexIconsVersion, renderGrid]);
+
+  // Separate effect for region highlighting to avoid constant re-renders during mouse movement
+  useEffect(() => {
+    // Only trigger re-render for region highlighting if we're in borders mode
+    if (activeTab === 'borders' && glRef.current && colorProgramRef.current && textureProgramRef.current) {
+      renderGrid();
+    }
+  }, [hoveredRegion, activeTab, renderGrid]);
 
   useEffect(() => {
     if (hexPositionsRef.current.length > 0 && hexRadiusRef.current > 0) {
@@ -992,21 +1013,22 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   }, [bordersVersion, borders, renderBordersThrottled, canvasSize, zoomLevel, panOffset, numberingMode, renderNumbering, cancelPendingRenders, updateIconPositionsThrottled, cancelPendingIconUpdates]);
 
   useEffect(() => {
+    const container = containerRef.current;
     const canvas = canvasRef.current;
-    if (canvas) {
-      // Mouse events
-      canvas.addEventListener('mousedown', handleMouseDown);
-      canvas.addEventListener('mousemove', handleMouseMove);
-      canvas.addEventListener('mouseup', handleMouseUp);
-      canvas.addEventListener('mouseleave', handleMouseLeave);
-      canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-      canvas.addEventListener('wheel', handleWheel, { passive: false });
+    if (container && canvas) {
+      // Mouse events on container to track mouse even when over buttons
+      container.addEventListener('mousedown', handleMouseDown);
+      container.addEventListener('mousemove', handleMouseMove);
+      container.addEventListener('mouseup', handleMouseUp);
+      container.addEventListener('mouseleave', handleMouseLeave);
+      container.addEventListener('contextmenu', (e) => e.preventDefault());
+      container.addEventListener('wheel', handleWheel, { passive: false });
       
-      // Touch events
-      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-      canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-      canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false }); // Treat touchcancel same as touchend
+      // Touch events on container
+      container.addEventListener('touchstart', handleTouchStart, { passive: false });
+      container.addEventListener('touchmove', handleTouchMove, { passive: false });
+      container.addEventListener('touchend', handleTouchEnd, { passive: false });
+      container.addEventListener('touchcancel', handleTouchEnd, { passive: false }); // Treat touchcancel same as touchend
       
       document.addEventListener('mouseup', handleMouseUp);
       
@@ -1020,19 +1042,19 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       }
       
       return () => {
-        // Remove mouse events
-        canvas.removeEventListener('mousedown', handleMouseDown);
-        canvas.removeEventListener('mousemove', handleMouseMove);
-        canvas.removeEventListener('mouseup', handleMouseUp);
-        canvas.removeEventListener('mouseleave', handleMouseLeave);
-        canvas.removeEventListener('contextmenu', (e) => e.preventDefault());
-        canvas.removeEventListener('wheel', handleWheel);
+        // Remove mouse events from container
+        container.removeEventListener('mousedown', handleMouseDown);
+        container.removeEventListener('mousemove', handleMouseMove);
+        container.removeEventListener('mouseup', handleMouseUp);
+        container.removeEventListener('mouseleave', handleMouseLeave);
+        container.removeEventListener('contextmenu', (e) => e.preventDefault());
+        container.removeEventListener('wheel', handleWheel);
         
-        // Remove touch events
-        canvas.removeEventListener('touchstart', handleTouchStart);
-        canvas.removeEventListener('touchmove', handleTouchMove);
-        canvas.removeEventListener('touchend', handleTouchEnd);
-        canvas.removeEventListener('touchcancel', handleTouchEnd);
+        // Remove touch events from container
+        container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchmove', handleTouchMove);
+        container.removeEventListener('touchend', handleTouchEnd);
+        container.removeEventListener('touchcancel', handleTouchEnd);
         
         document.removeEventListener('mouseup', handleMouseUp);
           canvas.style.cursor = 'default';
@@ -1043,8 +1065,92 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     }
   }, [handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave, handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd, isDragging, isPanning, cancelPendingRenders, cancelPendingIconUpdates]);
 
+  // Stable click handlers at component level
+  const handleCenterClick = useCallback((hex: HexPosition) => handleTileManipulation(hex, 'center'), [handleTileManipulation]);
+  const handleLeftClick = useCallback((hex: HexPosition) => handleTileManipulation(hex, 'left'), [handleTileManipulation]);
+  const handleRightClick = useCallback((hex: HexPosition) => handleTileManipulation(hex, 'right'), [handleTileManipulation]);
+
+  // Memoized button components isolated from throttled updates
+  const tileManipulationButtons = useMemo(() => {
+    if (!tileHoverState.hexCoord) return null;
+    
+    const hexCoord = tileHoverState.hexCoord;
+    const hexRadius = hexRadiusRef.current || 20; // Use stable ref, not throttled value
+    
+    // Find the actual hex position from coordinates using stable ref
+    const hex = hexPositionsRef.current.find(pos => pos.row === hexCoord.row && pos.col === hexCoord.col);
+    if (!hex) return null;
+    
+    // Check if this hex has a texture (only show buttons on textured hexes)
+    const currentTexture = getHexColor && getHexColor(hexCoord.row, hexCoord.col);
+    const hasTexture = currentTexture && typeof currentTexture === 'object' && currentTexture.type === 'texture';
+    
+    if (!hasTexture) return null;
+
+    return (
+      <>
+        <HexButton
+          key={`center-${hexCoord.row}-${hexCoord.col}`}
+          type="center"
+          hexX={hex.x}
+          hexY={hex.y}
+          hexRadius={hexRadius}
+          onClick={() => handleCenterClick(hex)}
+          visible={true}
+        >
+          ⬤
+        </HexButton>
+        
+        <HexButton
+          key={`left-${hexCoord.row}-${hexCoord.col}`}
+          type="left"
+          hexX={hex.x}
+          hexY={hex.y}
+          hexRadius={hexRadius}
+          onClick={() => handleLeftClick(hex)}
+          visible={true}
+        >
+          ↺
+        </HexButton>
+        
+        <HexButton
+          key={`right-${hexCoord.row}-${hexCoord.col}`}
+          type="right"
+          hexX={hex.x}
+          hexY={hex.y}
+          hexRadius={hexRadius}
+          onClick={() => handleRightClick(hex)}
+          visible={true}
+        >
+          ↻
+        </HexButton>
+      </>
+    );
+  }, [tileHoverState.hexCoord, getHexColor, handleCenterClick, handleLeftClick, handleRightClick]);
+  
+  // Create separate memoized component for buttons to isolate from throttled re-renders
+  const ButtonOverlay = useMemo(() => {
+    if (!tileHoverState.hexCoord || !menuOpen || activeTab !== 'paint' || isPanning || isDragging || isZooming) {
+      return null;
+    }
+    
+    return (
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none', // Don't interfere with canvas interactions
+        zIndex: 4
+      }}>
+        {tileManipulationButtons}
+      </div>
+    );
+  }, [tileHoverState.hexCoord, menuOpen, activeTab, isPanning, isDragging, isZooming, tileManipulationButtons]);
+
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
       {/* Main WebGL Canvas */}
       <canvas 
         ref={canvasRef} 
@@ -1146,102 +1252,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       )}
 
       {/* Tile Manipulation Button Regions Overlay */}
-      {menuOpen && activeTab === 'paint' && tileHoverState.hex && tileHoverState.buttonRegion && !isPanning && !isDragging && !isZooming && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-          zIndex: 4
-        }}>
-          {(() => {
-            const hex = tileHoverState.hex;
-            const buttonRegion = tileHoverState.buttonRegion;
-            const hexRadius = throttledRadius;
-            
-            // Define button region dimensions based on button type
-            let regionWidth, regionHeight, regionX, regionY;
-            
-            if (buttonRegion === 'center') {
-              // Smaller center button to allow texture placement behind it
-              regionWidth = hexRadius * 0.6;
-              regionHeight = hexRadius * 0.6;
-              regionX = hex.x - regionWidth / 2;
-              regionY = hex.y - regionHeight / 2;
-            } else {
-              // Edge buttons - make them hexagonal and positioned at the edges
-              regionWidth = hexRadius * 0.5;
-              regionHeight = hexRadius * 0.8;
-              
-              if (buttonRegion === 'left') {
-                regionX = hex.x - hexRadius * 0.65 - regionWidth / 2;
-              } else { // right
-                regionX = hex.x + hexRadius * 0.65 - regionWidth / 2;
-              }
-              regionY = hex.y - regionHeight / 2;
-            }
-            
-            const getBrightColor = () => {
-              if (buttonRegion === 'center') return 'rgba(100, 200, 255, 0.6)';
-              if (buttonRegion === 'left') return 'rgba(255, 150, 100, 0.6)';
-              if (buttonRegion === 'right') return 'rgba(100, 255, 150, 0.6)';
-              return 'rgba(255, 255, 255, 0.4)';
-            };
-
-            // Create appropriate shape based on button type
-            const getButtonShape = () => {
-              if (buttonRegion === 'center') {
-                return {
-                  borderRadius: '50%', // Circular center button
-                };
-              } else if (buttonRegion === 'left') {
-                // Hexagonal shape for edge buttons using clip-path
-                return {
-                  clipPath: 'polygon(40% 0%, 100% 0%, 100% 50%, 100% 100%, 45% 100%, 0% 50%)',
-                  borderRadius: '0',
-                };
-              } else { // right
-                return {
-                  clipPath: 'polygon(25% 0%, 60% 0%, 100% 50%, 60% 100%, 0% 100%, 0% 0%)',
-                  borderRadius: '0',
-                };
-              }
-            };
-
-            return (
-              <div
-                key={`${hex.row}-${hex.col}-${buttonRegion}`}
-                style={{
-                  position: 'absolute',
-                  left: regionX,
-                  top: regionY,
-                  width: regionWidth,
-                  height: regionHeight,
-                  backgroundColor: getBrightColor(),
-                  border: buttonRegion === 'center' ? `2px solid ${getBrightColor()}` : 'none',
-                  ...getButtonShape(),
-                  pointerEvents: 'none',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: `${hexRadius * (buttonRegion === 'center' ? 0.15 : 0.18)}px`,
-                  color: 'white',
-                  fontWeight: 'bold',
-                  textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
-                  boxShadow: buttonRegion !== 'center' ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.2)'
-                }}
-              >
-                {buttonRegion === 'center' && '⬤'}
-                {buttonRegion === 'left' && '↺'}
-                {buttonRegion === 'right' && '↻'}
-              </div>
-            );
-          })()}
-        </div>
-      )}
+      {ButtonOverlay}
 
       {/* Region Border Button Overlay */}
       {regionButtonState && activeTab === 'borders' && (

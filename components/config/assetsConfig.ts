@@ -27,12 +27,12 @@ export type AssetItem = TextureItem;
 
 export interface DefaultColors {
   readonly SELECTED: string;
-  readonly GREY_RGB: RGB;
+  readonly DEFAULT_RBG: RGB;
 }
 
 export const DEFAULT_COLORS: DefaultColors = {
-  SELECTED: "grey",
-  GREY_RGB: [0.42, 0.45, 0.5], // Default grey color RGB values
+  SELECTED: "manila",
+  DEFAULT_RBG: [0.95, 0.89, 0.73], // Default manila color RGB values (242, 227, 187 in 255 scale)
 };
 
 export interface BackgroundColor {
