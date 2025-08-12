@@ -25,13 +25,6 @@ export const terrainIndex = {
         "hasAngles": true,
         "hasSides": false,
         "hasSpecial": true
-      },
-      "menuConfig": {
-        "previewAsset": "coast_180_1.png",
-        "previewPath": "/assets/terrain/coast/coast_180_1.png",
-        "backgroundColor": "#4A90E2",
-        "description": "Coastal terrain with water transitions",
-        "useCustomBackground": true
       }
     },
     "forest": {
@@ -46,13 +39,6 @@ export const terrainIndex = {
         "hasAngles": true,
         "hasSides": true,
         "hasSpecial": false
-      },
-      "menuConfig": {
-        "previewAsset": "forest_180_top_B1.png",
-        "previewPath": "/assets/terrain/forest/forest_180_top_B1.png",
-        "backgroundColor": "#2D5016",
-        "description": "Dense forest terrain with varied tree coverage",
-        "useCustomBackground": true
       }
     },
     "hills": {
@@ -67,13 +53,6 @@ export const terrainIndex = {
         "hasAngles": false,
         "hasSides": false,
         "hasSpecial": false
-      },
-      "menuConfig": {
-        "previewAsset": "hills_2.png",
-        "previewPath": "/assets/terrain/hills/hills_2.png",
-        "backgroundColor": "#8B7355",
-        "description": "Rolling hills terrain",
-        "useCustomBackground": true
       }
     },
     "mountain": {
@@ -88,13 +67,6 @@ export const terrainIndex = {
         "hasAngles": false,
         "hasSides": false,
         "hasSpecial": false
-      },
-      "menuConfig": {
-        "previewAsset": "mountain_3.png",
-        "previewPath": "/assets/terrain/mountain/mountain_3.png",
-        "backgroundColor": "#6B6B6B",
-        "description": "Mountainous rocky terrain",
-        "useCustomBackground": true
       }
     },
     "plains": {
@@ -109,13 +81,6 @@ export const terrainIndex = {
         "hasAngles": false,
         "hasSides": false,
         "hasSpecial": false
-      },
-      "menuConfig": {
-        "previewAsset": "plains_1.png",
-        "previewPath": "/assets/terrain/plains/plains_1.png",
-        "backgroundColor": "#A0B366",
-        "description": "Open grassland terrain",
-        "useCustomBackground": true
       }
     },
     "shrubland": {
@@ -130,13 +95,6 @@ export const terrainIndex = {
         "hasAngles": false,
         "hasSides": false,
         "hasSpecial": false
-      },
-      "menuConfig": {
-        "previewAsset": "shrubland_2.png",
-        "previewPath": "/assets/terrain/shrubland/shrubland_2.png",
-        "backgroundColor": "#7A8B4A",
-        "description": "Sparse vegetation and scrubland",
-        "useCustomBackground": true
       }
     },
     "swamp": {
@@ -151,13 +109,6 @@ export const terrainIndex = {
         "hasAngles": false,
         "hasSides": false,
         "hasSpecial": false
-      },
-      "menuConfig": {
-        "previewAsset": "swamp_3.png",
-        "previewPath": "/assets/terrain/swamp/swamp_3.png",
-        "backgroundColor": "#3B4F2C",
-        "description": "Wetland and marsh terrain",
-        "useCustomBackground": true
       }
     }
   },
@@ -263,9 +214,7 @@ export const terrainIndex = {
         }
       }
     ]
-  },
-  "menuConfigGenerated": "2025-08-12T05:46:39.296Z",
-  "menuConfigVersion": "1.0.0"
+  }
 } as const;
 
 export type TerrainIndexType = typeof terrainIndex;

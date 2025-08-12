@@ -3,7 +3,7 @@ import { GRID_CONFIG, DEFAULT_COLORS } from './config';
 import type { RGB, IconItem } from './config';
 import type { ColoredIcon } from './config/iconsConfig';
 import type { NumberingMode } from './GridSizeControls';
-import HexButton, { isPointInHexButton, type HexButtonType } from './HexButton';
+import HexButton, { isPointInHexButton } from './HexButton';
 
 import { initializeWebGLContext, createShaderPrograms, loadTexture } from '../utils/webglUtils';
 import { 
@@ -203,6 +203,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       canvasSize,
       backgroundColor,
       getHexagonStyle: (row: number, col: number) => getHexagonStyle(row, col),
+      getHexBackgroundColor,
       borders,
       getHexIcon,
       numberingMode

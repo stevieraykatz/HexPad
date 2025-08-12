@@ -139,8 +139,6 @@ const HexGridApp: React.FC = () => {
     getRegionData,
     hoveredRegion,
     setHoveredRegion,
-    applyRegionBorders,
-    canApplyRegionBorders,
     getRegionForHex
   } = useGridState({
     selectedColor,
@@ -446,8 +444,6 @@ const HexGridApp: React.FC = () => {
           // Region props
           regionStats={regionStats}
           hoveredRegion={hoveredRegion}
-          canApplyRegionBorders={canApplyRegionBorders}
-          applyRegionBorders={applyRegionBorders}
           getRegionData={getRegionData}
           isMobile={isMobile}
         />
@@ -468,7 +464,7 @@ const HexGridApp: React.FC = () => {
           gridWidth={gridWidth} 
           gridHeight={gridHeight}
           numberingMode={numberingMode}
-          onHexClick={backgroundPaintingMode ? paintBackgroundHex : paintHex}
+          onHexClick={backgroundPaintingMode && selectedIcon?.name !== 'eraser' ? paintBackgroundHex : paintHex}
           onHexHover={handleHexHover}
           onEdgeClick={placeBorder}
           getHexColor={getHexColor}
@@ -489,8 +485,6 @@ const HexGridApp: React.FC = () => {
           hoveredRegion={hoveredRegion}
           getRegionForHex={getRegionForHex}
           getRegionData={getRegionData}
-          canApplyRegionBorders={canApplyRegionBorders}
-          applyRegionBorders={applyRegionBorders}
         />
       </div>
 

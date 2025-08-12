@@ -45,6 +45,7 @@ export interface ExportOptions {
   canvasSize: CanvasSize;
   backgroundColor?: { rgb: RGB };
   getHexagonStyle: (row: number, col: number) => HexStyle | undefined;
+  getHexBackgroundColor?: (row: number, col: number) => string | undefined;
   borders?: Record<string, BorderEdge>;
   getHexIcon?: (row: number, col: number) => ColoredIcon | undefined;
   numberingMode?: NumberingMode;
@@ -578,10 +579,25 @@ const renderInHexNumberingForExport = (
 };
 
 /**
+ * Convert hex color string to RGB array
+ */
+const hexToRgb = (hex: string): RGB => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) {
+    return [0.5, 0.5, 0.5]; // Default gray if parsing fails
+  }
+  return [
+    parseInt(result[1], 16) / 255,
+    parseInt(result[2], 16) / 255,
+    parseInt(result[3], 16) / 255
+  ];
+};
+
+/**
  * Export hex grid as PNG with high quality
  */
 export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
-  const { filename, scale, gridWidth, gridHeight, canvasSize, backgroundColor, getHexagonStyle, borders, getHexIcon, numberingMode } = options;
+  const { filename, scale, gridWidth, gridHeight, canvasSize, backgroundColor, getHexagonStyle, getHexBackgroundColor, borders, getHexIcon, numberingMode } = options;
   
 
 
@@ -689,8 +705,22 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
     exportGL.clearColor(exportBgColor[0], exportBgColor[1], exportBgColor[2], GRID_CONFIG.WEBGL_ALPHA_VALUE);
     exportGL.clear(exportGL.COLOR_BUFFER_BIT);
 
-    // Render each hexagon for export
+    // Render each hexagon for export using two-layer approach (like HexGrid.tsx)
     exportHexPositions.forEach((pos) => {
+      // First layer: Render background color if it exists
+      if (getHexBackgroundColor) {
+        const backgroundColorHex = getHexBackgroundColor(pos.row, pos.col);
+        if (backgroundColorHex) {
+          const backgroundRgb = hexToRgb(backgroundColorHex);
+          const backgroundStyle: HexStyle = {
+            type: 'color',
+            rgb: backgroundRgb
+          };
+          renderColorHexagon(exportGL, colorProgram, pos, backgroundStyle, exportHexRadius, exportSize);
+        }
+      }
+      
+      // Second layer: Render main texture/color on top (only if it exists)
       const style = getHexagonStyle(pos.row, pos.col);
       
       if (style) {
@@ -706,7 +736,6 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
           }
         }
       }
-      // Note: If style is undefined, only background layer will show (handled by canvas background color)
     });
 
     // Create a 2D canvas for compositing borders and icons

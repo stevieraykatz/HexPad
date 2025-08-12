@@ -353,7 +353,7 @@ export function useGridState({
     }
   }, [selectedColor, selectedTexture, selectedIcon, selectedIconColor, selectedBackgroundColor, activeTab, hexIcons, hexColors, hexBackgroundColors, onPaintStart, updateRegionsForHexChange]);
 
-  // Paint background hex operation
+  // Paint background hex operation (eraser logic handled in paintHex)
   const paintBackgroundHex = useCallback((row: number, col: number): void => {
     const hexKey = `${row}-${col}`;
     

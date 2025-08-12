@@ -92,6 +92,9 @@ export type { IconItem } from './iconsConfig';
 export { NUMBERING_CONFIG } from './numberingConfig';
 export type { NumberingConfig } from './numberingConfig';
 
+export { TERRAIN_MENU_CONFIG, DEFAULT_MENU_CONFIG } from './terrainMenuConfig';
+export type { TerrainMenuConfig, TerrainMenuConfigMap } from './terrainMenuConfig';
+
 // Additional types used by components
 export interface HexTexture {
   type: 'color' | 'texture';

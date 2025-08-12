@@ -46,8 +46,7 @@ interface DesignMenuContentProps {
     largestRegion: { id: string; size: number; terrainType: string } | null;
   };
   hoveredRegion?: string | null;
-  canApplyRegionBorders?: (regionId: string) => boolean;
-  applyRegionBorders?: (regionId: string) => Promise<void>;
+
   getRegionData?: (regionId: string) => { terrainType: string; hexes: Set<string>; id: string } | null;
 
 
@@ -83,8 +82,6 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
   // Region props
   regionStats,
   hoveredRegion,
-  canApplyRegionBorders,
-  applyRegionBorders,
   getRegionData,
   // Mobile layout
   isMobile = false
@@ -140,13 +137,11 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
       {activeTab === 'borders' && (
         <>
           {/* Region Border Controls */}
-          {regionStats && hoveredRegion !== undefined && canApplyRegionBorders && applyRegionBorders && getRegionData && (
+          {regionStats && hoveredRegion !== undefined && getRegionData && (
             <div className={isMobile ? 'mobile-section' : ''} style={sectionWrapperStyle}>
               <RegionBorderControls
                 regionStats={regionStats}
                 hoveredRegion={hoveredRegion}
-                canApplyRegionBorders={canApplyRegionBorders}
-                applyRegionBorders={applyRegionBorders}
                 getRegionData={getRegionData}
               />
             </div>

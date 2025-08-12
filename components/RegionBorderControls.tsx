@@ -4,7 +4,7 @@
  * Provides UI for region hover detection and border application
  */
 
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { UI_CONFIG } from './config';
 
 interface RegionBorderControlsProps {
@@ -15,36 +15,16 @@ interface RegionBorderControlsProps {
     largestRegion: { id: string; size: number; terrainType: string } | null;
   };
   hoveredRegion: string | null;
-  canApplyRegionBorders: (regionId: string) => boolean;
-  applyRegionBorders: (regionId: string) => Promise<void>;
+
   getRegionData: (regionId: string) => { terrainType: string; hexes: Set<string>; id: string } | null;
 }
 
 const RegionBorderControls: React.FC<RegionBorderControlsProps> = ({
   regionStats,
   hoveredRegion,
-  canApplyRegionBorders,
-  applyRegionBorders,
   getRegionData
 }) => {
-  const [isApplying, setIsApplying] = useState(false);
-  const [lastAppliedRegion, setLastAppliedRegion] = useState<string | null>(null);
 
-  const handleApplyBorders = useCallback(async () => {
-    if (!hoveredRegion || !canApplyRegionBorders(hoveredRegion) || isApplying) {
-      return;
-    }
-
-    setIsApplying(true);
-    try {
-      await applyRegionBorders(hoveredRegion);
-      setLastAppliedRegion(hoveredRegion);
-    } catch (error) {
-      console.error('Failed to apply region borders:', error);
-    } finally {
-      setIsApplying(false);
-    }
-  }, [hoveredRegion, canApplyRegionBorders, applyRegionBorders, isApplying]);
 
   const hoveredRegionData = hoveredRegion ? getRegionData(hoveredRegion) : null;
 
@@ -114,20 +94,7 @@ const RegionBorderControls: React.FC<RegionBorderControlsProps> = ({
           }}>
             Hover over region to see apply button
           </div>
-          
-          {!canApplyRegionBorders(hoveredRegion!) && (
-            <div style={{
-              marginTop: UI_CONFIG.SPACING.SMALL,
-              padding: UI_CONFIG.SPACING.SMALL,
-              background: UI_CONFIG.COLORS.DANGER_BACKGROUND,
-              color: UI_CONFIG.COLORS.TEXT_DANGER,
-              borderRadius: UI_CONFIG.BORDER_RADIUS.SMALL,
-              fontSize: UI_CONFIG.FONT_SIZE.SMALL,
-              textAlign: 'center'
-            }}>
-              Borders not available for this terrain type
-            </div>
-          )}
+
         </div>
       )}
 
@@ -144,20 +111,7 @@ const RegionBorderControls: React.FC<RegionBorderControlsProps> = ({
         </div>
       )}
 
-      {/* Success Message */}
-      {lastAppliedRegion && lastAppliedRegion === hoveredRegion && (
-        <div style={{
-          marginTop: UI_CONFIG.SPACING.SMALL,
-          padding: UI_CONFIG.SPACING.SMALL,
-          background: UI_CONFIG.COLORS.SELECTED_ALT_BACKGROUND,
-          color: UI_CONFIG.COLORS.TEXT_PRIMARY,
-          borderRadius: UI_CONFIG.BORDER_RADIUS.SMALL,
-          fontSize: UI_CONFIG.FONT_SIZE.SMALL,
-          textAlign: 'center'
-        }}>
-          Borders applied successfully!
-        </div>
-      )}
+
 
       {/* Terrain Support Info */}
       <div style={{

@@ -1,8 +1,9 @@
 /**
  * Dynamic Assets Configuration
  * 
- * This module provides dynamic paint options based on the terrain index,
- * using the first asset from each terrain folder as the icon.
+ * This module provides dynamic paint options based on the terrain index.
+ * Menu configuration (preview assets, backgrounds, descriptions) is imported
+ * directly from terrainMenuConfig.ts for immediate UI updates without regeneration.
  */
 
 import { 
@@ -10,7 +11,9 @@ import {
   getTerrainInfo, 
   loadTerrainManifest, 
   getAllTerrainTypes,
+  type TerrainInfo,
 } from './assetLoader';
+import { TERRAIN_MENU_CONFIG, DEFAULT_MENU_CONFIG } from './terrainMenuConfig';
 
 export type RGB = [number, number, number];
 
@@ -66,12 +69,13 @@ export const BACKGROUND_COLORS: readonly BackgroundColor[] = [
 ];
 
 /**
- * Gets the preview asset path for a terrain (using menu config if available)
+ * Gets the preview asset path for a terrain using the direct menu config
  */
-function getPreviewAssetPath(terrain: any): string {
-  // Check if terrain has menu configuration with a preview path
-  if (terrain.menuConfig && terrain.menuConfig.previewPath) {
-    return terrain.menuConfig.previewPath;
+function getPreviewAssetPath(terrain: TerrainInfo): string {
+  // First check the direct menu config for this terrain
+  const menuConfig = TERRAIN_MENU_CONFIG[terrain.name];
+  if (menuConfig && menuConfig.previewAsset) {
+    return `/assets/terrain/${terrain.name}/${menuConfig.previewAsset}`;
   }
   
   // For terrains with a base path, use that
@@ -127,6 +131,7 @@ export function getPaintOptions(): readonly DynamicTextureItem[] {
   
   sortedTerrains.forEach((terrain) => {
     const iconPath = getPreviewAssetPath(terrain);
+    const menuConfig = TERRAIN_MENU_CONFIG[terrain.name] || DEFAULT_MENU_CONFIG;
     
     options.push({
       name: terrain.name,
@@ -135,8 +140,8 @@ export function getPaintOptions(): readonly DynamicTextureItem[] {
       path: iconPath,
       hasVariants: terrain.hasVariants,
       assetCount: terrain.assetCount,
-      previewBackgroundColor: terrain.menuConfig?.backgroundColor,
-      description: terrain.menuConfig?.description || terrain.displayName
+      previewBackgroundColor: menuConfig.backgroundColor,
+      description: menuConfig.description || terrain.displayName
     });
   });
   
@@ -151,6 +156,7 @@ export function getTextureItem(name: string): DynamicTextureItem | null {
   if (!terrain) return null;
   
   const iconPath = getPreviewAssetPath(terrain);
+  const menuConfig = TERRAIN_MENU_CONFIG[terrain.name] || DEFAULT_MENU_CONFIG;
   
   return {
     name: terrain.name,
@@ -159,8 +165,8 @@ export function getTextureItem(name: string): DynamicTextureItem | null {
     path: iconPath,
     hasVariants: terrain.hasVariants,
     assetCount: terrain.assetCount,
-    previewBackgroundColor: terrain.menuConfig?.backgroundColor,
-    description: terrain.menuConfig?.description || terrain.displayName
+    previewBackgroundColor: menuConfig.backgroundColor,
+    description: menuConfig.description || terrain.displayName
   };
 }
 
@@ -173,6 +179,7 @@ export function getTexturesByType(type: 'simple' | 'complex'): readonly DynamicT
   
   return terrainsOfType.map((terrain) => {
     const iconPath = getPreviewAssetPath(terrain);
+    const menuConfig = TERRAIN_MENU_CONFIG[terrain.name] || DEFAULT_MENU_CONFIG;
     
     return {
       name: terrain.name,
@@ -181,8 +188,8 @@ export function getTexturesByType(type: 'simple' | 'complex'): readonly DynamicT
       path: iconPath,
       hasVariants: terrain.hasVariants,
       assetCount: terrain.assetCount,
-      previewBackgroundColor: terrain.menuConfig?.backgroundColor,
-      description: terrain.menuConfig?.description || terrain.displayName
+      previewBackgroundColor: menuConfig.backgroundColor,
+      description: menuConfig.description || terrain.displayName
     };
   });
 }
