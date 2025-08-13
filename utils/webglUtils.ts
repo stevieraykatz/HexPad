@@ -1,4 +1,4 @@
-/**
+``/**
  * WebGL Utilities
  * 
  * Helper functions for WebGL shader creation, program linking, and texture management.
@@ -41,7 +41,8 @@ export const SHADER_SOURCES = {
     attribute vec2 a_texCoord;
     uniform vec2 u_resolution;
     uniform vec2 u_translation;
-    uniform float u_rotation; // Rotation in radians
+    uniform mediump float u_rotation; // Rotation in radians
+    uniform mediump float u_flipped; // Horizontal flip flag (0.0 or 1.0)
     varying vec2 v_texCoord;
     
     void main() {
@@ -62,7 +63,14 @@ export const SHADER_SOURCES = {
         centeredCoord.x * sinAngle + centeredCoord.y * cosAngle
       );
       
-      v_texCoord = rotatedCoord + 0.5;
+      vec2 finalCoord = rotatedCoord + 0.5;
+      
+      // Apply horizontal flip if enabled (more visually apparent for directional textures)
+      if (u_flipped > 0.5) {
+        finalCoord.x = 1.0 - finalCoord.x;
+      }
+      
+      v_texCoord = finalCoord;
     }
   `,
 
@@ -70,6 +78,7 @@ export const SHADER_SOURCES = {
   textureFragment: `
     precision mediump float;
     uniform sampler2D u_texture;
+    uniform mediump float u_flipped;
     varying vec2 v_texCoord;
     
     void main() {

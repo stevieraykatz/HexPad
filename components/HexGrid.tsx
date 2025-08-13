@@ -40,6 +40,7 @@ interface HexTexture {
   rgb?: RGB;
   path?: string;
   rotation?: number; // Rotation in 1/6th increments (0-5)
+  flipped?: boolean; // Vertical flip for non-rotatable textures
 }
 
 type HexColor = string;
@@ -271,8 +272,6 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
 
   // Update region button position when hoveredRegion changes
   useEffect(() => {
-    console.log('Region state:', { hoveredRegion, activeTab, isPanning, isDragging, isZooming });
-    
     if (!hoveredRegion || activeTab !== 'borders' || !getRegionForHex || !canApplyRegionBorders || isPanning || isDragging || isZooming) {
       setRegionButtonState(null);
       return;
@@ -328,10 +327,6 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     const hexRegionId = getRegionForHex && getRegionForHex(hexCoord);
     const isHoveredRegion = activeTab === 'borders' && hoveredRegion && hexRegionId === hoveredRegion;
     
-    if (isHoveredRegion) {
-      console.log('Highlighting hex:', hexCoord, 'in region:', hoveredRegion);
-    }
-    
     if (userTexture) {
       if (userTexture === DEFAULT_COLORS.SELECTED) {
         const rgb = isHoveredRegion 
@@ -366,7 +361,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           type: 'texture', 
           path: userTexture.path, 
           name: userTexture.name,
-          rotation: userTexture.rotation || 0
+          rotation: userTexture.rotation || 0,
+          flipped: userTexture.flipped || false
         };
       }
     }
@@ -764,6 +760,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         const resolutionUniformLocation = gl.getUniformLocation(textureProgram, 'u_resolution');
         const translationUniformLocation = gl.getUniformLocation(textureProgram, 'u_translation');
         const rotationUniformLocation = gl.getUniformLocation(textureProgram, 'u_rotation');
+        const flippedUniformLocation = gl.getUniformLocation(textureProgram, 'u_flipped');
         const textureUniformLocation = gl.getUniformLocation(textureProgram, 'u_texture');
         
         gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
@@ -772,6 +769,10 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         // Each increment is 60 degrees = π/3 radians
         const rotationRadians = (style.rotation || 0) * (Math.PI / 3);
         gl.uniform1f(rotationUniformLocation, rotationRadians);
+        
+        // Set flip uniform (1.0 for flipped, 0.0 for normal)
+        const flipValue = style.flipped ? 1.0 : 0.0;
+        gl.uniform1f(flippedUniformLocation, flipValue);
         
     const { vertices, texCoords } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, true);
         

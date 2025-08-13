@@ -1,13 +1,13 @@
 /**
  * Generated Terrain Manifest: shrubland
  * 
- * This file is auto-generated from shrubland-manifest.json
- * Do not edit manually - regenerate using generateTerrainTypes.js
+ * This file is auto-generated from asset directory parsing
+ * Do not edit manually - regenerate using generateDirectTS.js
  */
 
 export const shrublandManifest = {
   "name": "shrubland",
-  "generated": "2025-08-12T05:41:15.821Z",
+  "generated": "2025-08-12T23:41:22.734Z",
   "totalAssets": 3,
   "assets": {
     "byAngle": {},

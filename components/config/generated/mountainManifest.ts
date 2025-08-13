@@ -1,13 +1,13 @@
 /**
  * Generated Terrain Manifest: mountain
  * 
- * This file is auto-generated from mountain-manifest.json
- * Do not edit manually - regenerate using generateTerrainTypes.js
+ * This file is auto-generated from asset directory parsing
+ * Do not edit manually - regenerate using generateDirectTS.js
  */
 
 export const mountainManifest = {
   "name": "mountain",
-  "generated": "2025-08-12T05:41:15.820Z",
+  "generated": "2025-08-12T23:41:22.732Z",
   "totalAssets": 8,
   "assets": {
     "byAngle": {},

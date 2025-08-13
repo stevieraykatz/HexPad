@@ -8,8 +8,10 @@
 import { terrainIndex } from './generated/terrainIndex';
 import { coastManifest } from './generated/coastManifest';
 import { forestManifest } from './generated/forestManifest';
+import { forestedgeManifest } from './generated/forestedgeManifest';
 import { hillsManifest } from './generated/hillsManifest';
 import { mountainManifest } from './generated/mountainManifest';
+import { oceanManifest } from './generated/oceanManifest';
 import { plainsManifest } from './generated/plainsManifest';
 import { shrublandManifest } from './generated/shrublandManifest';
 import { swampManifest } from './generated/swampManifest';
@@ -18,8 +20,10 @@ import { swampManifest } from './generated/swampManifest';
 const staticManifests: Record<string, AssetManifest> = {
   coast: coastManifest,
   forest: forestManifest,
+  forestedge: forestedgeManifest,
   hills: hillsManifest,
   mountain: mountainManifest,
+  ocean: oceanManifest,
   plains: plainsManifest,
   shrubland: shrublandManifest,
   swamp: swampManifest
@@ -65,6 +69,7 @@ export interface TerrainInfo {
   readonly manifestPath: string | null;
   readonly hasVariants: boolean;
   readonly assetCount: number;
+  readonly rotatable: boolean;
   readonly features?: {
     readonly hasAngles: boolean;
     readonly hasSides: boolean;

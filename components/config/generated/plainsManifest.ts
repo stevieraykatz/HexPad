@@ -1,13 +1,13 @@
 /**
  * Generated Terrain Manifest: plains
  * 
- * This file is auto-generated from plains-manifest.json
- * Do not edit manually - regenerate using generateTerrainTypes.js
+ * This file is auto-generated from asset directory parsing
+ * Do not edit manually - regenerate using generateDirectTS.js
  */
 
 export const plainsManifest = {
   "name": "plains",
-  "generated": "2025-08-12T05:41:15.820Z",
+  "generated": "2025-08-12T23:41:22.733Z",
   "totalAssets": 3,
   "assets": {
     "byAngle": {},

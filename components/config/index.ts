@@ -103,4 +103,5 @@ export interface HexTexture {
   rgb?: [number, number, number];
   path?: string;
   rotation?: number; // Rotation in 1/6th increments (0-5)
+  flipped?: boolean; // Vertical flip for non-rotatable textures
 } 

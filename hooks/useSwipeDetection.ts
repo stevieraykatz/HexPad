@@ -69,7 +69,6 @@ export const useSwipeDetection = (
       }
 
       if (!isInRegion) {
-        console.log('Touch not in region:', touchStartRegion, 'position:', touchX, touchY, 'regionSize:', regionSize);
         return;
       }
 

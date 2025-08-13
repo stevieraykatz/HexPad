@@ -1,13 +1,13 @@
 /**
  * Generated Terrain Manifest: swamp
  * 
- * This file is auto-generated from swamp-manifest.json
- * Do not edit manually - regenerate using generateTerrainTypes.js
+ * This file is auto-generated from asset directory parsing
+ * Do not edit manually - regenerate using generateDirectTS.js
  */
 
 export const swampManifest = {
   "name": "swamp",
-  "generated": "2025-08-12T05:41:15.821Z",
+  "generated": "2025-08-12T23:41:22.734Z",
   "totalAssets": 5,
   "assets": {
     "byAngle": {},

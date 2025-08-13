@@ -20,7 +20,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-assets": "node scripts/generateDirectTS.js public/assets/terrain components/config/generated/"
   },
   "browserslist": {
     "production": [

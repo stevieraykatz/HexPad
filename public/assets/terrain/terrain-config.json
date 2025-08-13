@@ -1,0 +1,35 @@
+{
+  "$schema": "terrain-config-schema",
+  "version": "1.0.0",
+  "description": "Configuration for terrain asset properties and behaviors",
+  "generated": "2025-08-12T23:37:09.423Z",
+  "terrains": {
+    "coast": {
+      "rotatable": true
+    },
+    "forest": {
+      "rotatable": false
+    },
+    "forestedge": {
+      "rotatable": false
+    },
+    "hills": {
+      "rotatable": false
+    },
+    "mountain": {
+      "rotatable": false
+    },
+    "ocean": {
+      "rotatable": false
+    },
+    "plains": {
+      "rotatable": true
+    },
+    "shrubland": {
+      "rotatable": false
+    },
+    "swamp": {
+      "rotatable": true
+    }
+  }
+}

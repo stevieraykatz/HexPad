@@ -21,6 +21,7 @@ export interface HexStyle {
   path?: string;
   name?: string;
   rotation?: number; // Rotation in 1/6th increments (0-5)
+  flipped?: boolean; // Vertical flip for non-rotatable textures
   highlight?: boolean; // For region highlighting
 }
 
@@ -125,6 +126,7 @@ export const renderTextureHexagon = (
   const resolutionUniformLocation = gl.getUniformLocation(textureProgram, 'u_resolution');
   const translationUniformLocation = gl.getUniformLocation(textureProgram, 'u_translation');
   const rotationUniformLocation = gl.getUniformLocation(textureProgram, 'u_rotation');
+  const flippedUniformLocation = gl.getUniformLocation(textureProgram, 'u_flipped');
   const textureUniformLocation = gl.getUniformLocation(textureProgram, 'u_texture');
   
   gl.uniform2f(resolutionUniformLocation, canvasSize.width, canvasSize.height);
@@ -133,6 +135,9 @@ export const renderTextureHexagon = (
   // Each increment is 60 degrees = π/3 radians
   const rotationRadians = (style.rotation || 0) * (Math.PI / 3);
   gl.uniform1f(rotationUniformLocation, rotationRadians);
+  
+  // Set flip uniform (1.0 for flipped, 0.0 for normal)
+  gl.uniform1f(flippedUniformLocation, style.flipped ? 1.0 : 0.0);
   
   const { vertices, texCoords } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, true);
   

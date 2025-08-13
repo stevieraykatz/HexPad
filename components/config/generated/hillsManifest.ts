@@ -1,13 +1,13 @@
 /**
  * Generated Terrain Manifest: hills
  * 
- * This file is auto-generated from hills-manifest.json
- * Do not edit manually - regenerate using generateTerrainTypes.js
+ * This file is auto-generated from asset directory parsing
+ * Do not edit manually - regenerate using generateDirectTS.js
  */
 
 export const hillsManifest = {
   "name": "hills",
-  "generated": "2025-08-12T05:41:15.819Z",
+  "generated": "2025-08-12T23:41:22.731Z",
   "totalAssets": 3,
   "assets": {
     "byAngle": {},

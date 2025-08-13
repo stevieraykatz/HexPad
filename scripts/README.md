@@ -1,6 +1,24 @@
-# Asset Manifest Generator
+# Asset Configuration Generator
 
-This script parses asset directories and generates JSON manifests with metadata extracted from filenames, optimized for efficient querying by rendering logic.
+This directory contains scripts for generating TypeScript configuration files from terrain asset directories.
+
+## 🚀 Quick Start (Recommended)
+
+Use the direct TypeScript generator for the fastest and simplest workflow:
+
+```bash
+npm run generate-assets
+```
+
+Or run directly:
+```bash
+node scripts/generateDirectTS.js public/assets/terrain components/config/generated/
+```
+
+## 📁 Scripts Overview
+
+### `generateDirectTS.js` ⭐ **RECOMMENDED**
+**Direct TypeScript Generation** - Generates TypeScript files directly from asset directories, bypassing JSON intermediates.
 
 ## Usage
 

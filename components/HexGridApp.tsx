@@ -279,6 +279,11 @@ const HexGridApp: React.FC = () => {
         terrainName = terrainName.split('-')[0];
       }
       
+      // Special case: forest edge assets have names starting with "forest_" but are in "forestedge" terrain
+      if (terrainName === 'forest' && currentTexture.path?.includes('/forestedge/')) {
+        terrainName = 'forestedge';
+      }
+      
       // Get terrain info and manifest
       const terrainInfo = getTerrainInfo(terrainName);
       if (!terrainInfo || terrainInfo.type !== 'complex') {
@@ -324,18 +329,52 @@ const HexGridApp: React.FC = () => {
         }
       });
     } else if (action === 'rotate-left' || action === 'rotate-right') {
-      // Handle rotation (for future directional textures)
-      const currentRotation = currentTexture.rotation || 0;
-      const rotationDelta = action === 'rotate-right' ? -1 : 1;
-      const newRotation = (currentRotation + rotationDelta + 6) % 6; // 6 sides in hexagon
-      
-      setHexColors({
-        ...hexColors,
-        [hexKey]: {
-          ...currentTexture,
-          rotation: newRotation
+      // Extract terrain name from current texture
+      let terrainName = '';
+      if (typeof currentTexture === 'object' && currentTexture.name) {
+        // Extract the terrain name from the asset name (e.g., "coast_180_1" -> "coast")
+        terrainName = currentTexture.name.split('_')[0];
+        // Handle cases where terrain name contains hyphens (e.g., "forest-360" -> "forest")
+        if (terrainName.includes('-')) {
+          terrainName = terrainName.split('-')[0];
         }
-      });
+        
+        // Special case: forest edge assets have names starting with "forest_" but are in "forestedge" terrain
+        if (terrainName === 'forest' && currentTexture.path?.includes('/forestedge/')) {
+          terrainName = 'forestedge';
+        }
+      }
+      
+      // Check if this terrain is rotatable
+      const terrainInfo = getTerrainInfo(terrainName);
+      const isRotatable = terrainInfo?.rotatable ?? true;
+      
+      if (isRotatable) {
+        // Handle rotation for rotatable textures
+        const currentRotation = currentTexture.rotation || 0;
+        const rotationDelta = action === 'rotate-right' ? -1 : 1;
+        const newRotation = (currentRotation + rotationDelta + 6) % 6; // 6 sides in hexagon
+        
+        setHexColors({
+          ...hexColors,
+          [hexKey]: {
+            ...currentTexture,
+            rotation: newRotation
+          }
+        });
+      } else {
+        // Handle vertical flipping for non-rotatable textures
+        const currentFlipped = currentTexture.flipped || false;
+        const newFlipped = !currentFlipped;
+        
+        setHexColors({
+          ...hexColors,
+          [hexKey]: {
+            ...currentTexture,
+            flipped: newFlipped
+          }
+        });
+      }
     }
   }, [hexColors, setHexColors]);
 

@@ -1,17 +1,17 @@
 /**
  * Generated Terrain Index
  * 
- * This file is auto-generated from terrain-index.json
- * Do not edit manually - regenerate using generateTerrainTypes.js
+ * This file is auto-generated from terrain asset directories
+ * Do not edit manually - regenerate using generateDirectTS.js
  */
 
 export const terrainIndex = {
   "name": "terrain",
-  "generated": "2025-08-12T05:41:23.230Z",
-  "totalTerrainTypes": 7,
-  "totalAssets": 54,
-  "baseTerrains": 0,
-  "complexTerrains": 7,
+  "generated": "2025-08-12T23:41:22.727Z",
+  "totalTerrainTypes": 9,
+  "totalAssets": 68,
+  "baseTerrains": 1,
+  "complexTerrains": 8,
   "terrains": {
     "coast": {
       "name": "coast",
@@ -21,6 +21,7 @@ export const terrainIndex = {
       "manifestPath": "/assets/terrain/coast/coast-manifest.json",
       "hasVariants": true,
       "assetCount": 17,
+      "rotatable": true,
       "features": {
         "hasAngles": true,
         "hasSides": false,
@@ -30,11 +31,27 @@ export const terrainIndex = {
     "forest": {
       "name": "forest",
       "displayName": "Forest",
+      "type": "simple",
+      "basePath": "/assets/terrain/forest/forest-360_B1.png",
+      "manifestPath": null,
+      "hasVariants": false,
+      "assetCount": 1,
+      "rotatable": false,
+      "features": {
+        "hasAngles": false,
+        "hasSides": false,
+        "hasSpecial": false
+      }
+    },
+    "forestedge": {
+      "name": "forestedge",
+      "displayName": "Forestedge",
       "type": "complex",
       "basePath": null,
-      "manifestPath": "/assets/terrain/forest/forest-manifest.json",
+      "manifestPath": "/assets/terrain/forestedge/forestedge-manifest.json",
       "hasVariants": true,
-      "assetCount": 15,
+      "assetCount": 14,
+      "rotatable": false,
       "features": {
         "hasAngles": true,
         "hasSides": true,
@@ -49,6 +66,7 @@ export const terrainIndex = {
       "manifestPath": "/assets/terrain/hills/hills-manifest.json",
       "hasVariants": true,
       "assetCount": 3,
+      "rotatable": false,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -63,6 +81,22 @@ export const terrainIndex = {
       "manifestPath": "/assets/terrain/mountain/mountain-manifest.json",
       "hasVariants": true,
       "assetCount": 8,
+      "rotatable": false,
+      "features": {
+        "hasAngles": false,
+        "hasSides": false,
+        "hasSpecial": false
+      }
+    },
+    "ocean": {
+      "name": "ocean",
+      "displayName": "Ocean",
+      "type": "complex",
+      "basePath": null,
+      "manifestPath": "/assets/terrain/ocean/ocean-manifest.json",
+      "hasVariants": true,
+      "assetCount": 14,
+      "rotatable": false,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -77,6 +111,7 @@ export const terrainIndex = {
       "manifestPath": "/assets/terrain/plains/plains-manifest.json",
       "hasVariants": true,
       "assetCount": 3,
+      "rotatable": true,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -91,6 +126,7 @@ export const terrainIndex = {
       "manifestPath": "/assets/terrain/shrubland/shrubland-manifest.json",
       "hasVariants": true,
       "assetCount": 3,
+      "rotatable": false,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -105,6 +141,7 @@ export const terrainIndex = {
       "manifestPath": "/assets/terrain/swamp/swamp-manifest.json",
       "hasVariants": true,
       "assetCount": 5,
+      "rotatable": true,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -113,7 +150,23 @@ export const terrainIndex = {
     }
   },
   "byType": {
-    "simple": [],
+    "simple": [
+      {
+        "name": "forest",
+        "displayName": "Forest",
+        "type": "simple",
+        "basePath": "/assets/terrain/forest/forest-360_B1.png",
+        "manifestPath": null,
+        "hasVariants": false,
+        "assetCount": 1,
+        "rotatable": false,
+        "features": {
+          "hasAngles": false,
+          "hasSides": false,
+          "hasSpecial": false
+        }
+      }
+    ],
     "complex": [
       {
         "name": "coast",
@@ -123,6 +176,7 @@ export const terrainIndex = {
         "manifestPath": "/assets/terrain/coast/coast-manifest.json",
         "hasVariants": true,
         "assetCount": 17,
+        "rotatable": true,
         "features": {
           "hasAngles": true,
           "hasSides": false,
@@ -130,13 +184,14 @@ export const terrainIndex = {
         }
       },
       {
-        "name": "forest",
-        "displayName": "Forest",
+        "name": "forestedge",
+        "displayName": "Forestedge",
         "type": "complex",
         "basePath": null,
-        "manifestPath": "/assets/terrain/forest/forest-manifest.json",
+        "manifestPath": "/assets/terrain/forestedge/forestedge-manifest.json",
         "hasVariants": true,
-        "assetCount": 15,
+        "assetCount": 14,
+        "rotatable": false,
         "features": {
           "hasAngles": true,
           "hasSides": true,
@@ -151,6 +206,7 @@ export const terrainIndex = {
         "manifestPath": "/assets/terrain/hills/hills-manifest.json",
         "hasVariants": true,
         "assetCount": 3,
+        "rotatable": false,
         "features": {
           "hasAngles": false,
           "hasSides": false,
@@ -165,6 +221,22 @@ export const terrainIndex = {
         "manifestPath": "/assets/terrain/mountain/mountain-manifest.json",
         "hasVariants": true,
         "assetCount": 8,
+        "rotatable": false,
+        "features": {
+          "hasAngles": false,
+          "hasSides": false,
+          "hasSpecial": false
+        }
+      },
+      {
+        "name": "ocean",
+        "displayName": "Ocean",
+        "type": "complex",
+        "basePath": null,
+        "manifestPath": "/assets/terrain/ocean/ocean-manifest.json",
+        "hasVariants": true,
+        "assetCount": 14,
+        "rotatable": false,
         "features": {
           "hasAngles": false,
           "hasSides": false,
@@ -179,6 +251,7 @@ export const terrainIndex = {
         "manifestPath": "/assets/terrain/plains/plains-manifest.json",
         "hasVariants": true,
         "assetCount": 3,
+        "rotatable": true,
         "features": {
           "hasAngles": false,
           "hasSides": false,
@@ -193,6 +266,7 @@ export const terrainIndex = {
         "manifestPath": "/assets/terrain/shrubland/shrubland-manifest.json",
         "hasVariants": true,
         "assetCount": 3,
+        "rotatable": false,
         "features": {
           "hasAngles": false,
           "hasSides": false,
@@ -207,6 +281,7 @@ export const terrainIndex = {
         "manifestPath": "/assets/terrain/swamp/swamp-manifest.json",
         "hasVariants": true,
         "assetCount": 5,
+        "rotatable": true,
         "features": {
           "hasAngles": false,
           "hasSides": false,

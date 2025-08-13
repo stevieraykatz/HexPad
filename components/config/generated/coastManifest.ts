@@ -1,13 +1,13 @@
 /**
  * Generated Terrain Manifest: coast
  * 
- * This file is auto-generated from coast-manifest.json
- * Do not edit manually - regenerate using generateTerrainTypes.js
+ * This file is auto-generated from asset directory parsing
+ * Do not edit manually - regenerate using generateDirectTS.js
  */
 
 export const coastManifest = {
   "name": "coast",
-  "generated": "2025-08-12T05:41:15.815Z",
+  "generated": "2025-08-12T23:41:22.729Z",
   "totalAssets": 17,
   "assets": {
     "byAngle": {
@@ -69,9 +69,7 @@ export const coastManifest = {
             "baseName": "coast",
             "angle": 180,
             "variant": 3
-          }
-        ],
-        "angle_180_special": [
+          },
           {
             "filename": "coast_180_special_1.png",
             "name": "coast_180_special_1",
@@ -148,7 +146,7 @@ export const coastManifest = {
         ]
       },
       "360": {
-        "angle_360_special": [
+        "angle_360": [
           {
             "filename": "coast_360_special_1.png",
             "name": "coast_360_special_1",

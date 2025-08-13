@@ -24,7 +24,12 @@ export const TERRAIN_MENU_CONFIG: TerrainMenuConfigMap = {
   forest: {
     previewAsset: "forest-360_B1.png",
     backgroundColor: "#2D5016",
-    description: "Dense forest terrain with varied tree coverage"
+    description: "Dense forest terrain"
+  },
+  forestedge: {
+    previewAsset: "forest_180_top-side_B1L.png",
+    backgroundColor: "#90EE90",
+    description: "Forest edge transitions with varied angles and sides"
   },
   hills: {
     previewAsset: "hills_2.png",
@@ -35,6 +40,11 @@ export const TERRAIN_MENU_CONFIG: TerrainMenuConfigMap = {
     previewAsset: "mountain_3.png",
     backgroundColor: "#6B6B6B",
     description: "Mountainous rocky terrain"
+  },
+  ocean: {
+    previewAsset: "ocean_01.png",
+    backgroundColor: "#1E40AF",
+    description: "Deep ocean waters with varied wave patterns"
   },
   plains: {
     previewAsset: "plains_1.png",
