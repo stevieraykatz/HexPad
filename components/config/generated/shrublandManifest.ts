@@ -7,7 +7,7 @@
 
 export const shrublandManifest = {
   "name": "shrubland",
-  "generated": "2025-08-12T23:41:22.734Z",
+  "generated": "2025-08-13T02:38:01.972Z",
   "totalAssets": 3,
   "assets": {
     "byAngle": {},

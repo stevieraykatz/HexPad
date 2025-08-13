@@ -22,6 +22,7 @@ function generateDefaultTerrainConfig(terrainNames) {
     "terrains": terrainNames.reduce((config, terrainName) => {
       config[terrainName] = {
         "rotatable": true,
+        "randomize": true
       };
       return config;
     }, {})
@@ -54,6 +55,7 @@ function loadTerrainConfig(terrainDirectory, terrainNames) {
     if (!config.terrains[terrainName]) {
       config.terrains[terrainName] = {
         "rotatable": true,
+        "randomize": true
       };
       configUpdated = true;
       console.log(`  ➕ Added new terrain to config: ${terrainName}`);
@@ -218,6 +220,8 @@ function generateTerrainInfo(manifest, terrainPath, terrainConfig = null) {
   
   // Get rotatable setting from config, default to true
   const rotatable = terrainConfig?.terrains?.[manifest.name]?.rotatable ?? true;
+  // Get randomize setting from config, default to true
+  const randomize = terrainConfig?.terrains?.[manifest.name]?.randomize ?? true;
   
   return {
     name: manifest.name,
@@ -228,6 +232,7 @@ function generateTerrainInfo(manifest, terrainPath, terrainConfig = null) {
     hasVariants: manifest.totalAssets > 1,
     assetCount: manifest.totalAssets,
     rotatable: rotatable,
+    randomize: randomize,
     features: {
       hasAngles,
       hasSides,

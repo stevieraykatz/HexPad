@@ -150,7 +150,7 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
                   border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
                   overflow: 'hidden',
                   position: 'relative',
-                  backgroundColor: (texture as TextureItem).previewBackgroundColor || UI_CONFIG.COLORS.BUTTON_BACKGROUND
+                  backgroundColor: selectedBackgroundColor || UI_CONFIG.COLORS.BUTTON_BACKGROUND
                 }}>
                   <div style={{
                     width: UI_CONFIG.PAINT_OPTIONS.ZOOM_SCALE_PERCENTAGE,

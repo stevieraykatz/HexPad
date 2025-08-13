@@ -270,7 +270,7 @@ export const UI_CONFIG: UIConfig = {
   // Grid controls
   GRID_CONTROLS: {
     SLIDER_HEIGHT: '6px',
-    COLOR_SWATCH_SIZE: '40px',
+    COLOR_SWATCH_SIZE: '50px', // Increased from 40px
     COLOR_SWATCH_BORDER_SELECTED: '3px solid white',
     COLOR_SWATCH_BORDER_NORMAL: '2px solid rgba(255, 255, 255, 0.3)',
   },
@@ -278,16 +278,16 @@ export const UI_CONFIG: UIConfig = {
   // Paint options
   PAINT_OPTIONS: {
     GRID_COLUMNS: 3, // Number of columns in paint options grid
-    TILE_SIZE: '65px', // Size of each paint option tile
-    TILE_GAP: '4px', // Gap between paint option tiles
-    TILE_PADDING: '2px', // Padding inside each tile
+    TILE_SIZE: '80px', // Size of each paint option tile (increased from 65px)
+    TILE_GAP: '6px', // Gap between paint option tiles (increased from 4px)
+    TILE_PADDING: '3px', // Padding inside each tile (increased from 2px)
     TILE_BORDER_WIDTH_NORMAL: '2px', // Border width for normal tiles
     TILE_BORDER_WIDTH_SELECTED: '3px', // Border width for selected tiles
     ZOOM_SCALE_PERCENTAGE: '130%', // Scale percentage for zooming texture images
     ZOOM_OFFSET_PERCENTAGE: '-15%', // Offset percentage for zoomed texture positioning
     MAX_HEIGHT: '400px', // Maximum height for scrollable paint options
     MAX_HEIGHT_MOBILE: '200px', // Maximum height for mobile paint options
-    BACKGROUND_PREVIEW_SIZE: '60px', // Size of background preview tile
+    BACKGROUND_PREVIEW_SIZE: '75px', // Size of background preview tile (increased from 60px)
     BACKGROUND_BORDER_NORMAL: '2px', // Border width for normal background preview
     BACKGROUND_BORDER_SELECTED: '3px', // Border width for selected background preview
     COLOR_PICKER_SIZE_MOBILE: '120px', // Color picker size on mobile

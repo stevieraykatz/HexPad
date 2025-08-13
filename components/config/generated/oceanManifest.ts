@@ -7,7 +7,7 @@
 
 export const oceanManifest = {
   "name": "ocean",
-  "generated": "2025-08-12T23:41:22.733Z",
+  "generated": "2025-08-13T02:38:01.971Z",
   "totalAssets": 14,
   "assets": {
     "byAngle": {},

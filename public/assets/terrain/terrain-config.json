@@ -5,31 +5,40 @@
   "generated": "2025-08-12T23:37:09.423Z",
   "terrains": {
     "coast": {
-      "rotatable": true
+      "rotatable": true,
+      "randomize": false
     },
     "forest": {
-      "rotatable": false
+      "rotatable": false,
+      "randomize": true
     },
     "forestedge": {
-      "rotatable": false
+      "rotatable": false,
+      "randomize": false
     },
     "hills": {
-      "rotatable": false
+      "rotatable": false,
+      "randomize": true
     },
     "mountain": {
-      "rotatable": false
+      "rotatable": false,
+      "randomize": true
     },
     "ocean": {
-      "rotatable": false
+      "rotatable": false,
+      "randomize": true
     },
     "plains": {
-      "rotatable": true
+      "rotatable": true,
+      "randomize": true
     },
     "shrubland": {
-      "rotatable": false
+      "rotatable": false,
+      "randomize": true
     },
     "swamp": {
-      "rotatable": true
+      "rotatable": true,
+      "randomize": true
     }
   }
 }

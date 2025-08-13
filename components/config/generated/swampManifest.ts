@@ -7,7 +7,7 @@
 
 export const swampManifest = {
   "name": "swamp",
-  "generated": "2025-08-12T23:41:22.734Z",
+  "generated": "2025-08-13T02:38:01.972Z",
   "totalAssets": 5,
   "assets": {
     "byAngle": {},

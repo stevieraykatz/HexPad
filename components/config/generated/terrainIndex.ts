@@ -7,7 +7,7 @@
 
 export const terrainIndex = {
   "name": "terrain",
-  "generated": "2025-08-12T23:41:22.727Z",
+  "generated": "2025-08-13T02:38:01.966Z",
   "totalTerrainTypes": 9,
   "totalAssets": 68,
   "baseTerrains": 1,
@@ -22,6 +22,7 @@ export const terrainIndex = {
       "hasVariants": true,
       "assetCount": 17,
       "rotatable": true,
+      "randomize": false,
       "features": {
         "hasAngles": true,
         "hasSides": false,
@@ -37,6 +38,7 @@ export const terrainIndex = {
       "hasVariants": false,
       "assetCount": 1,
       "rotatable": false,
+      "randomize": true,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -52,6 +54,7 @@ export const terrainIndex = {
       "hasVariants": true,
       "assetCount": 14,
       "rotatable": false,
+      "randomize": false,
       "features": {
         "hasAngles": true,
         "hasSides": true,
@@ -67,6 +70,7 @@ export const terrainIndex = {
       "hasVariants": true,
       "assetCount": 3,
       "rotatable": false,
+      "randomize": true,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -82,6 +86,7 @@ export const terrainIndex = {
       "hasVariants": true,
       "assetCount": 8,
       "rotatable": false,
+      "randomize": true,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -97,6 +102,7 @@ export const terrainIndex = {
       "hasVariants": true,
       "assetCount": 14,
       "rotatable": false,
+      "randomize": true,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -112,6 +118,7 @@ export const terrainIndex = {
       "hasVariants": true,
       "assetCount": 3,
       "rotatable": true,
+      "randomize": true,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -127,6 +134,7 @@ export const terrainIndex = {
       "hasVariants": true,
       "assetCount": 3,
       "rotatable": false,
+      "randomize": true,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -142,6 +150,7 @@ export const terrainIndex = {
       "hasVariants": true,
       "assetCount": 5,
       "rotatable": true,
+      "randomize": true,
       "features": {
         "hasAngles": false,
         "hasSides": false,
@@ -160,6 +169,7 @@ export const terrainIndex = {
         "hasVariants": false,
         "assetCount": 1,
         "rotatable": false,
+        "randomize": true,
         "features": {
           "hasAngles": false,
           "hasSides": false,
@@ -177,6 +187,7 @@ export const terrainIndex = {
         "hasVariants": true,
         "assetCount": 17,
         "rotatable": true,
+        "randomize": false,
         "features": {
           "hasAngles": true,
           "hasSides": false,
@@ -192,6 +203,7 @@ export const terrainIndex = {
         "hasVariants": true,
         "assetCount": 14,
         "rotatable": false,
+        "randomize": false,
         "features": {
           "hasAngles": true,
           "hasSides": true,
@@ -207,6 +219,7 @@ export const terrainIndex = {
         "hasVariants": true,
         "assetCount": 3,
         "rotatable": false,
+        "randomize": true,
         "features": {
           "hasAngles": false,
           "hasSides": false,
@@ -222,6 +235,7 @@ export const terrainIndex = {
         "hasVariants": true,
         "assetCount": 8,
         "rotatable": false,
+        "randomize": true,
         "features": {
           "hasAngles": false,
           "hasSides": false,
@@ -237,6 +251,7 @@ export const terrainIndex = {
         "hasVariants": true,
         "assetCount": 14,
         "rotatable": false,
+        "randomize": true,
         "features": {
           "hasAngles": false,
           "hasSides": false,
@@ -252,6 +267,7 @@ export const terrainIndex = {
         "hasVariants": true,
         "assetCount": 3,
         "rotatable": true,
+        "randomize": true,
         "features": {
           "hasAngles": false,
           "hasSides": false,
@@ -267,6 +283,7 @@ export const terrainIndex = {
         "hasVariants": true,
         "assetCount": 3,
         "rotatable": false,
+        "randomize": true,
         "features": {
           "hasAngles": false,
           "hasSides": false,
@@ -282,6 +299,7 @@ export const terrainIndex = {
         "hasVariants": true,
         "assetCount": 5,
         "rotatable": true,
+        "randomize": true,
         "features": {
           "hasAngles": false,
           "hasSides": false,

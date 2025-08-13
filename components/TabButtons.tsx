@@ -49,8 +49,8 @@ const TabButtons: React.FC<TabButtonsProps> = ({
     }
     
     return {
-      width: (isActive && menuOpen) ? '60px' : '50px',
-      height: (isActive && menuOpen) ? '60px' : '50px',
+      width: (isActive && menuOpen) ? '70px' : '60px', // Increased from 60px/50px
+      height: (isActive && menuOpen) ? '70px' : '60px', // Increased from 60px/50px
       background,
       backdropFilter: UI_CONFIG.BLUR.LIGHT,
       border,

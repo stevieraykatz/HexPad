@@ -54,8 +54,8 @@ const ActionButton: React.FC<ActionButtonProps> = ({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      minWidth: '60px',
-      height: '50px'
+      minWidth: '70px', // Increased from 60px
+      height: '60px' // Increased from 50px
     };
 
     switch (type) {

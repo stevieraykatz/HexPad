@@ -7,7 +7,7 @@
 
 export const forestedgeManifest = {
   "name": "forestedge",
-  "generated": "2025-08-12T23:41:22.730Z",
+  "generated": "2025-08-13T02:38:01.969Z",
   "totalAssets": 14,
   "assets": {
     "byAngle": {

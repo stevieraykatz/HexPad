@@ -70,6 +70,7 @@ export interface TerrainInfo {
   readonly hasVariants: boolean;
   readonly assetCount: number;
   readonly rotatable: boolean;
+  readonly randomize: boolean;
   readonly features?: {
     readonly hasAngles: boolean;
     readonly hasSides: boolean;

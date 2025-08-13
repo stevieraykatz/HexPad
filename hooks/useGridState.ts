@@ -5,6 +5,7 @@ import { GRID_CONFIG, DEFAULT_COLORS } from '../components/config';
 import { useRegionState } from './useRegionState';
 import { useRegionBorders } from './useRegionBorders';
 import type { RegionMap } from '../utils/regionUtils';
+import { getRandomTerrainVariant, getTerrainInfo, loadTerrainManifest } from '../components/config/assetLoader';
 
 // Type definitions for hex colors and textures
 type HexColor = string;
@@ -286,6 +287,38 @@ export function useGridState({
     } else {
       // Paint mode - use selectedTexture if available, otherwise fall back to selectedColor
       let textureToUse: HexTexture | null = selectedTexture;
+      
+      // If we have a selected texture, try to get a random variant from its set
+      if (selectedTexture && selectedTexture.type === 'texture') {
+        const terrainInfo = getTerrainInfo(selectedTexture.name);
+        // Check if randomization is enabled for this terrain type
+        const shouldRandomize = terrainInfo?.randomize !== false; // Default to true if not specified
+        
+        if (terrainInfo && terrainInfo.hasVariants && shouldRandomize) {
+          // For complex terrains with manifests, get a random variant
+          const randomVariant = getRandomTerrainVariant(selectedTexture.name);
+          if (randomVariant) {
+            textureToUse = {
+              ...selectedTexture,
+              name: randomVariant.name,
+              path: `/assets/terrain/${selectedTexture.name}/${randomVariant.filename}`,
+              rotation: 0, // Reset rotation for new variant
+              flipped: false // Reset flip for new variant
+            };
+          }
+        } else if (terrainInfo && terrainInfo.assetCount > 1 && shouldRandomize) {
+          // For simple terrains with multiple numbered assets, pick a random one
+          const randomVariantNumber = Math.floor(Math.random() * terrainInfo.assetCount) + 1;
+          const randomPath = `/assets/terrain/${selectedTexture.name}/${selectedTexture.name}_${randomVariantNumber}.png`;
+          textureToUse = {
+            ...selectedTexture,
+            name: `${selectedTexture.name}_${randomVariantNumber}`,
+            path: randomPath,
+            rotation: 0, // Reset rotation for new variant
+            flipped: false // Reset flip for new variant
+          };
+        }
+      }
       
       if (!textureToUse) {
         // Create a color texture from selectedColor (hex string)
