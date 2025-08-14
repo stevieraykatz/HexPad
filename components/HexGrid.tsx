@@ -864,7 +864,18 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       const entry = entries[0];
       if (entry) {
         const { width, height } = entry.contentRect;
-        setCanvasSize({ width, height });
+        
+        // Get device pixel ratio for high-DPI displays (mobile retina screens)
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        
+        // Set canvas size accounting for device pixel ratio
+        const scaledWidth = Math.floor(width * devicePixelRatio);
+        const scaledHeight = Math.floor(height * devicePixelRatio);
+        
+        setCanvasSize({ 
+          width: scaledWidth, 
+          height: scaledHeight 
+        });
       }
     });
 
@@ -900,11 +911,12 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     hexPositions: HexPosition[],
     hexRadius: number
   ) => {
-    const fontSize = calculateEdgeFontSize(hexRadius);
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const fontSize = calculateEdgeFontSize(hexRadius) * devicePixelRatio;
     ctx.font = `${fontSize}px Arial`;
     ctx.fillStyle = 'white';
     ctx.strokeStyle = 'black';
-    ctx.lineWidth = NUMBERING_CONFIG.OUTLINE_WIDTH;
+    ctx.lineWidth = NUMBERING_CONFIG.OUTLINE_WIDTH * devicePixelRatio;
     
     // Find the actual visual bounds of the rendered grid
     const visibleHexes = hexPositions.filter(pos => 
@@ -992,7 +1004,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     hexPositions: HexPosition[],
     hexRadius: number
   ) => {
-    const fontSize = calculateInHexFontSize(hexRadius);
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const fontSize = calculateInHexFontSize(hexRadius) * devicePixelRatio;
     ctx.font = `${fontSize}px Arial`;
     
     hexPositions.forEach(pos => {
@@ -1007,7 +1020,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         textY, 
         'white', 
         'black', 
-        NUMBERING_CONFIG.OUTLINE_WIDTH, 
+        NUMBERING_CONFIG.OUTLINE_WIDTH * devicePixelRatio, 
         'center', 
         'middle'
       );
@@ -1020,6 +1033,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
     
+    // Get device pixel ratio for high-DPI scaling
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     if (numberingMode === 'off') return;
@@ -1029,7 +1045,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     
     if (hexRadius <= 0 || hexPositions.length === 0) return;
     
-    ctx.font = `${calculateGeneralFontSize(hexRadius)}px Arial`;
+    // Scale font size for device pixel ratio
+    ctx.font = `${calculateGeneralFontSize(hexRadius) * devicePixelRatio}px Arial`;
     
     if (numberingMode === 'edge') {
       renderEdgeNumbering(ctx, canvas, hexPositions, hexRadius);

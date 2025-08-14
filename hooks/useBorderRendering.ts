@@ -37,6 +37,9 @@ export function useBorderRendering({
     const ctx = bordersCanvas.getContext('2d');
     if (!ctx) return;
 
+    // Get device pixel ratio for high-DPI scaling
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
     ctx.clearRect(0, 0, bordersCanvas.width, bordersCanvas.height);
 
     if (!borders || Object.keys(borders).length === 0 || hexRadius <= 0 || hexPositions.length === 0) {
@@ -50,7 +53,7 @@ export function useBorderRendering({
       
       if (edgeVertices) {
         ctx.strokeStyle = border.color;
-        ctx.lineWidth = 6;
+        ctx.lineWidth = 6 * devicePixelRatio; // Scale line width for device pixel ratio
         ctx.lineCap = 'round';
         
         ctx.beginPath();
