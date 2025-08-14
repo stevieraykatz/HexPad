@@ -67,8 +67,11 @@ export const usePinchZoomPan = ({
     
     const { minZoom, maxZoom } = calculateZoomLimits(gridWidth);
     const rect = (event.target as HTMLElement).getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    
+    // Convert CSS coordinates to device pixel coordinates
+    const mouseX = (event.clientX - rect.left) * devicePixelRatio;
+    const mouseY = (event.clientY - rect.top) * devicePixelRatio;
     
     // Calculate zoom change
     const zoomDelta = event.deltaY > 0 ? -GRID_CONFIG.ZOOM_SPEED : GRID_CONFIG.ZOOM_SPEED;
@@ -166,8 +169,11 @@ export const usePinchZoomPan = ({
         
         // Calculate zoom-to-point using initial center
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-        const centerX = touchState.center.x - rect.left;
-        const centerY = touchState.center.y - rect.top;
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        
+        // Convert CSS coordinates to device pixel coordinates
+        const centerX = (touchState.center.x - rect.left) * devicePixelRatio;
+        const centerY = (touchState.center.y - rect.top) * devicePixelRatio;
         
         const zoomRatio = newZoom / touchState.initialZoom;
         const worldX = centerX - canvasSize.width / 2 - touchState.initialPan.x;

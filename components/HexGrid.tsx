@@ -395,8 +395,11 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     setTimeout(() => setIsZooming(false), 150);
     
     const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    
+    // Convert CSS coordinates to device pixel coordinates
+    const mouseX = (event.clientX - rect.left) * devicePixelRatio;
+    const mouseY = (event.clientY - rect.top) * devicePixelRatio;
     const zoomDirection = event.deltaY > 0 ? -1 : 1;
     
         const currentHexRadius = hexRadiusRef.current || GRID_CONFIG.FALLBACK_HEX_RADIUS;
@@ -539,8 +542,11 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     if (!canvas) return;
     
     const rect = canvas.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    
+    // Convert CSS coordinates to device pixel coordinates
+    const x = (clientX - rect.left) * devicePixelRatio;
+    const y = (clientY - rect.top) * devicePixelRatio;
     
     if (activeTab === 'borders') {
       paintBorderIfNew(x, y);
@@ -569,8 +575,11 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       const canvas = canvasRef.current;
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        
+        // Convert CSS coordinates to device pixel coordinates
+        const x = (event.clientX - rect.left) * devicePixelRatio;
+        const y = (event.clientY - rect.top) * devicePixelRatio;
         
         // Check for region border button click first
         if (regionButtonState && activeTab === 'borders') {
@@ -625,8 +634,11 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       const canvas = canvasRef.current;
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        
+        // Convert CSS coordinates to device pixel coordinates
+        const x = (event.clientX - rect.left) * devicePixelRatio;
+        const y = (event.clientY - rect.top) * devicePixelRatio;
         
         const currentHoveredHex = getHexFromMousePos(x, y, hexPositionsRef.current, hexRadiusRef.current);
         
