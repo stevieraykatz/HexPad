@@ -70,7 +70,7 @@ interface UseGridStateReturn {
   setGridWidth: (width: number) => void;
   setGridHeight: (height: number) => void;
   setHexColors: (colors: HexColorsMap) => void;
-  setHexBackgroundColors: (colors: HexBackgroundColorsMap) => void;
+  setHexBackgroundColors: (colors: HexBackgroundColorsMap | ((prev: HexBackgroundColorsMap) => HexBackgroundColorsMap)) => void;
   setHexIcons: (icons: Record<string, ColoredIcon>) => void;
   setBorders: (borders: BordersMap) => void;
   
@@ -195,11 +195,29 @@ export function useGridState({
     const backgroundColorsChanged = JSON.stringify(prevBackgroundColorState) !== JSON.stringify(currentBackgroundColorState);
     const bordersChanged = JSON.stringify(prevBorderState) !== JSON.stringify(currentBorderState);
     
-    // Only save to history if something actually changed and it's not the initial state
+    // Only save to history if something actually changed and we have meaningful content in both states
     if (iconsChanged || colorsChanged || backgroundColorsChanged || bordersChanged) {
-      const hasInitialState = Object.keys(prevIconState).length > 0 || Object.keys(prevColorState).length > 0 || Object.keys(prevBackgroundColorState).length > 0 || Object.keys(prevBorderState).length > 0;
+      // Check if previous state had meaningful content (not just default background colors)
+      const prevHadMeaningfulContent = 
+        Object.keys(prevIconState).length > 0 || 
+        Object.keys(prevColorState).length > 0 || 
+        Object.keys(prevBorderState).length > 0 ||
+        // For background colors, check if they're not just default manila colors
+        (Object.keys(prevBackgroundColorState).length > 0 && 
+         Object.values(prevBackgroundColorState).some(color => color !== '#F3E8C2'));
       
-      if (hasInitialState) {
+      // Check if current state has meaningful content
+      const currentHasMeaningfulContent = 
+        Object.keys(currentIconState).length > 0 || 
+        Object.keys(currentColorState).length > 0 || 
+        Object.keys(currentBorderState).length > 0 ||
+        // For background colors, check if they're not just default manila colors
+        (Object.keys(currentBackgroundColorState).length > 0 && 
+         Object.values(currentBackgroundColorState).some(color => color !== '#F3E8C2'));
+      
+      // Only save to history if previous state had meaningful content
+      // This prevents saving when loading from autosave/URL (previous state is empty)
+      if (prevHadMeaningfulContent) {
         const historyEntry: HistoryEntry = {
           iconState: { ...prevIconState },
           colorState: { ...prevColorState },
@@ -300,7 +318,8 @@ export function useGridState({
           if (randomVariant) {
             textureToUse = {
               ...selectedTexture,
-              name: randomVariant.name,
+              name: randomVariant.name, // Use variant name for rendering and encoding
+              displayName: randomVariant.name, // Use variant name for display
               path: `/assets/terrain/${selectedTexture.name}/${randomVariant.filename}`,
               rotation: 0, // Reset rotation for new variant
               flipped: false // Reset flip for new variant
@@ -312,7 +331,8 @@ export function useGridState({
           const randomPath = `/assets/terrain/${selectedTexture.name}/${selectedTexture.name}_${randomVariantNumber}.png`;
           textureToUse = {
             ...selectedTexture,
-            name: `${selectedTexture.name}_${randomVariantNumber}`,
+            name: `${selectedTexture.name}_${randomVariantNumber}`, // Use variant name for rendering and encoding
+            displayName: `${selectedTexture.name}_${randomVariantNumber}`, // Use variant name for display
             path: randomPath,
             rotation: 0, // Reset rotation for new variant
             flipped: false // Reset flip for new variant
@@ -489,6 +509,12 @@ export function useGridState({
     setUnifiedHistory([]);
     setHexIconsVersion(prev => prev + 1);
     setBordersVersion(prev => prev + 1);
+    
+    // Reset refs to current state to prevent unwanted undo entries
+    prevHexIconsRef.current = {};
+    prevHexColorsRef.current = {};
+    prevHexBackgroundColorsRef.current = defaultBackgroundColors;
+    prevBordersRef.current = {};
     
     // Note: clearAutosave will be called at component level
   }, [gridWidth, gridHeight]);

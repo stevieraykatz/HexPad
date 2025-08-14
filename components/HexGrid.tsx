@@ -39,6 +39,7 @@ interface HexTexture {
   displayName: string;
   rgb?: RGB;
   path?: string;
+  baseName?: string; // Base terrain name for encoding (e.g., "coast" for "coast_180_1")
   rotation?: number; // Rotation in 1/6th increments (0-5)
   flipped?: boolean; // Vertical flip for non-rotatable textures
 }
@@ -250,12 +251,13 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
 
   // Helper function to handle tile manipulation clicks
   const handleTileManipulation = useCallback((hex: HexPosition, buttonRegion: ButtonRegion): void => {
-    if (!menuOpen || !onTileTextureAction || !buttonRegion) return;
+    // Allow tile manipulation when design menu is active (either open or minimized) and on paint tab
+    if (activeTab !== 'paint' || !onTileTextureAction || !buttonRegion) return;
     
     const action = buttonRegion === 'center' ? 'cycle' : 
                    buttonRegion === 'left' ? 'rotate-left' : 'rotate-right';
     onTileTextureAction(hex.row, hex.col, action);
-  }, [menuOpen, onTileTextureAction]);
+  }, [activeTab, onTileTextureAction]);
 
   // Helper function to handle region border application
   const handleRegionBorderApplication = useCallback(async (regionId: string): Promise<void> => {
@@ -547,7 +549,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       clearPaintedBorders();
       handlePaintAtPosition(event.clientX, event.clientY);
     }
-  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction, menuOpen, getHexColor, handleTileManipulation, regionButtonState, activeTab, handleRegionBorderApplication]);
+  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction, regionButtonState, activeTab, handleRegionBorderApplication]);
 
   const handleMouseMove = useCallback((event: MouseEvent): void => {
     if (isPanning && lastPanPosition) {
@@ -596,7 +598,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           // Region button state is now handled by useEffect when hoveredRegion changes
           
           // Tile manipulation logic - only update when hex actually changes
-          if (menuOpen) {
+          // Show buttons when design menu is active (either open or minimized) and on paint tab
+          if (activeTab === 'paint') {
             const currentHexKey = `${currentHoveredHex.row}-${currentHoveredHex.col}`;
             
             // Only check texture and update state if we've moved to a different hex
@@ -613,7 +616,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
               lastButtonHexRef.current = currentHexKey;
             }
           } else {
-            // Clear state when menu is closed
+            // Clear state when not on paint tab
             if (tileHoverState.hexCoord) {
               setTileHoverState({ hexCoord: null, buttonRegion: null });
             }
@@ -1012,7 +1015,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       cancelPendingRenders();
       cancelPendingIconUpdates();
     };
-  }, [bordersVersion, borders, renderBordersThrottled, canvasSize, zoomLevel, panOffset, numberingMode, renderNumbering, cancelPendingRenders, updateIconPositionsThrottled, cancelPendingIconUpdates]);
+  }, [bordersVersion, borders, renderBordersThrottled, canvasSize, zoomLevel, panOffset, numberingMode, renderNumbering, cancelPendingRenders, updateIconPositionsThrottled, cancelPendingIconUpdates, gridWidth, gridHeight]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -1132,7 +1135,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   
   // Create separate memoized component for buttons to isolate from throttled re-renders
   const ButtonOverlay = useMemo(() => {
-    if (!tileHoverState.hexCoord || !menuOpen || activeTab !== 'paint' || isPanning || isDragging || isZooming) {
+    // Show buttons when design menu is active (either open or minimized) and on paint tab
+    if (!tileHoverState.hexCoord || activeTab !== 'paint' || isPanning || isDragging || isZooming) {
       return null;
     }
     
@@ -1149,7 +1153,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         {tileManipulationButtons}
       </div>
     );
-  }, [tileHoverState.hexCoord, menuOpen, activeTab, isPanning, isDragging, isZooming, tileManipulationButtons]);
+  }, [tileHoverState.hexCoord, activeTab, isPanning, isDragging, isZooming, tileManipulationButtons]);
 
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>

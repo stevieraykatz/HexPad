@@ -1,7 +1,7 @@
 {
   "name": "icons",
-  "generated": "2025-08-12T05:32:26.745Z",
-  "totalAssets": 9,
+  "generated": "2025-08-13T22:50:48.750Z",
+  "totalAssets": 14,
   "assets": {
     "byAngle": {},
     "bySide": {},
@@ -13,12 +13,24 @@
           "name": "castle"
         },
         {
+          "filename": "castle2.png",
+          "name": "castle2"
+        },
+        {
+          "filename": "cave.png",
+          "name": "cave"
+        },
+        {
           "filename": "church.png",
           "name": "church"
         },
         {
           "filename": "curse.png",
           "name": "curse"
+        },
+        {
+          "filename": "fortress.png",
+          "name": "fortress"
         },
         {
           "filename": "huts.png",
@@ -37,8 +49,16 @@
           "name": "sanctum"
         },
         {
+          "filename": "tower.png",
+          "name": "tower"
+        },
+        {
           "filename": "town.png",
           "name": "town"
+        },
+        {
+          "filename": "town2.png",
+          "name": "town2"
         },
         {
           "filename": "village.png",
@@ -53,12 +73,24 @@
       "name": "castle"
     },
     {
+      "filename": "castle2.png",
+      "name": "castle2"
+    },
+    {
+      "filename": "cave.png",
+      "name": "cave"
+    },
+    {
       "filename": "church.png",
       "name": "church"
     },
     {
       "filename": "curse.png",
       "name": "curse"
+    },
+    {
+      "filename": "fortress.png",
+      "name": "fortress"
     },
     {
       "filename": "huts.png",
@@ -77,8 +109,16 @@
       "name": "sanctum"
     },
     {
+      "filename": "tower.png",
+      "name": "tower"
+    },
+    {
       "filename": "town.png",
       "name": "town"
+    },
+    {
+      "filename": "town2.png",
+      "name": "town2"
     },
     {
       "filename": "village.png",

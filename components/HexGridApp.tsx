@@ -41,6 +41,7 @@ const HexGridApp: React.FC = () => {
   const [selectedIconColor, setSelectedIconColor] = useState<string>('#FFFFFF');
   const [selectedBackgroundShaderColor, setSelectedBackgroundShaderColor] = useState<string>('#F3E8C2');
   const [backgroundPaintingMode, setBackgroundPaintingMode] = useState<boolean>(false);
+  const [eyeDropperMode, setEyeDropperMode] = useState<boolean>(false);
   const [menuOpen, setMenuOpen] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'paint' | 'icons' | 'borders' | 'settings'>('paint');
   const [isExporting, setIsExporting] = useState<boolean>(false);
@@ -113,6 +114,7 @@ const HexGridApp: React.FC = () => {
     gridWidth,
     gridHeight,
     hexColors,
+    hexBackgroundColors,
     hexIcons,
     borders,
     hexColorsVersion,
@@ -154,22 +156,35 @@ const HexGridApp: React.FC = () => {
   const { loadFromLocalStorage, clearAutosave } = useAutoSave({
     encodingMap,
     hexColors,
+    hexBackgroundColors,
     hexIcons,
     borders,
     gridWidth,
     gridHeight,
+    selectedBackgroundColor,
     isUndoing: false
   });
 
-  // Initialize grid with grey background colors on first load
+  // Initialize grid with grey background colors on first load and preserve existing colors on resize
   useEffect(() => {
-    const greyBackgroundColors: Record<string, string> = {};
-    for (let row = 0; row < gridHeight; row++) {
-      for (let col = 0; col < gridWidth; col++) {
-        greyBackgroundColors[`${row}-${col}`] = '#F3E8C2'; // Default manila hex color
+    setHexBackgroundColors(prevColors => {
+      const updatedBackgroundColors: Record<string, string> = { ...prevColors };
+      
+      // Only set default colors for tiles that don't already have background colors
+      for (let row = 0; row < gridHeight; row++) {
+        for (let col = 0; col < gridWidth; col++) {
+          const hexKey = `${row}-${col}`;
+          if (!updatedBackgroundColors[hexKey]) {
+            updatedBackgroundColors[hexKey] = '#F3E8C2'; // Default manila hex color
+          }
+        }
       }
-    }
-    setHexBackgroundColors(greyBackgroundColors);
+      
+      // Note: We intentionally do NOT remove background colors for tiles outside grid bounds
+      // This allows content to persist when the grid is temporarily made smaller and then larger again
+      
+      return updatedBackgroundColors;
+    });
   }, [gridWidth, gridHeight, setHexBackgroundColors]);
 
   const handleClearGrid = (): void => {
@@ -189,7 +204,7 @@ const HexGridApp: React.FC = () => {
       const decodedGridState = decodeBase64ToGrid(encoded, encodingMap);
       
       if (decodedGridState) {
-        const { gridWidth: decodedWidth, gridHeight: decodedHeight, hexColors, hexIcons, borders } = decodedGridState;
+        const { gridWidth: decodedWidth, gridHeight: decodedHeight, hexColors, hexBackgroundColors, hexIcons, borders } = decodedGridState;
         
         // Set grid dimensions from decoded URL
         setGridWidth(decodedWidth);
@@ -197,6 +212,7 @@ const HexGridApp: React.FC = () => {
         
         // hexColors from decoding is already in the correct format (string | HexTexture)
         setHexColors(hexColors);
+        setHexBackgroundColors(hexBackgroundColors);
         setHexIcons(hexIcons); // hexIcons is already in ColoredIcon format from new decoding
         setBorders(borders);
         
@@ -205,12 +221,22 @@ const HexGridApp: React.FC = () => {
     } else {
       const savedState = loadFromLocalStorage();
       if (savedState) {
+        // Restore grid dimensions if they were saved
+        if (savedState.gridWidth && savedState.gridHeight) {
+          setGridWidth(savedState.gridWidth);
+          setGridHeight(savedState.gridHeight);
+        }
+        
         setHexColors(savedState.hexColors);
+        setHexBackgroundColors(savedState.hexBackgroundColors);
         setHexIcons(savedState.hexIcons);
         setBorders(savedState.borders);
+        if (savedState.selectedBackgroundColor) {
+          setSelectedBackgroundColor(savedState.selectedBackgroundColor);
+        }
       }
     }
-      }, [encodingMap, gridWidth, gridHeight, loadFromLocalStorage, setHexColors, setHexIcons, setBorders, setGridWidth, setGridHeight]); // Only run when encoding map is first available
+      }, [encodingMap, loadFromLocalStorage, setHexColors, setHexBackgroundColors, setHexIcons, setBorders, setGridWidth, setGridHeight, setSelectedBackgroundColor]); // Only run when encoding map is first available, not on grid resize
 
 
 
@@ -225,7 +251,8 @@ const HexGridApp: React.FC = () => {
     setHexBackgroundColors,
     setBorders,
     setIsExporting,
-    setBackgroundPaintingMode
+    setBackgroundPaintingMode,
+    setEyeDropperMode
   };
 
   const handleTextureSelect = createTextureSelectHandler(gridActionHelpers);
@@ -245,6 +272,26 @@ const HexGridApp: React.FC = () => {
     gridActionHelpers
   );
   
+  const handleEyeDropperToggle = useCallback(() => {
+    setEyeDropperMode(prev => !prev);
+    // Disable background painting mode when eye dropper is active
+    if (!eyeDropperMode) {
+      setBackgroundPaintingMode(false);
+    }
+  }, [eyeDropperMode]);
+
+  // Eye dropper functionality to sample background color from hex
+  const handleEyeDropperClick = useCallback((row: number, col: number) => {
+    const backgroundColorHex = getHexBackgroundColor(row, col);
+    
+    if (backgroundColorHex) {
+      // Set the sampled color as the active background color
+      setSelectedBackgroundShaderColor(backgroundColorHex);
+      // Exit eye dropper mode after sampling
+      setEyeDropperMode(false);
+    }
+  }, [getHexBackgroundColor]);
+  
   const handleExportPNG = createExportPNGHandler(
     { hexGridRef, gridWidth, gridHeight, isExporting },
     gridActionHelpers
@@ -253,6 +300,7 @@ const HexGridApp: React.FC = () => {
   const handleCopyUrl = createCopyUrlHandler({
     encodingMap,
     hexColors,
+    hexBackgroundColors,
     hexIcons,
     borders,
     gridWidth,
@@ -478,8 +526,10 @@ const HexGridApp: React.FC = () => {
           onBorderColorSelect={setSelectedBorderColor}
           selectedBackgroundShaderColor={selectedBackgroundShaderColor}
           backgroundPaintingMode={backgroundPaintingMode}
+          eyeDropperMode={eyeDropperMode}
           onBackgroundShaderColorSelect={setSelectedBackgroundShaderColor}
           onBackgroundPaintingModeToggle={handleBackgroundPaintingModeToggle}
+          onEyeDropperToggle={handleEyeDropperToggle}
           // Region props
           regionStats={regionStats}
           hoveredRegion={hoveredRegion}
@@ -503,7 +553,12 @@ const HexGridApp: React.FC = () => {
           gridWidth={gridWidth} 
           gridHeight={gridHeight}
           numberingMode={numberingMode}
-          onHexClick={backgroundPaintingMode && selectedIcon?.name !== 'eraser' ? paintBackgroundHex : paintHex}
+          onHexClick={eyeDropperMode ? handleEyeDropperClick : (
+            (backgroundPaintingMode && selectedIcon?.name !== 'eraser') || 
+            (!selectedTexture && selectedIcon?.name !== 'eraser' && activeTab === 'paint') 
+              ? paintBackgroundHex 
+              : paintHex
+          )}
           onHexHover={handleHexHover}
           onEdgeClick={placeBorder}
           getHexColor={getHexColor}

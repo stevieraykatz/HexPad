@@ -25,8 +25,10 @@ interface DesignMenuContentProps {
   // Background shader props (used in paint tab)
   selectedBackgroundShaderColor: string;
   backgroundPaintingMode: boolean;
+  eyeDropperMode: boolean;
   onBackgroundShaderColorSelect: (color: string) => void;
   onBackgroundPaintingModeToggle: () => void;
+  onEyeDropperToggle: () => void;
   // Settings tab props
   gridWidth: number;
   gridHeight: number;
@@ -68,8 +70,10 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
   // Backgrounds props
   selectedBackgroundShaderColor,
   backgroundPaintingMode,
+  eyeDropperMode,
   onBackgroundShaderColorSelect,
   onBackgroundPaintingModeToggle,
+  onEyeDropperToggle,
   // Settings props
   gridWidth,
   gridHeight,
@@ -111,9 +115,11 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
               selectedTexture={selectedTexture}
               selectedBackgroundColor={selectedBackgroundShaderColor}
               backgroundPaintingMode={backgroundPaintingMode}
+              eyeDropperMode={eyeDropperMode}
               onTextureSelect={onTextureSelect}
               onBackgroundColorSelect={onBackgroundShaderColorSelect}
               onBackgroundPaintingModeToggle={onBackgroundPaintingModeToggle}
+              onEyeDropperToggle={onEyeDropperToggle}
               isMobile={isMobile}
             />
           </div>

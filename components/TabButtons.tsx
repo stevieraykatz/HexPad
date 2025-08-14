@@ -116,7 +116,19 @@ const TabButtons: React.FC<TabButtonsProps> = ({
         style={createTabButtonStyle('paint', activeTab === 'paint')}
         title="Paint Tools"
       >
-        🎨
+        <img 
+          src="/assets/ui/large-paint-brush.png" 
+          alt="Paint"
+          style={{
+            width: '32px',
+            height: '32px',
+            objectFit: 'contain',
+            filter: activeTab === 'paint' 
+              ? 'brightness(1.8) contrast(1.5) drop-shadow(0 0 4px rgba(59, 130, 246, 0.8))' 
+              : 'brightness(1.5) contrast(1.3)',
+            opacity: activeTab === 'paint' ? 1 : 0.9
+          }}
+        />
       </button>
 
       {/* Icons Menu Button */}
@@ -126,7 +138,19 @@ const TabButtons: React.FC<TabButtonsProps> = ({
         style={createTabButtonStyle('icons', activeTab === 'icons')}
         title="Icon Overlays"
       >
-        📍
+        <img 
+          src="/assets/ui/pin.png" 
+          alt="Icons"
+          style={{
+            width: '28px',
+            height: '28px',
+            objectFit: 'contain',
+            filter: activeTab === 'icons' 
+              ? 'brightness(1.8) contrast(1.5) drop-shadow(0 0 4px rgba(168, 85, 247, 0.8))' 
+              : 'brightness(1.5) contrast(1.3)',
+            opacity: activeTab === 'icons' ? 1 : 0.9
+          }}
+        />
       </button>
 
       {/* Borders Menu Button */}
@@ -136,7 +160,19 @@ const TabButtons: React.FC<TabButtonsProps> = ({
         style={createTabButtonStyle('borders', activeTab === 'borders')}
         title="Border Tools"
       >
-        🧱
+        <img 
+          src="/assets/ui/flying-flag.png" 
+          alt="Borders"
+          style={{
+            width: '30px',
+            height: '30px',
+            objectFit: 'contain',
+            filter: activeTab === 'borders' 
+              ? 'brightness(1.8) contrast(1.5) drop-shadow(0 0 4px rgba(59, 130, 246, 0.8))' 
+              : 'brightness(1.5) contrast(1.3)',
+            opacity: activeTab === 'borders' ? 1 : 0.9
+          }}
+        />
       </button>
 
       {/* Settings Menu Button */}
@@ -146,19 +182,19 @@ const TabButtons: React.FC<TabButtonsProps> = ({
         style={createTabButtonStyle('settings', activeTab === 'settings')}
         title="Grid Settings"
       >
-        <svg 
-          width="20" 
-          height="20" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-          style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }}
-        >
-          <polygon points="6,4 18,4 21,12 18,20 6,20 3,12" />
-        </svg>
+        <img 
+          src="/assets/ui/cog.png" 
+          alt="Settings"
+          style={{
+            width: '28px',
+            height: '28px',
+            objectFit: 'contain',
+            filter: activeTab === 'settings' 
+              ? 'brightness(1.8) contrast(1.5) drop-shadow(0 0 4px rgba(168, 85, 247, 0.8))' 
+              : 'brightness(1.5) contrast(1.3)',
+            opacity: activeTab === 'settings' ? 1 : 0.9
+          }}
+        />
       </button>
     </div>
   );

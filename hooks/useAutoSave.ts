@@ -6,7 +6,7 @@ import { PAINT_OPTIONS } from '../components/config';
 import { generateGridUrl, parseGridUrl, isValidGridEncoding, decodeBase64ToGrid } from '../utils/gridEncoding';
 
 // localStorage key for auto-save
-const AUTOSAVE_KEY = 'hexgrid_autosave';
+const AUTOSAVE_KEY = 'hexpad_autosave';
 const AUTOSAVE_DEBOUNCE_MS = 2000; // Save 2 seconds after last change
 
 type HexColorsMap = Record<string, string | HexTexture>;
@@ -15,15 +15,25 @@ type BordersMap = Record<string, { fromHex: string; toHex: string; color: string
 interface UseAutoSaveProps {
   encodingMap: EncodingMap | null;
   hexColors: HexColorsMap;
+  hexBackgroundColors: Record<string, string>;
   hexIcons: Record<string, ColoredIcon>;
   borders: BordersMap;
   gridWidth: number;
   gridHeight: number;
+  selectedBackgroundColor: any; // Grid background color
   isUndoing: boolean;
 }
 
 interface UseAutoSaveReturn {
-  loadFromLocalStorage: () => { hexColors: HexColorsMap; hexIcons: Record<string, ColoredIcon>; borders: BordersMap } | null;
+  loadFromLocalStorage: () => { 
+    hexColors: HexColorsMap; 
+    hexBackgroundColors: Record<string, string>;
+    hexIcons: Record<string, ColoredIcon>; 
+    borders: BordersMap;
+    gridWidth?: number;
+    gridHeight?: number;
+    selectedBackgroundColor?: any;
+  } | null;
   clearAutosave: () => void;
   triggerSave: () => void;
 }
@@ -31,10 +41,12 @@ interface UseAutoSaveReturn {
 export function useAutoSave({
   encodingMap,
   hexColors,
+  hexBackgroundColors,
   hexIcons,
   borders,
   gridWidth,
   gridHeight,
+  selectedBackgroundColor,
   isUndoing
 }: UseAutoSaveProps): UseAutoSaveReturn {
   const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -44,35 +56,26 @@ export function useAutoSave({
     if (!encodingMap) return;
     
     try {
-      // Convert HexColorsMap to the format expected by the encoder
-      const assetItemColors: Record<string, AssetItem> = {};
-      Object.entries(hexColors).forEach(([key, value]) => {
-        if (typeof value === 'object' && 'name' in value) {
-          // Find matching AssetItem from PAINT_OPTIONS
-          const matchingAsset = PAINT_OPTIONS.find(option => option.name === value.name);
-          if (matchingAsset) {
-            assetItemColors[key] = matchingAsset;
-          }
-        }
-      });
-      
-      // Create complete grid state
-      const completeGridState: CompleteGridState = {
+      // Create a comprehensive save state that includes all data
+      const saveState = {
+        version: '2.0', // Version for future compatibility
         gridWidth,
         gridHeight,
-        hexColors: assetItemColors,
-        hexIcons, // Use ColoredIcon format directly
-        borders
+        hexColors, // Save full HexTexture objects with rotations/flips
+        hexBackgroundColors,
+        hexIcons,
+        borders,
+        selectedBackgroundColor
       };
       
       // Check if there's actually any content to save
-      const hasContent = Object.keys(assetItemColors).length > 0 || 
+      const hasContent = Object.keys(hexColors).length > 0 || 
+                        Object.keys(hexBackgroundColors).length > 0 ||
                         Object.keys(hexIcons).length > 0 || 
                         Object.keys(borders).length > 0;
       
       if (hasContent) {
-        const encodedPath = generateGridUrl(completeGridState, encodingMap);
-        localStorage.setItem(AUTOSAVE_KEY, encodedPath);
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(saveState));
       } else {
         // Clear autosave if grid is empty
         localStorage.removeItem(AUTOSAVE_KEY);
@@ -80,7 +83,7 @@ export function useAutoSave({
     } catch (error) {
       console.warn('Failed to auto-save to localStorage:', error);
     }
-  }, [encodingMap, hexColors, hexIcons, borders, gridWidth, gridHeight]);
+  }, [encodingMap, hexColors, hexBackgroundColors, hexIcons, borders, gridWidth, gridHeight, selectedBackgroundColor]);
 
   // Debounced save function
   const debouncedSave = useCallback((): void => {
@@ -93,24 +96,52 @@ export function useAutoSave({
   }, [saveToLocalStorage]);
 
   // Load from localStorage
-  const loadFromLocalStorage = useCallback((): { hexColors: HexColorsMap; hexIcons: Record<string, ColoredIcon>; borders: BordersMap } | null => {
+  const loadFromLocalStorage = useCallback((): { 
+    hexColors: HexColorsMap; 
+    hexBackgroundColors: Record<string, string>;
+    hexIcons: Record<string, ColoredIcon>; 
+    borders: BordersMap;
+    gridWidth?: number;
+    gridHeight?: number;
+    selectedBackgroundColor?: any;
+  } | null => {
     if (!encodingMap) return null;
     
     try {
-      const savedPath = localStorage.getItem(AUTOSAVE_KEY);
-      if (savedPath) {
-        const encoded = parseGridUrl(savedPath);
+      const savedData = localStorage.getItem(AUTOSAVE_KEY);
+      if (savedData) {
+        // Try to parse as new JSON format first
+        try {
+          const saveState = JSON.parse(savedData);
+          if (saveState.version === '2.0') {
+            // New format with all data
+            return {
+              hexColors: saveState.hexColors || {},
+              hexBackgroundColors: saveState.hexBackgroundColors || {},
+              hexIcons: saveState.hexIcons || {},
+              borders: saveState.borders || {},
+              gridWidth: saveState.gridWidth,
+              gridHeight: saveState.gridHeight,
+              selectedBackgroundColor: saveState.selectedBackgroundColor
+            };
+          }
+        } catch (jsonError) {
+          // Not JSON, try old URL format
+        }
+        
+        // Fallback to old URL-encoded format
+        const encoded = parseGridUrl(savedData);
         if (encoded && isValidGridEncoding(encoded)) {
           const decodedGridState = decodeBase64ToGrid(encoded, encodingMap);
           
           if (decodedGridState) {
-            // decodedGridState.hexColors is already in the correct format (string | HexTexture)
-            const hexTextureColors: HexColorsMap = decodedGridState.hexColors;
-            
             return {
-              hexColors: hexTextureColors,
-              hexIcons: decodedGridState.hexIcons, // Already in ColoredIcon format
-              borders: decodedGridState.borders
+              hexColors: decodedGridState.hexColors,
+              hexBackgroundColors: {}, // Old format didn't have background colors
+              hexIcons: decodedGridState.hexIcons,
+              borders: decodedGridState.borders,
+              gridWidth: decodedGridState.gridWidth,
+              gridHeight: decodedGridState.gridHeight
             };
           }
         }
@@ -134,7 +165,7 @@ export function useAutoSave({
     if (isUndoing || !encodingMap) return;
     
     debouncedSave();
-  }, [hexColors, hexIcons, borders, debouncedSave, encodingMap, isUndoing]);
+  }, [hexColors, hexBackgroundColors, hexIcons, borders, selectedBackgroundColor, debouncedSave, encodingMap, isUndoing]);
 
   // Cleanup timer on unmount
   useEffect(() => {

@@ -1,3 +1,20 @@
+/* Canterbury Font Face Declarations */
+@font-face {
+  font-family: 'Canterbury';
+  src: url('/assets/fonts/Canterbury.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block; /* Ensures font loads before rendering */
+}
+
+@font-face {
+  font-family: 'Canterbury';
+  src: url('/assets/fonts/Canterbury.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: block; /* Ensures font loads before rendering */
+}
+
 * {
   margin: 0;
   padding: 0;

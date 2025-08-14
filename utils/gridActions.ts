@@ -31,6 +31,7 @@ interface ExportHelpers {
 interface CopyUrlHelpers {
   encodingMap: EncodingMap | null;
   hexColors: HexColorsMap;
+  hexBackgroundColors: Record<string, string>;
   hexIcons: Record<string, ColoredIcon>;
   borders: BordersMap;
   gridWidth: number;
@@ -132,7 +133,7 @@ export function createExportPNGHandler(exportHelpers: ExportHelpers, helpers: Gr
 // Copy URL handler
 export function createCopyUrlHandler(urlHelpers: CopyUrlHelpers) {
   return async (): Promise<void> => {
-    const { encodingMap, hexColors, hexIcons, borders, gridWidth, gridHeight, clearAutosave } = urlHelpers;
+    const { encodingMap, hexColors, hexBackgroundColors, hexIcons, borders, gridWidth, gridHeight, clearAutosave } = urlHelpers;
     
     if (!encodingMap) return;
     
@@ -142,6 +143,7 @@ export function createCopyUrlHandler(urlHelpers: CopyUrlHelpers) {
         gridWidth,
         gridHeight,
         hexColors, // hexColors is already Record<string, string | HexTexture>
+        hexBackgroundColors, // hexBackgroundColors is Record<string, string>
         hexIcons, // Use ColoredIcon format directly
         borders
       };

@@ -26,80 +26,6 @@ const IconOptionsGrid: React.FC<IconOptionsGridProps> = ({
       width: '100%',
       paddingBottom: isMobile ? UI_CONFIG.SPACING.LARGE : UI_CONFIG.SPACING.XLARGE
     }}>
-      {/* Icon Preview */}
-      <div style={{
-        background: UI_CONFIG.COLORS.OVERLAY_BACKGROUND,
-        backdropFilter: UI_CONFIG.BLUR.LIGHT,
-        border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-        borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-        padding: UI_CONFIG.SPACING.MEDIUM,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: UI_CONFIG.SPACING.MEDIUM
-      }}>
-        
-        {/* Preview icon with color */}
-        <div style={{
-          width: '80px',
-          height: '80px',
-          borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-          border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'rgba(255, 255, 255, 0.1)',
-          position: 'relative'
-        }}>
-          {selectedIcon && selectedIcon.name !== 'eraser' ? (
-            <div style={{
-              width: '60px',
-              height: '60px',
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src={selectedIcon.path}
-                alt={selectedIcon.displayName}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  filter: 'brightness(0)',
-                  position: 'absolute'
-                }}
-              />
-              <div style={{
-                width: '100%',
-                height: '100%',
-                backgroundColor: selectedIconColor,
-                mask: `url(${selectedIcon.path}) center/contain no-repeat`,
-                WebkitMask: `url(${selectedIcon.path}) center/contain no-repeat`,
-                position: 'absolute'
-              }} />
-            </div>
-          ) : (<div></div>)}
-        </div>
-        
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: UI_CONFIG.SPACING.SMALL
-        }}>
-          <div style={{
-            fontSize: UI_CONFIG.FONT_SIZE.SMALL,
-            color: UI_CONFIG.COLORS.TEXT_SECONDARY,
-            fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM
-          }}>
-            {selectedIcon && selectedIcon.name !== 'eraser' ? selectedIcon.displayName : 
-             selectedIcon?.name === 'eraser' ? 'Eraser tool active' : 'No icon selected'}
-          </div>
-        </div>
-      </div>
-
       {/* Color Picker */}
       <div style={{
         background: UI_CONFIG.COLORS.OVERLAY_BACKGROUND,
@@ -168,17 +94,14 @@ const IconOptionsGrid: React.FC<IconOptionsGridProps> = ({
                 position: 'relative',
                 backgroundColor: 'rgba(255, 255, 255, 0.1)'
               }}>
-                                 <img 
-                   src={icon.path}
-                   alt={icon.displayName}
-                   style={{
-                     width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
-                     height: UI_CONFIG.APP_LAYOUT.FULL_HEIGHT_PERCENTAGE,
-                     objectFit: 'contain',
-                     padding: '4px',
-                     filter: 'brightness(0) invert(1)'
-                   }}
-                 />
+                <div style={{
+                  width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
+                  height: UI_CONFIG.APP_LAYOUT.FULL_HEIGHT_PERCENTAGE,
+                  backgroundColor: selectedIconColor,
+                  mask: `url(${icon.path}) center/contain no-repeat`,
+                  WebkitMask: `url(${icon.path}) center/contain no-repeat`,
+                  padding: '4px'
+                }} />
               </div>
             </button>
           ))}

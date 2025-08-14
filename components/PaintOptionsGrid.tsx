@@ -7,20 +7,23 @@ interface PaintOptionsGridProps {
   selectedTexture: HexTexture | null;
   selectedBackgroundColor: string;
   backgroundPaintingMode: boolean;
+  eyeDropperMode: boolean;
   onTextureSelect: (texture: TextureItem) => void;
   onBackgroundColorSelect: (color: string) => void;
   onBackgroundPaintingModeToggle: () => void;
+  onEyeDropperToggle: () => void;
   isMobile?: boolean; // Optional mobile detection for layout optimizations
-
 }
 
 const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({ 
   selectedTexture,
   selectedBackgroundColor,
   backgroundPaintingMode,
+  eyeDropperMode,
   onTextureSelect,
   onBackgroundColorSelect,
   onBackgroundPaintingModeToggle,
+  onEyeDropperToggle,
   isMobile = false
 }) => {
   // Filter out color items, only show textures
@@ -61,32 +64,82 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
           justifyContent: 'center',
           gap: UI_CONFIG.SPACING.MEDIUM
         }}>
-          {/* Background Preview tile - clickable to toggle painting mode */}
-          <button
-            onClick={onBackgroundPaintingModeToggle}
-            style={{
-              width: UI_CONFIG.PAINT_OPTIONS.BACKGROUND_PREVIEW_SIZE,
-              height: UI_CONFIG.PAINT_OPTIONS.BACKGROUND_PREVIEW_SIZE,
-              borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
-              border: backgroundPaintingMode 
-                ? `${UI_CONFIG.PAINT_OPTIONS.BACKGROUND_BORDER_SELECTED} solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` 
-                : `${UI_CONFIG.PAINT_OPTIONS.BACKGROUND_BORDER_NORMAL} solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
-              backgroundColor: selectedBackgroundColor,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: backgroundPaintingMode 
-                ? UI_CONFIG.BOX_SHADOW.SELECTED 
-                : UI_CONFIG.BOX_SHADOW.LIGHT,
-              cursor: 'pointer',
-              transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
-              transform: backgroundPaintingMode ? `scale(${UI_CONFIG.PAINT_OPTIONS.ACTIVE_SCALE})` : 'scale(1)'
-            }}
-            title={backgroundPaintingMode 
-              ? "Background painting active - click hexes to paint backgrounds" 
-              : "Click to activate background painting mode"}
-          >
-          </button>
+          {/* Left side: Background tile and eye dropper stacked */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: UI_CONFIG.SPACING.SMALL
+          }}>
+            {/* Background Preview tile - clickable to toggle painting mode */}
+            <button
+              onClick={onBackgroundPaintingModeToggle}
+              style={{
+                width: UI_CONFIG.PAINT_OPTIONS.BACKGROUND_PREVIEW_SIZE,
+                height: UI_CONFIG.PAINT_OPTIONS.BACKGROUND_PREVIEW_SIZE,
+                borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM,
+                border: backgroundPaintingMode 
+                  ? `${UI_CONFIG.PAINT_OPTIONS.BACKGROUND_BORDER_SELECTED} solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` 
+                  : `${UI_CONFIG.PAINT_OPTIONS.BACKGROUND_BORDER_NORMAL} solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+                backgroundColor: selectedBackgroundColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: backgroundPaintingMode 
+                  ? UI_CONFIG.BOX_SHADOW.SELECTED 
+                  : UI_CONFIG.BOX_SHADOW.LIGHT,
+                cursor: 'pointer',
+                transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+                transform: backgroundPaintingMode ? `scale(${UI_CONFIG.PAINT_OPTIONS.ACTIVE_SCALE})` : 'scale(1)'
+              }}
+              title={backgroundPaintingMode 
+                ? "Background painting active - click hexes to paint backgrounds" 
+                : "Click to activate background painting mode"}
+            >
+            </button>
+
+            {/* Eye Dropper Button - Half size */}
+            <button
+              onClick={onEyeDropperToggle}
+              style={{
+                width: `calc(${UI_CONFIG.PAINT_OPTIONS.BACKGROUND_PREVIEW_SIZE} / 2)`,
+                height: `calc(${UI_CONFIG.PAINT_OPTIONS.BACKGROUND_PREVIEW_SIZE} / 2)`,
+                borderRadius: UI_CONFIG.BORDER_RADIUS.SMALL,
+                border: eyeDropperMode 
+                  ? `${UI_CONFIG.PAINT_OPTIONS.BACKGROUND_BORDER_SELECTED} solid ${UI_CONFIG.COLORS.SELECTED_BORDER}` 
+                  : `${UI_CONFIG.PAINT_OPTIONS.BACKGROUND_BORDER_NORMAL} solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
+                backgroundColor: UI_CONFIG.COLORS.BUTTON_BACKGROUND,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: eyeDropperMode 
+                  ? UI_CONFIG.BOX_SHADOW.SELECTED 
+                  : UI_CONFIG.BOX_SHADOW.LIGHT,
+                cursor: 'pointer',
+                transition: `all ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+                transform: eyeDropperMode ? `scale(${UI_CONFIG.PAINT_OPTIONS.ACTIVE_SCALE})` : 'scale(1)',
+                padding: `calc(${UI_CONFIG.SPACING.SMALL} / 2)`
+              }}
+              title={eyeDropperMode 
+                ? "Eye dropper active - click on a hex to sample its background color" 
+                : "Click to activate eye dropper tool"}
+            >
+              <img 
+                src="/assets/ui/eyedropper.png" 
+                alt="Eye dropper"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  mixBlendMode: 'screen',
+                  filter: eyeDropperMode 
+                    ? 'brightness(1.3) contrast(1.2)' 
+                    : 'brightness(1.1) contrast(1.1)',
+                  opacity: eyeDropperMode ? 1 : 0.8
+                }}
+              />
+            </button>
+          </div>
 
           {/* Background Color Picker */}
           <HexColorPicker

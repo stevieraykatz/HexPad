@@ -102,6 +102,7 @@ export interface HexTexture {
   displayName: string;
   rgb?: [number, number, number];
   path?: string;
+  baseName?: string; // Base terrain name for encoding (e.g., "coast" for "coast_180_1")
   rotation?: number; // Rotation in 1/6th increments (0-5)
   flipped?: boolean; // Vertical flip for non-rotatable textures
 } 
