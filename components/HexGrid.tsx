@@ -440,7 +440,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
 
   // Initialize pinch zoom and pan gestures for touch devices
   const currentHexRadius = hexRadiusRef.current || GRID_CONFIG.FALLBACK_HEX_RADIUS;
-  const gesturesBind = usePinchZoomPan({
+  const gesturesRef = usePinchZoomPan({
     canvasSize,
     gridWidth,
     gridHeight,
@@ -1205,9 +1205,13 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
 
   return (
     <div 
-      ref={containerRef} 
+      ref={useCallback((element: HTMLDivElement | null) => {
+        (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = element;
+        if (isTouchDevice) {
+          gesturesRef(element);
+        }
+      }, [isTouchDevice, gesturesRef])}
       className="hex-grid-container"
-      {...(isTouchDevice ? gesturesBind() : {})}
       style={{ position: 'relative', width: '100%', height: '100%' }}
     >
       {/* Main WebGL Canvas */}
