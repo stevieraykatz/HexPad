@@ -35,7 +35,7 @@ export const usePinchZoomPan = ({
   const initialZoomRef = useRef<number>(currentZoom);
   const initialPanRef = useRef<PanOffset>(currentPanOffset);
   
-  const handlePinch = useCallback((distance: number, origin: [number, number], initial: boolean) => {
+  const handlePinch = useCallback((scale: number, origin: [number, number], initial: boolean) => {
     if (disabled) return;
     
     if (initial) {
@@ -46,10 +46,8 @@ export const usePinchZoomPan = ({
     // Calculate zoom limits
     const { minZoom, maxZoom } = calculateZoomLimits(gridWidth);
     
-    // Convert distance to scale factor with reduced sensitivity
-    // Distance is in pixels, so we need to normalize it
-    const scaleFactor = 1 + (distance / 300); // Reduced sensitivity: 300px = 2x zoom
-    const newZoom = Math.max(minZoom, Math.min(maxZoom, initialZoomRef.current * scaleFactor));
+    // Apply scale directly to initial zoom with bounds
+    const newZoom = Math.max(minZoom, Math.min(maxZoom, initialZoomRef.current * scale));
     
     // If we're at minimum zoom, reset pan to center the grid
     if (newZoom === minZoom) {
@@ -127,8 +125,8 @@ export const usePinchZoomPan = ({
 
   const bind = useGesture(
     {
-      // Handle pinch-to-zoom
-      onPinch: ({ offset: [distance], origin, first, last }) => {
+      // Handle pinch-to-zoom - use movement for scale
+      onPinch: ({ movement: [d], origin, first, last }) => {
         if (disabled) return;
         
         if (first) {
@@ -138,8 +136,10 @@ export const usePinchZoomPan = ({
         if (last) {
           onGestureEnd?.();
         } else {
-          // Use distance (offset[0]) for zoom calculation
-          handlePinch(distance, origin, first);
+          // Convert distance to scale: d is the distance change from initial pinch
+          // Normalize to get a reasonable scale factor
+          const scale = 1 + d / 200; // 200px distance = 2x scale
+          handlePinch(scale, origin, first);
         }
       },
       
@@ -165,9 +165,9 @@ export const usePinchZoomPan = ({
       target: undefined, // Will be set when binding
       eventOptions: { passive: false },
       pinch: {
-        scaleBounds: { min: 0.1, max: 10 },
+        scaleBounds: { min: 0.5, max: 3 }, // More reasonable bounds
         rubberband: false,
-        threshold: 10 // Minimum distance in pixels to start pinch
+        threshold: 5 // Lower threshold for better responsiveness
       },
       drag: {
         threshold: 5, // Minimum movement to start pan
