@@ -79,9 +79,13 @@ const TopCornerLinks: React.FC = () => {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-.766-1.613a4.44 4.44 0 0 0-1.328-1.072c-.566-.296-1.206-.44-1.907-.44h-9.592c-.7 0-1.34.144-1.906.44a4.44 4.44 0 0 0-1.33 1.072c-.377.45-.646 1.015-.765 1.613L2.357 6.62C1.728 6.89 1.25 7.62 1.25 8.5v3c0 .828.672 1.5 1.5 1.5h.75v7.5c0 .828.672 1.5 1.5 1.5h13c.828 0 1.5-.672 1.5-1.5V13h.75c.828 0 1.5-.672 1.5-1.5v-3c0-.88-.478-1.61-1.084-1.885zM4.5 7.5h15l.25 1.25H4.25L4.5 7.5zm13.5 13h-12V13h12v7.5zM19 11h-.75H4.75H4V9.5h15V11z"/>
-        </svg>
+        <img 
+          src="/assets/ui/coffee-cup.png" 
+          alt="Coffee cup" 
+          width="24" 
+          height="24"
+          style={{ filter: 'brightness(0) invert(1)' }}
+        />
       </a>
     </div>
   );

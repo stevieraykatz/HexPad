@@ -34,7 +34,8 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
       display: 'flex',
       flexDirection: 'column',
       gap: UI_CONFIG.SPACING.MEDIUM,
-      width: '100%'
+      width: '100%',
+      paddingBottom: isMobile ? '20px' : UI_CONFIG.SPACING.XLARGE
     }}>
       {/* Background Shader Section */}
       <div style={{
@@ -165,13 +166,13 @@ const PaintOptionsGrid: React.FC<PaintOptionsGridProps> = ({
       }}>
         {/* Texture Section Title */}
         <div 
-          className={isMobile ? 'mobile-paint-grid' : ''}
+          className={isMobile ? 'mobile-paint-grid scrollable-menu-area' : ''}
           style={{ 
             display: 'grid',
             gridTemplateColumns: isMobile ? `repeat(3, 1fr)` : `repeat(${UI_CONFIG.PAINT_OPTIONS.GRID_COLUMNS}, 1fr)`,
             gap: isMobile ? UI_CONFIG.SPACING.SMALL : UI_CONFIG.PAINT_OPTIONS.TILE_GAP,
-            maxHeight: isMobile ? UI_CONFIG.PAINT_OPTIONS.MAX_HEIGHT_MOBILE : 'none',
-            overflowY: 'visible',
+            maxHeight: isMobile ? '300px' : 'none',
+            overflowY: isMobile ? 'auto' : 'visible',
             justifyContent: 'center',
             justifyItems: 'center'
           }}

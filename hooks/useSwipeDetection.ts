@@ -72,15 +72,29 @@ export const useSwipeDetection = (
         return;
       }
 
-      // Only exclude canvas interactions since they have their own painting logic
+      // Exclude canvas interactions and scrollable elements
       const target = e.target as HTMLElement;
       const isCanvas = target && (
         target.tagName === 'CANVAS' ||
         target.closest('canvas')
       );
       
-      if (isCanvas) {
-        return; // Don't interfere with canvas painting
+      // Check if the target is within a scrollable element
+      const isScrollable = target && (
+        // Check if the element itself is scrollable
+        (target.scrollHeight > target.clientHeight && 
+         getComputedStyle(target).overflowY !== 'visible' &&
+         getComputedStyle(target).overflowY !== 'hidden') ||
+        // Check if any parent element is scrollable (including our mobile grids)
+        target.closest('[style*="overflow-y: auto"], [style*="overflow-y: scroll"], .mobile-paint-grid, .mobile-icon-grid, .scrollable-menu-area') ||
+        // Check for elements within menu content that might be scrollable
+        target.closest('.mobile-menu-content, .mobile-section') ||
+        // Check for color picker or other interactive elements
+        target.closest('.react-colorful, .mobile-color-picker')
+      );
+      
+      if (isCanvas || isScrollable) {
+        return; // Don't interfere with canvas painting or scrolling
       }
 
       touchDataRef.current = {

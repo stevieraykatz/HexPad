@@ -24,7 +24,7 @@ const IconOptionsGrid: React.FC<IconOptionsGridProps> = ({
       flexDirection: 'column',
       gap: UI_CONFIG.SPACING.LARGE,
       width: '100%',
-      paddingBottom: isMobile ? UI_CONFIG.SPACING.LARGE : UI_CONFIG.SPACING.XLARGE
+      paddingBottom: isMobile ? '20px' : UI_CONFIG.SPACING.XLARGE
     }}>
       {/* Color Picker */}
       <div style={{
@@ -58,13 +58,13 @@ const IconOptionsGrid: React.FC<IconOptionsGridProps> = ({
         padding: UI_CONFIG.SPACING.MEDIUM
       }}>
         <div 
-          className={isMobile ? 'mobile-paint-grid' : ''}
+          className={isMobile ? 'mobile-paint-grid scrollable-menu-area' : ''}
           style={{ 
             display: 'grid',
             gridTemplateColumns: isMobile ? `repeat(3, 1fr)` : `repeat(${UI_CONFIG.PAINT_OPTIONS.GRID_COLUMNS}, 1fr)`,
             gap: isMobile ? '8px' : UI_CONFIG.PAINT_OPTIONS.TILE_GAP,
-            maxHeight: isMobile ? UI_CONFIG.PAINT_OPTIONS.ICON_GRID_MAX_HEIGHT_MOBILE : 'none',
-            overflowY: 'visible',
+            maxHeight: isMobile ? '300px' : 'none',
+            overflowY: isMobile ? 'auto' : 'visible',
             justifyContent: 'center',
             justifyItems: 'center'
           }}>

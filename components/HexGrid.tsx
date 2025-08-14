@@ -31,6 +31,8 @@ import { NUMBERING_CONFIG } from './config';
 import { useBorderInteraction } from '../hooks/useBorderInteraction';
 import { useBorderRendering } from '../hooks/useBorderRendering';
 import { useIconPositioning } from '../hooks/useIconPositioning';
+import { usePinchZoomPan } from '../hooks/usePinchZoomPan';
+import { useMobileDetection } from '../hooks/useMobileDetection';
 import type { BorderEdge } from '../utils/borderUtils';
 
 interface HexTexture {
@@ -144,6 +146,10 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   const hexRadiusRef = useRef<number>(0);
   const paintedDuringDragRef = useRef<Set<string>>(new Set());
   const texturesRef = useRef<Map<string, WebGLTexture>>(new Map());
+  
+  // Mobile detection and gesture handling
+  const { isTouchDevice } = useMobileDetection();
+  const [isGesturing, setIsGesturing] = useState<boolean>(false);
   
   // Tile manipulation state
   const [tileHoverState, setTileHoverState] = useState<TileHoverState>({ hexCoord: null, buttonRegion: null });
@@ -411,6 +417,43 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     setPanOffset(result.newPanOffset);
   }, [zoomLevel, panOffset, canvasSize, gridWidth, gridHeight]);
 
+  // Gesture handling callbacks
+  const handleZoomChange = useCallback((newZoom: number, newPanOffset: PanOffset) => {
+    setZoomLevel(newZoom);
+    setPanOffset(newPanOffset);
+    setIsZooming(true);
+    setTimeout(() => setIsZooming(false), 150);
+  }, []);
+
+  const handlePanChange = useCallback((newPanOffset: PanOffset) => {
+    setPanOffset(newPanOffset);
+  }, []);
+
+  const handleGestureStart = useCallback(() => {
+    setIsGesturing(true);
+    onCanvasInteraction?.(); // Close menu on gesture start
+  }, [onCanvasInteraction]);
+
+  const handleGestureEnd = useCallback(() => {
+    setIsGesturing(false);
+  }, []);
+
+  // Initialize pinch zoom and pan gestures for touch devices
+  const currentHexRadius = hexRadiusRef.current || GRID_CONFIG.FALLBACK_HEX_RADIUS;
+  const gesturesBind = usePinchZoomPan({
+    canvasSize,
+    gridWidth,
+    gridHeight,
+    currentZoom: zoomLevel,
+    currentPanOffset: panOffset,
+    currentHexRadius,
+    onZoomChange: handleZoomChange,
+    onPanChange: handlePanChange,
+    onGestureStart: handleGestureStart,
+    onGestureEnd: handleGestureEnd,
+    disabled: !isTouchDevice || menuOpen // Disable gestures when menu is open
+  });
+
   const paintHexIfNew = useCallback((hex: HexPosition | null): void => {
     if (!hex || !onHexClick) return;
     
@@ -663,11 +706,14 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     // Region button state is now managed by useEffect
   }, [clearPaintedBorders, hoveredHex, onHexHover]);
 
-  // Touch event handlers
+  // Touch event handlers - updated to work with gesture system
   const handleTouchStart = useCallback((event: TouchEvent): void => {
-    event.preventDefault(); // Prevent page scrolling and default touch behaviors
+    // Don't prevent default here - let gesture library handle it
     const touch = event.touches[0];
     if (!touch) return;
+    
+    // Skip painting if we're in a multi-touch gesture
+    if (event.touches.length > 1 || isGesturing) return;
     
     // Notify parent of canvas interaction for menu closing
     onCanvasInteraction?.();
@@ -677,26 +723,28 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     clearPaintedBorders();
     
     handlePaintAtPosition(touch.clientX, touch.clientY);
-  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction]);
+  }, [handlePaintAtPosition, clearPaintedBorders, onCanvasInteraction, isGesturing]);
 
   const handleTouchMove = useCallback((event: TouchEvent): void => {
-    event.preventDefault(); // Prevent page scrolling
-    if (!isDragging) return;
+    // Skip painting if we're in a multi-touch gesture
+    if (event.touches.length > 1 || isGesturing || !isDragging) return;
     
     const touch = event.touches[0];
     if (!touch) return;
     
     handlePaintAtPosition(touch.clientX, touch.clientY);
-  }, [isDragging, handlePaintAtPosition]);
+  }, [isDragging, handlePaintAtPosition, isGesturing]);
 
   const handleTouchEnd = useCallback((event: TouchEvent): void => {
-    event.preventDefault();
+    // Only handle single touch end events
+    if (isGesturing) return;
+    
     setIsDragging(false);
     setIsPanning(false);
     setLastPanPosition(null);
     paintedDuringDragRef.current.clear();
     clearPaintedBorders();
-  }, [clearPaintedBorders]);
+  }, [clearPaintedBorders, isGesturing]);
 
   const renderColorHexagon = (
     gl: WebGLRenderingContext,
@@ -1156,7 +1204,12 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   }, [tileHoverState.hexCoord, activeTab, isPanning, isDragging, isZooming, tileManipulationButtons]);
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div 
+      ref={containerRef} 
+      className="hex-grid-container"
+      {...(isTouchDevice ? gesturesBind() : {})}
+      style={{ position: 'relative', width: '100%', height: '100%' }}
+    >
       {/* Main WebGL Canvas */}
       <canvas 
         ref={canvasRef} 

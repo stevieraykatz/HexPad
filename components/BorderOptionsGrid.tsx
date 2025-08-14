@@ -10,14 +10,16 @@ interface BorderOptionsGridProps {
 
 const BorderOptionsGrid: React.FC<BorderOptionsGridProps> = ({
   selectedBorderColor,
-  onBorderColorSelect
+  onBorderColorSelect,
+  isMobile = false
 }) => {
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
       gap: UI_CONFIG.SPACING.LARGE,
-      width: '100%'
+      width: '100%',
+      paddingBottom: isMobile ? '20px' : UI_CONFIG.SPACING.XLARGE
     }}>
       {/* Border Preview */}
       <div style={{
@@ -62,8 +64,8 @@ const BorderOptionsGrid: React.FC<BorderOptionsGridProps> = ({
           color={selectedBorderColor}
           onChange={onBorderColorSelect}
           style={{
-            width: '180px',
-            height: '180px',
+            width: isMobile ? '140px' : '180px',
+            height: isMobile ? '140px' : '180px',
             borderRadius: UI_CONFIG.BORDER_RADIUS.MEDIUM
           }}
         />

@@ -105,7 +105,7 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
     <div 
       className={`mobile-spacing-medium ${isMobile ? 'mobile-menu-content' : ''}`}
       style={{
-        paddingBottom: UI_CONFIG.MENU.MENU_HEIGHT
+        paddingBottom: isMobile ? '0px' : UI_CONFIG.MENU.MENU_HEIGHT
       }}
     >
       {activeTab === 'paint' && (

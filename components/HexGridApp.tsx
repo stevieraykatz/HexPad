@@ -480,7 +480,7 @@ const HexGridApp: React.FC = () => {
             left: 0,
             right: 0,
             width: '100%',
-            height: menuOpen ? '75vh' : '0',
+            height: menuOpen ? '60vh' : '0',
             maxHeight: '75vh',
             borderTop: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR}`,
             borderRadius: `${UI_CONFIG.BORDER_RADIUS.LARGE} ${UI_CONFIG.BORDER_RADIUS.LARGE} 0 0`,
