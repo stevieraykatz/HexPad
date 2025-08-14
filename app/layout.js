@@ -3,14 +3,14 @@ import './globals.css'
 export const metadata = {
   metadataBase: new URL('https://hexpad.app'),
   title: 'HexPad',
-  description: 'Create stunning hex maps for D&D, tabletop RPGs, and game masters. Free online hexagonal grid maker with terrain painting, icons, and instant sharing. Perfect for RPG campaigns and worldbuilding.',
+  description: 'The always free, open source hex map maker.Create stunning hex maps for D&D, tabletop RPGs, and game masters. Free online hexagonal grid maker with terrain painting, icons, and instant sharing. Perfect for RPG campaigns and worldbuilding.',
   keywords: 'hex map maker, hexagonal grid, D&D maps, RPG maps, tabletop maps, hex grid creator, game master tools, map making, hex mapper, fantasy maps',
   author: 'HexPad',
   robots: 'index, follow',
   
   // Open Graph tags for social sharing
   openGraph: {
-    title: 'HexPad - Free Hex Map Maker for D&D & RPGs',
+    title: 'HexPad - Free Hex Map Maker',
     description: 'Create beautiful hexagonal grid maps for your tabletop adventures. Paint terrain, add icons, and share instantly.',
     url: 'https://hexpad.app', // Update with your actual domain
     siteName: 'HexPad',
