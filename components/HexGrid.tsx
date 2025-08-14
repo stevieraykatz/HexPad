@@ -1303,17 +1303,22 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
             if (!coloredIcon) return null;
             
             const { icon, color } = coloredIcon;
-            const iconSize = throttledRadius * 1.2; // Icon size relative to hex
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            
+            // Convert device pixel coordinates to CSS coordinates for DOM positioning
+            const cssX = pos.x / devicePixelRatio;
+            const cssY = pos.y / devicePixelRatio;
+            const cssIconSize = (throttledRadius * 1.2) / devicePixelRatio; // Icon size relative to hex, converted to CSS pixels
             
             return (
               <div
                 key={`${pos.row}-${pos.col}`}
                 style={{
                   position: 'absolute',
-                  left: pos.x - iconSize / 2,
-                  top: pos.y - iconSize / 2,
-                  width: iconSize,
-                  height: iconSize,
+                  left: cssX - cssIconSize / 2,
+                  top: cssY - cssIconSize / 2,
+                  width: cssIconSize,
+                  height: cssIconSize,
                   pointerEvents: 'none',
                   zIndex: 1
                 }}
