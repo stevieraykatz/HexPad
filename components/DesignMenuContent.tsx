@@ -5,7 +5,6 @@ import BorderOptionsGrid from './BorderOptionsGrid';
 // import RegionBorderControls from './RegionBorderControls'; // Unused - regioning disabled
 import GridSizeControls from './GridSizeControls';
 import BackgroundColorSelector from './BackgroundColorSelector';
-import SwipableBar from './SwipableBar';
 import { UI_CONFIG } from './config';
 import type { BackgroundColor, TextureItem, HexTexture, IconItem } from './config';
 import type { NumberingMode } from './GridSizeControls';
@@ -40,7 +39,6 @@ interface DesignMenuContentProps {
   onBackgroundColorChange: (color: BackgroundColor) => void;
   // Mobile layout
   isMobile?: boolean; // Optional mobile detection for layout adjustments
-  menuOpen?: boolean; // For swipable bar state
   onNumberingModeChange: (mode: NumberingMode) => void;
   // Region props
   regionStats?: {
@@ -90,8 +88,7 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
   hoveredRegion: _hoveredRegion,
   getRegionData: _getRegionData,
   // Mobile layout
-  isMobile = false,
-  menuOpen = false
+  isMobile = false
 }) => {
   // Mark regioning props as explicitly unused
   void _regionStats;

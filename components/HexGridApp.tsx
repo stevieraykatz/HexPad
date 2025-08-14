@@ -540,12 +540,10 @@ const HexGridApp: React.FC = () => {
           hoveredRegion={hoveredRegion}
           getRegionData={getRegionData}
           isMobile={isMobile}
-          menuOpen={menuOpen}
         />
       </div>
 
       {/* Swipable Bar - Slides with menu on mobile */}
-      {/* CONSTRAINT: Bottom edge sits on top edge of design menu (60vh from bottom) */}
       {isMobile && (
         <div
           style={{
