@@ -7,9 +7,9 @@
 
 export const terrainIndex = {
   "name": "terrain",
-  "generated": "2025-08-13T02:38:01.966Z",
+  "generated": "2025-08-14T22:58:43.919Z",
   "totalTerrainTypes": 9,
-  "totalAssets": 68,
+  "totalAssets": 74,
   "baseTerrains": 1,
   "complexTerrains": 8,
   "terrains": {
@@ -52,7 +52,7 @@ export const terrainIndex = {
       "basePath": null,
       "manifestPath": "/assets/terrain/forestedge/forestedge-manifest.json",
       "hasVariants": true,
-      "assetCount": 14,
+      "assetCount": 20,
       "rotatable": false,
       "randomize": false,
       "features": {
@@ -201,7 +201,7 @@ export const terrainIndex = {
         "basePath": null,
         "manifestPath": "/assets/terrain/forestedge/forestedge-manifest.json",
         "hasVariants": true,
-        "assetCount": 14,
+        "assetCount": 20,
         "rotatable": false,
         "randomize": false,
         "features": {

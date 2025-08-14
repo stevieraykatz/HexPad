@@ -32,7 +32,7 @@ export interface DefaultColors {
 
 export const DEFAULT_COLORS: DefaultColors = {
   SELECTED: "manila",
-  DEFAULT_RBG: [0.95, 0.89, 0.73], // Default manila color RGB values (242, 227, 187 in 255 scale)
+  DEFAULT_RBG: [0.815, 0.780, 0.671], // Papery color RGB values (208, 199, 171 in 255 scale)
 };
 
 export interface BackgroundColor {

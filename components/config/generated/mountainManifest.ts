@@ -7,7 +7,7 @@
 
 export const mountainManifest = {
   "name": "mountain",
-  "generated": "2025-08-13T02:38:01.970Z",
+  "generated": "2025-08-14T22:58:43.925Z",
   "totalAssets": 8,
   "assets": {
     "byAngle": {},

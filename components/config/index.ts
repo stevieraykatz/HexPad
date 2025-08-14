@@ -45,6 +45,7 @@ export type {
 export { 
   DEFAULT_COLORS, 
   BACKGROUND_COLORS,
+  getManilaColor,
   getPaintOptions,
   getTextureItem,
   getTexturesByType,

@@ -7,7 +7,7 @@
 
 export const plainsManifest = {
   "name": "plains",
-  "generated": "2025-08-13T02:38:01.971Z",
+  "generated": "2025-08-14T22:58:43.927Z",
   "totalAssets": 3,
   "assets": {
     "byAngle": {},

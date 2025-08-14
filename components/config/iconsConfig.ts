@@ -18,6 +18,8 @@
 
 // Import the number icon generator
 import { numberIconCache } from '../../utils/numberIconGenerator';
+// Import the generated icons manifest
+import { iconsManifest } from './generated/iconsManifest';
 
 export interface IconItem {
   readonly name: string;
@@ -33,9 +35,9 @@ export interface ColoredIcon {
 
 // Define the manifest structure
 interface IconManifest {
-  rawAssets: Array<{
-    name: string;
-    filename: string;
+  readonly rawAssets: ReadonlyArray<{
+    readonly name: string;
+    readonly filename: string;
   }>;
 }
 
@@ -44,13 +46,11 @@ interface IconManifest {
  */
 function loadIconManifest(): IconManifest | null {
   try {
-    // Try to import the manifest - fallback to null if not available
-    // Note: This is a synchronous fallback for build-time generation
-    // In a real app, you might want to use dynamic imports or fetch
-    const manifest = null; // Will use fallback icons instead
-    return manifest;
+    // Use the statically imported icons manifest
+    // This ensures type safety and build-time optimization
+    return iconsManifest;
   } catch (error) {
-    console.warn('Could not load icon manifest:', error);
+    console.warn('Could not load icon manifest, using fallback icons:', error);
     return null;
   }
 }
@@ -132,16 +132,22 @@ function generateIconOptions(): readonly IconItem[] {
       });
     });
   } else {
-    // Fallback to static list if manifest loading fails
+    // Comprehensive fallback list including all available icons
+    // This ensures icons are always available regardless of manifest generation
     imageIcons.push(
       { name: 'castle', displayName: 'Castle', type: 'icon', path: '/assets/icons/castle.png' },
+      { name: 'castle2', displayName: 'Castle 2', type: 'icon', path: '/assets/icons/castle2.png' },
+      { name: 'cave', displayName: 'Cave', type: 'icon', path: '/assets/icons/cave.png' },
       { name: 'church', displayName: 'Church', type: 'icon', path: '/assets/icons/church.png' },
       { name: 'curse', displayName: 'Curse', type: 'icon', path: '/assets/icons/curse.png' },
+      { name: 'fortress', displayName: 'Fortress', type: 'icon', path: '/assets/icons/fortress.png' },
       { name: 'huts', displayName: 'Huts', type: 'icon', path: '/assets/icons/huts.png' },
       { name: 'pavillion', displayName: 'Pavilion', type: 'icon', path: '/assets/icons/pavillion.png' },
       { name: 'ruins', displayName: 'Ruins', type: 'icon', path: '/assets/icons/ruins.png' },
       { name: 'sanctum', displayName: 'Sanctum', type: 'icon', path: '/assets/icons/sanctum.png' },
+      { name: 'tower', displayName: 'Tower', type: 'icon', path: '/assets/icons/tower.png' },
       { name: 'town', displayName: 'Town', type: 'icon', path: '/assets/icons/town.png' },
+      { name: 'town2', displayName: 'Town 2', type: 'icon', path: '/assets/icons/town2.png' },
       { name: 'village', displayName: 'Village', type: 'icon', path: '/assets/icons/village.png' }
     );
   }

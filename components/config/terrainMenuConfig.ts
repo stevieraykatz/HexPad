@@ -18,7 +18,7 @@ export interface TerrainMenuConfigMap {
 export const TERRAIN_MENU_CONFIG: TerrainMenuConfigMap = {
   coast: {
     previewAsset: "coast_180_1.png",
-    backgroundColor: "#F3E8C2",
+    backgroundColor: "#d0c7ab",
     description: "Coastal terrain with water transitions"
   },
   forest: {

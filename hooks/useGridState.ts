@@ -1,11 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { IconItem, HexTexture } from '../components/config';
 import type { ColoredIcon } from '../components/config/iconsConfig';
-import { GRID_CONFIG, DEFAULT_COLORS } from '../components/config';
+import { GRID_CONFIG, DEFAULT_COLORS, getManilaColor } from '../components/config';
 import { useRegionState } from './useRegionState';
 import { useRegionBorders } from './useRegionBorders';
 import type { RegionMap } from '../utils/regionUtils';
-import { getRandomTerrainVariant, getTerrainInfo, loadTerrainManifest } from '../components/config/assetLoader';
+import { getRandomTerrainVariant, getTerrainInfo } from '../components/config/assetLoader';
 
 // Type definitions for hex colors and textures
 type HexColor = string;
@@ -204,7 +204,7 @@ export function useGridState({
         Object.keys(prevBorderState).length > 0 ||
         // For background colors, check if they're not just default manila colors
         (Object.keys(prevBackgroundColorState).length > 0 && 
-         Object.values(prevBackgroundColorState).some(color => color !== '#F3E8C2'));
+         Object.values(prevBackgroundColorState).some(color => color !== getManilaColor().cssColor));
       
       // Check if current state has meaningful content
       const currentHasMeaningfulContent = 
@@ -213,7 +213,7 @@ export function useGridState({
         Object.keys(currentBorderState).length > 0 ||
         // For background colors, check if they're not just default manila colors
         (Object.keys(currentBackgroundColorState).length > 0 && 
-         Object.values(currentBackgroundColorState).some(color => color !== '#F3E8C2'));
+         Object.values(currentBackgroundColorState).some(color => color !== getManilaColor().cssColor));
       
       // Only save to history if previous state had meaningful content
       // This prevents saving when loading from autosave/URL (previous state is empty)
@@ -378,10 +378,11 @@ export function useGridState({
         } catch (error) {
           console.warn('Failed to parse color:', selectedColor, error);
           // Fallback for invalid hex colors
+          const manilaColor = getManilaColor();
           textureToUse = { 
             type: 'color', 
-            name: '#F3E8C2', // Default manila hex
-            displayName: '#F3E8C2',
+            name: manilaColor.cssColor, // Default manila hex
+            displayName: manilaColor.cssColor,
             rgb: DEFAULT_COLORS.DEFAULT_RGB
           };
         }
@@ -495,9 +496,10 @@ export function useGridState({
     
     // Set all hexes to have manila background colors instead  
     const defaultBackgroundColors: HexBackgroundColorsMap = {};
+    const manilaColor = getManilaColor();
     for (let row = 0; row < gridHeight; row++) {
       for (let col = 0; col < gridWidth; col++) {
-        defaultBackgroundColors[`${row}-${col}`] = '#F3E8C2'; // Manila color (243, 232, 194)
+        defaultBackgroundColors[`${row}-${col}`] = manilaColor.cssColor; // Manila color (208, 199, 171)
       }
     }
     setHexBackgroundColors(defaultBackgroundColors);

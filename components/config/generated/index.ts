@@ -27,3 +27,7 @@ export { shrublandManifest } from './shrublandManifest';
 export type { ShrublandManifestType } from './shrublandManifest';
 export { swampManifest } from './swampManifest';
 export type { SwampManifestType } from './swampManifest';
+
+// Export icons manifest
+export { iconsManifest } from './iconsManifest';
+export type { IconsManifestType } from './iconsManifest';

@@ -53,6 +53,66 @@ export interface ExportOptions {
 }
 
 /**
+ * Calculate optimal export canvas size based on grid dimensions
+ * This ensures the export has proper aspect ratio regardless of viewport size
+ */
+export const calculateOptimalExportSize = (
+  gridWidth: number,
+  gridHeight: number,
+  scale: number,
+  numberingMode?: NumberingMode
+): CanvasSize => {
+  // Calculate the theoretical grid dimensions
+  const hexRadius = GRID_CONFIG.MIN_HEX_RADIUS * scale * 2; // Use a reasonable base size
+  const hexWidth = HEX_GEOMETRY.getHexWidth(hexRadius);
+  const hexHeight = HEX_GEOMETRY.getHexHeight(hexRadius);
+  const horizontalSpacing = HEX_GEOMETRY.getHorizontalSpacing(hexRadius);
+  const verticalSpacing = HEX_GEOMETRY.getVerticalSpacing(hexRadius);
+  
+  // Calculate total grid dimensions
+  const totalGridWidth = (gridWidth - 1) * horizontalSpacing + hexWidth;
+  
+  // Calculate actual visual height by finding min/max Y positions
+  let minY = 0;
+  let maxY = 0;
+  
+  for (let row = 0; row < gridHeight; row++) {
+    for (let col = 0; col < gridWidth; col++) {
+      const y = row * verticalSpacing + (col % 2) * (verticalSpacing * GRID_CONFIG.HEX_ROW_VERTICAL_OFFSET);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+  }
+  
+  const actualHexHeight = hexHeight * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO;
+  const totalGridHeight = maxY - minY + actualHexHeight;
+  
+  // Add padding for the grid
+  const verticalPadding = GRID_CONFIG.VERTICAL_PADDING * scale * 2;
+  const horizontalPadding = 50 * scale; // Some horizontal padding
+  
+  // Calculate base canvas size with margins
+  let canvasWidth = totalGridWidth + horizontalPadding * 2;
+  let canvasHeight = totalGridHeight + verticalPadding * 2;
+  
+  // Add extra space for edge numbering if needed
+  if (numberingMode === 'edge') {
+    const fontSize = hexRadius * 0.15; // Approximate font size
+    canvasWidth += fontSize * 4; // Extra space on sides
+    canvasHeight += fontSize * 4; // Extra space on top/bottom
+  }
+  
+  // Apply margin factor to ensure content fits well
+  canvasWidth = canvasWidth / GRID_CONFIG.CANVAS_MARGIN_FACTOR;
+  canvasHeight = canvasHeight / GRID_CONFIG.CANVAS_MARGIN_FACTOR;
+  
+  return {
+    width: Math.ceil(canvasWidth),
+    height: Math.ceil(canvasHeight)
+  };
+};
+
+/**
  * Calculate export hex radius for high-resolution export
  */
 export const calculateExportHexRadius = (
@@ -606,10 +666,13 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
   
 
 
+  // Calculate optimal export size based on grid dimensions (ignoring viewport size)
+  const optimalCanvasSize = calculateOptimalExportSize(gridWidth, gridHeight, scale, numberingMode);
+
   // Calculate base export size without numbering
   const baseExportSize = {
-    width: canvasSize.width * scale,
-    height: canvasSize.height * scale
+    width: optimalCanvasSize.width * scale,
+    height: optimalCanvasSize.height * scale
   };
 
   // Calculate extra space needed for edge numbering

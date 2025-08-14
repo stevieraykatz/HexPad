@@ -22,7 +22,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate-assets": "node scripts/generateDirectTS.js public/assets/terrain components/config/generated/"
+    "generate-assets": "node scripts/generateDirectTS.js public/assets/terrain components/config/generated/",
+    "generate-icons": "node scripts/generateIconsManifest.js public/assets/icons/icons-manifest.json components/config/generated/iconsManifest.ts"
   },
   "browserslist": {
     "production": [

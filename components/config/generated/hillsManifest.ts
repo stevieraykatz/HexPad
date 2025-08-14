@@ -7,7 +7,7 @@
 
 export const hillsManifest = {
   "name": "hills",
-  "generated": "2025-08-13T02:38:01.969Z",
+  "generated": "2025-08-14T22:58:43.924Z",
   "totalAssets": 3,
   "assets": {
     "byAngle": {},

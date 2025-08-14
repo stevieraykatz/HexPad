@@ -7,8 +7,8 @@
 
 export const forestedgeManifest = {
   "name": "forestedge",
-  "generated": "2025-08-13T02:38:01.969Z",
-  "totalAssets": 14,
+  "generated": "2025-08-14T22:58:43.923Z",
+  "totalAssets": 20,
   "assets": {
     "byAngle": {
       "120": {
@@ -31,6 +31,46 @@ export const forestedgeManifest = {
             "side": "bottom-side-top",
             "variant": 2,
             "variantType": "B"
+          },
+          {
+            "filename": "forest_120_bottom-side-top_B3L.png",
+            "name": "forest_120_bottom-side-top_B3L",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side-top",
+            "variant": 3,
+            "variantType": "B",
+            "variantSide": "L"
+          },
+          {
+            "filename": "forest_120_bottom-side-top_B4R.png",
+            "name": "forest_120_bottom-side-top_B4R",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side-top",
+            "variant": 4,
+            "variantType": "B",
+            "variantSide": "R"
+          },
+          {
+            "filename": "forest_120_bottom-side-top_B5L.png",
+            "name": "forest_120_bottom-side-top_B5L",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side-top",
+            "variant": 5,
+            "variantType": "B",
+            "variantSide": "L"
+          },
+          {
+            "filename": "forest_120_bottom-side-top_B6R.png",
+            "name": "forest_120_bottom-side-top_B6R",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side-top",
+            "variant": 6,
+            "variantType": "B",
+            "variantSide": "R"
           }
         ],
         "angle_120_side_bottom-side": [
@@ -41,6 +81,26 @@ export const forestedgeManifest = {
             "angle": 120,
             "side": "bottom-side",
             "variant": 1,
+            "variantType": "B",
+            "variantSide": "L"
+          },
+          {
+            "filename": "forest_120_bottom-side_B2R.png",
+            "name": "forest_120_bottom-side_B2R",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side",
+            "variant": 2,
+            "variantType": "B",
+            "variantSide": "R"
+          },
+          {
+            "filename": "forest_120_bottom-side_B3L.png",
+            "name": "forest_120_bottom-side_B3L",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side",
+            "variant": 3,
             "variantType": "B",
             "variantSide": "L"
           }
@@ -185,6 +245,46 @@ export const forestedgeManifest = {
             "side": "bottom-side-top",
             "variant": 2,
             "variantType": "B"
+          },
+          {
+            "filename": "forest_120_bottom-side-top_B3L.png",
+            "name": "forest_120_bottom-side-top_B3L",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side-top",
+            "variant": 3,
+            "variantType": "B",
+            "variantSide": "L"
+          },
+          {
+            "filename": "forest_120_bottom-side-top_B4R.png",
+            "name": "forest_120_bottom-side-top_B4R",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side-top",
+            "variant": 4,
+            "variantType": "B",
+            "variantSide": "R"
+          },
+          {
+            "filename": "forest_120_bottom-side-top_B5L.png",
+            "name": "forest_120_bottom-side-top_B5L",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side-top",
+            "variant": 5,
+            "variantType": "B",
+            "variantSide": "L"
+          },
+          {
+            "filename": "forest_120_bottom-side-top_B6R.png",
+            "name": "forest_120_bottom-side-top_B6R",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side-top",
+            "variant": 6,
+            "variantType": "B",
+            "variantSide": "R"
           }
         ]
       },
@@ -197,6 +297,26 @@ export const forestedgeManifest = {
             "angle": 120,
             "side": "bottom-side",
             "variant": 1,
+            "variantType": "B",
+            "variantSide": "L"
+          },
+          {
+            "filename": "forest_120_bottom-side_B2R.png",
+            "name": "forest_120_bottom-side_B2R",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side",
+            "variant": 2,
+            "variantType": "B",
+            "variantSide": "R"
+          },
+          {
+            "filename": "forest_120_bottom-side_B3L.png",
+            "name": "forest_120_bottom-side_B3L",
+            "baseName": "forest",
+            "angle": 120,
+            "side": "bottom-side",
+            "variant": 3,
             "variantType": "B",
             "variantSide": "L"
           }
@@ -335,6 +455,46 @@ export const forestedgeManifest = {
           "side": "bottom-side-top",
           "variant": 2,
           "variantType": "B"
+        },
+        {
+          "filename": "forest_120_bottom-side-top_B3L.png",
+          "name": "forest_120_bottom-side-top_B3L",
+          "baseName": "forest",
+          "angle": 120,
+          "side": "bottom-side-top",
+          "variant": 3,
+          "variantType": "B",
+          "variantSide": "L"
+        },
+        {
+          "filename": "forest_120_bottom-side-top_B4R.png",
+          "name": "forest_120_bottom-side-top_B4R",
+          "baseName": "forest",
+          "angle": 120,
+          "side": "bottom-side-top",
+          "variant": 4,
+          "variantType": "B",
+          "variantSide": "R"
+        },
+        {
+          "filename": "forest_120_bottom-side-top_B5L.png",
+          "name": "forest_120_bottom-side-top_B5L",
+          "baseName": "forest",
+          "angle": 120,
+          "side": "bottom-side-top",
+          "variant": 5,
+          "variantType": "B",
+          "variantSide": "L"
+        },
+        {
+          "filename": "forest_120_bottom-side-top_B6R.png",
+          "name": "forest_120_bottom-side-top_B6R",
+          "baseName": "forest",
+          "angle": 120,
+          "side": "bottom-side-top",
+          "variant": 6,
+          "variantType": "B",
+          "variantSide": "R"
         }
       ],
       "angle_120_side_bottom-side": [
@@ -345,6 +505,26 @@ export const forestedgeManifest = {
           "angle": 120,
           "side": "bottom-side",
           "variant": 1,
+          "variantType": "B",
+          "variantSide": "L"
+        },
+        {
+          "filename": "forest_120_bottom-side_B2R.png",
+          "name": "forest_120_bottom-side_B2R",
+          "baseName": "forest",
+          "angle": 120,
+          "side": "bottom-side",
+          "variant": 2,
+          "variantType": "B",
+          "variantSide": "R"
+        },
+        {
+          "filename": "forest_120_bottom-side_B3L.png",
+          "name": "forest_120_bottom-side_B3L",
+          "baseName": "forest",
+          "angle": 120,
+          "side": "bottom-side",
+          "variant": 3,
           "variantType": "B",
           "variantSide": "L"
         }
@@ -487,12 +667,72 @@ export const forestedgeManifest = {
       "variantType": "B"
     },
     {
+      "filename": "forest_120_bottom-side-top_B3L.png",
+      "name": "forest_120_bottom-side-top_B3L",
+      "baseName": "forest",
+      "angle": 120,
+      "side": "bottom-side-top",
+      "variant": 3,
+      "variantType": "B",
+      "variantSide": "L"
+    },
+    {
+      "filename": "forest_120_bottom-side-top_B4R.png",
+      "name": "forest_120_bottom-side-top_B4R",
+      "baseName": "forest",
+      "angle": 120,
+      "side": "bottom-side-top",
+      "variant": 4,
+      "variantType": "B",
+      "variantSide": "R"
+    },
+    {
+      "filename": "forest_120_bottom-side-top_B5L.png",
+      "name": "forest_120_bottom-side-top_B5L",
+      "baseName": "forest",
+      "angle": 120,
+      "side": "bottom-side-top",
+      "variant": 5,
+      "variantType": "B",
+      "variantSide": "L"
+    },
+    {
+      "filename": "forest_120_bottom-side-top_B6R.png",
+      "name": "forest_120_bottom-side-top_B6R",
+      "baseName": "forest",
+      "angle": 120,
+      "side": "bottom-side-top",
+      "variant": 6,
+      "variantType": "B",
+      "variantSide": "R"
+    },
+    {
       "filename": "forest_120_bottom-side_B1L.png",
       "name": "forest_120_bottom-side_B1L",
       "baseName": "forest",
       "angle": 120,
       "side": "bottom-side",
       "variant": 1,
+      "variantType": "B",
+      "variantSide": "L"
+    },
+    {
+      "filename": "forest_120_bottom-side_B2R.png",
+      "name": "forest_120_bottom-side_B2R",
+      "baseName": "forest",
+      "angle": 120,
+      "side": "bottom-side",
+      "variant": 2,
+      "variantType": "B",
+      "variantSide": "R"
+    },
+    {
+      "filename": "forest_120_bottom-side_B3L.png",
+      "name": "forest_120_bottom-side_B3L",
+      "baseName": "forest",
+      "angle": 120,
+      "side": "bottom-side",
+      "variant": 3,
       "variantType": "B",
       "variantSide": "L"
     },

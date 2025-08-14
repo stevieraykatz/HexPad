@@ -1,0 +1,137 @@
+/**
+ * Generated Icons Manifest
+ * 
+ * This file is auto-generated from the icons manifest JSON
+ * Do not edit manually - regenerate using generateIconsManifest.js
+ */
+
+export const iconsManifest = {
+  "name": "icons",
+  "generated": "2025-08-13T22:50:48.750Z",
+  "totalAssets": 14,
+  "assets": {
+    "byAngle": {},
+    "bySide": {},
+    "bySpecial": {},
+    "all": {
+      "base": [
+        {
+          "filename": "castle.png",
+          "name": "castle"
+        },
+        {
+          "filename": "castle2.png",
+          "name": "castle2"
+        },
+        {
+          "filename": "cave.png",
+          "name": "cave"
+        },
+        {
+          "filename": "church.png",
+          "name": "church"
+        },
+        {
+          "filename": "curse.png",
+          "name": "curse"
+        },
+        {
+          "filename": "fortress.png",
+          "name": "fortress"
+        },
+        {
+          "filename": "huts.png",
+          "name": "huts"
+        },
+        {
+          "filename": "pavillion.png",
+          "name": "pavillion"
+        },
+        {
+          "filename": "ruins.png",
+          "name": "ruins"
+        },
+        {
+          "filename": "sanctum.png",
+          "name": "sanctum"
+        },
+        {
+          "filename": "tower.png",
+          "name": "tower"
+        },
+        {
+          "filename": "town.png",
+          "name": "town"
+        },
+        {
+          "filename": "town2.png",
+          "name": "town2"
+        },
+        {
+          "filename": "village.png",
+          "name": "village"
+        }
+      ]
+    }
+  },
+  "rawAssets": [
+    {
+      "filename": "castle.png",
+      "name": "castle"
+    },
+    {
+      "filename": "castle2.png",
+      "name": "castle2"
+    },
+    {
+      "filename": "cave.png",
+      "name": "cave"
+    },
+    {
+      "filename": "church.png",
+      "name": "church"
+    },
+    {
+      "filename": "curse.png",
+      "name": "curse"
+    },
+    {
+      "filename": "fortress.png",
+      "name": "fortress"
+    },
+    {
+      "filename": "huts.png",
+      "name": "huts"
+    },
+    {
+      "filename": "pavillion.png",
+      "name": "pavillion"
+    },
+    {
+      "filename": "ruins.png",
+      "name": "ruins"
+    },
+    {
+      "filename": "sanctum.png",
+      "name": "sanctum"
+    },
+    {
+      "filename": "tower.png",
+      "name": "tower"
+    },
+    {
+      "filename": "town.png",
+      "name": "town"
+    },
+    {
+      "filename": "town2.png",
+      "name": "town2"
+    },
+    {
+      "filename": "village.png",
+      "name": "village"
+    }
+  ]
+} as const;
+
+export type IconsManifestType = typeof iconsManifest;

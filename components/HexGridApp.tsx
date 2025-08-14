@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import HexGrid, { HexGridRef } from './HexGrid';
-import { UI_CONFIG, PAINT_OPTIONS, BACKGROUND_COLORS, ICON_OPTIONS } from './config';
+import { UI_CONFIG, PAINT_OPTIONS, BACKGROUND_COLORS, ICON_OPTIONS, getManilaColor } from './config';
 import type { BackgroundColor, IconItem, HexTexture } from './config';
 import { loadTerrainManifest, getTerrainInfo } from './config/assetLoader';
 import type { NumberingMode } from './GridSizeControls';
@@ -33,14 +33,14 @@ import {
 } from '../utils/gridActions';
 
 const HexGridApp: React.FC = () => {
-  const [selectedColor, setSelectedColor] = useState<string>('#F3E8C2'); // Default manila as hex
+  const [selectedColor, setSelectedColor] = useState<string>(getManilaColor().cssColor); // Default manila as hex
   const [selectedTexture, setSelectedTexture] = useState<HexTexture | null>(null);
   const [selectedIcon, setSelectedIcon] = useState<IconItem | null>(null);
   
 
   const [selectedBorderColor, setSelectedBorderColor] = useState<string>('#FF1A00');
   const [selectedIconColor, setSelectedIconColor] = useState<string>('#FFFFFF');
-  const [selectedBackgroundShaderColor, setSelectedBackgroundShaderColor] = useState<string>('#F3E8C2');
+  const [selectedBackgroundShaderColor, setSelectedBackgroundShaderColor] = useState<string>(getManilaColor().cssColor);
   const [backgroundPaintingMode, setBackgroundPaintingMode] = useState<boolean>(false);
   const [eyeDropperMode, setEyeDropperMode] = useState<boolean>(false);
   const [menuOpen, setMenuOpen] = useState<boolean>(true);
@@ -179,7 +179,7 @@ const HexGridApp: React.FC = () => {
         for (let col = 0; col < gridWidth; col++) {
           const hexKey = `${row}-${col}`;
           if (!updatedBackgroundColors[hexKey]) {
-            updatedBackgroundColors[hexKey] = '#F3E8C2'; // Default manila hex color
+            updatedBackgroundColors[hexKey] = getManilaColor().cssColor; // Default manila hex color
           }
         }
       }

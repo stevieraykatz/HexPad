@@ -133,7 +133,7 @@ export const GRID_CONFIG: GridConfig = {
   
   // Fallback colors
   FALLBACK_TEXTURE_COLOR: [0.8, 0.6, 0.4], // RGB values for texture loading fallback (0-1 range)
-  DEFAULT_BACKGROUND_COLOR: [0.1, 0.1, 0.1], // RGB values for default background color (0-1 range)
+  DEFAULT_BACKGROUND_COLOR: [0.815, 0.780, 0.671], // RGB values for default background color (0-1 range) - papery manila
 };
 
 /**

@@ -37,7 +37,7 @@ export interface DefaultColors {
 
 export const DEFAULT_COLORS: DefaultColors = {
   SELECTED: "manila",
-  DEFAULT_RGB: [0.95, 0.91, 0.76], // Manila paper color RGB values (243, 232, 194 in 255 scale)
+  DEFAULT_RGB: [0.815, 0.780, 0.671], // Papery color RGB values (208, 199, 171 in 255 scale)
 };
 
 export interface BackgroundColor {
@@ -57,8 +57,8 @@ export const BACKGROUND_COLORS: readonly BackgroundColor[] = [
   {
     name: "manila",
     displayName: "Manila",
-    rgb: [0.95, 0.91, 0.76],
-    cssColor: "#F3E8C2",
+    rgb: [0.815, 0.780, 0.671],
+    cssColor: "#d0c7ab",
   },
   {
     name: "white",
@@ -67,6 +67,17 @@ export const BACKGROUND_COLORS: readonly BackgroundColor[] = [
     cssColor: "#ffffff",
   },
 ];
+
+/**
+ * Gets the manila background color configuration
+ */
+export function getManilaColor(): BackgroundColor {
+  const manilaColor = BACKGROUND_COLORS.find(color => color.name === "manila");
+  if (!manilaColor) {
+    throw new Error("Manila color not found in BACKGROUND_COLORS");
+  }
+  return manilaColor;
+}
 
 /**
  * Gets the preview asset path for a terrain using the direct menu config

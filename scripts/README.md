@@ -15,10 +15,24 @@ Or run directly:
 node scripts/generateDirectTS.js public/assets/terrain components/config/generated/
 ```
 
+**Note**: This script only processes **terrain assets** in `public/assets/terrain/`. **Icons** in `public/assets/icons/` are managed separately using `npm run generate-icons`.
+
 ## 📁 Scripts Overview
 
 ### `generateDirectTS.js` ⭐ **RECOMMENDED**
 **Direct TypeScript Generation** - Generates TypeScript files directly from asset directories, bypassing JSON intermediates.
+
+### `generateIconsManifest.js` 🎨 **ICONS**
+**Icons Manifest Generation** - Generates TypeScript manifest from the existing `icons-manifest.json` for type-safe icon loading.
+
+```bash
+npm run generate-icons
+```
+
+Or run directly:
+```bash
+node scripts/generateIconsManifest.js public/assets/icons/icons-manifest.json components/config/generated/iconsManifest.ts
+```
 
 ## Usage
 
