@@ -1169,14 +1169,20 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     
     if (!hasTexture) return null;
 
+    // Convert device pixel coordinates to CSS coordinates for DOM positioning
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const cssX = hex.x / devicePixelRatio;
+    const cssY = hex.y / devicePixelRatio;
+    const cssRadius = hexRadius / devicePixelRatio;
+
     return (
       <>
         <HexButton
           key={`center-${hexCoord.row}-${hexCoord.col}`}
           type="center"
-          hexX={hex.x}
-          hexY={hex.y}
-          hexRadius={hexRadius}
+          hexX={cssX}
+          hexY={cssY}
+          hexRadius={cssRadius}
           onClick={() => handleCenterClick(hex)}
           visible={true}
         >
@@ -1186,9 +1192,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         <HexButton
           key={`left-${hexCoord.row}-${hexCoord.col}`}
           type="left"
-          hexX={hex.x}
-          hexY={hex.y}
-          hexRadius={hexRadius}
+          hexX={cssX}
+          hexY={cssY}
+          hexRadius={cssRadius}
           onClick={() => handleLeftClick(hex)}
           visible={true}
         >
@@ -1198,9 +1204,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         <HexButton
           key={`right-${hexCoord.row}-${hexCoord.col}`}
           type="right"
-          hexX={hex.x}
-          hexY={hex.y}
-          hexRadius={hexRadius}
+          hexX={cssX}
+          hexY={cssY}
+          hexRadius={cssRadius}
           onClick={() => handleRightClick(hex)}
           visible={true}
         >
