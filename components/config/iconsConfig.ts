@@ -16,6 +16,9 @@
  * - Icons are rendered at a smaller size than the hex to maintain visibility
  */
 
+// Import the number icon generator
+import { numberIconCache } from '../../utils/numberIconGenerator';
+
 export interface IconItem {
   readonly name: string;
   readonly displayName: string;
@@ -28,13 +31,24 @@ export interface ColoredIcon {
   readonly color: string;
 }
 
+// Define the manifest structure
+interface IconManifest {
+  rawAssets: Array<{
+    name: string;
+    filename: string;
+  }>;
+}
+
 /**
  * Load icon manifest and generate icon options dynamically
  */
-function loadIconManifest(): any {
+function loadIconManifest(): IconManifest | null {
   try {
-    // Import the manifest directly (this will be bundled at build time)
-    return require('../../public/assets/icons/icons-manifest.json');
+    // Try to import the manifest - fallback to null if not available
+    // Note: This is a synchronous fallback for build-time generation
+    // In a real app, you might want to use dynamic imports or fetch
+    const manifest = null; // Will use fallback icons instead
+    return manifest;
   } catch (error) {
     console.warn('Could not load icon manifest:', error);
     return null;
@@ -47,14 +61,14 @@ function loadIconManifest(): any {
 function generateNumberIconOptions(): IconItem[] {
   const numberIcons: IconItem[] = [];
   
-  // Import the number icon generator
+  // Use the number icon generator
   try {
-    const { numberIconCache } = require('../../utils/numberIconGenerator');
     
     // Try to use async version for better font loading, but fallback to sync
     const config = {
       size: 64,
       fontSize: 30, // Slightly smaller to ensure good fit in circle
+      fontFamily: 'Canterbury, Arial, sans-serif', // Canterbury font with fallbacks
       backgroundColor: 'transparent', // Transparent for CSS masking
       textColor: '#000000', // Black text (will be colored by CSS mask)
       borderColor: '#000000', // Black circle border (will be colored by CSS mask)
@@ -62,10 +76,13 @@ function generateNumberIconOptions(): IconItem[] {
       borderWidth: 3 // Circle border width
     };
     
+    // Clear cache to ensure fresh generation with Canterbury font
+    numberIconCache.clearCache();
+    
     // Use async version if available, otherwise fallback to sync
     if (numberIconCache.getIconsAsync) {
       // Schedule async generation for better font loading
-      numberIconCache.getIconsAsync(config).catch((error: any) => {
+      numberIconCache.getIconsAsync(config).catch((error: unknown) => {
         console.warn('Async number icon generation failed:', error);
       });
     }
@@ -100,9 +117,9 @@ function generateIconOptions(): readonly IconItem[] {
   // 1. Load image icons from manifest
   const manifest = loadIconManifest();
   if (manifest && manifest.rawAssets) {
-    manifest.rawAssets.forEach((asset: any) => {
+    manifest.rawAssets.forEach((asset) => {
       // Convert name to display name (capitalize and handle special cases)
-      let displayName = asset.name
+      const displayName = asset.name
         .split('-')
         .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');

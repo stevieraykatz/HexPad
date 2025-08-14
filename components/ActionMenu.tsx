@@ -30,7 +30,8 @@ interface ActionButtonProps {
   disabled?: boolean;
   type: 'primary' | 'secondary' | 'danger' | 'inactive' | 'disabled';
   title: string;
-  emoji: string;
+  emoji?: string;
+  imageSrc?: string;
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({ 
@@ -38,7 +39,8 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   disabled = false, 
   type, 
   title, 
-  emoji 
+  emoji,
+  imageSrc 
 }) => {
   const getButtonStyle = () => {
     const baseStyle = {
@@ -98,7 +100,27 @@ const ActionButton: React.FC<ActionButtonProps> = ({
         }
       }}
     >
-      {emoji}
+      {imageSrc ? (
+        <img 
+          src={imageSrc} 
+          alt={title}
+          style={{
+            width: '32px',
+            height: '32px',
+            objectFit: 'contain',
+            filter: disabled 
+              ? 'grayscale(100%) brightness(0.7) contrast(2)' 
+              : type === 'primary' 
+                ? 'brightness(2.5) contrast(3) drop-shadow(0 0 4px rgba(59, 130, 246, 0.8))'
+                : type === 'danger'
+                  ? 'brightness(2.2) contrast(2.8) drop-shadow(0 0 3px rgba(239, 68, 68, 0.7))'
+                  : 'brightness(2) contrast(2.5)',
+            opacity: disabled ? 0.6 : 1
+          }}
+        />
+      ) : (
+        emoji
+      )}
     </button>
   );
 };
@@ -146,7 +168,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
         onClick={onCopyUrl}
         type="primary"
         title="Copy shareable URL to clipboard"
-        emoji="🔗"
+        imageSrc="/assets/ui/link-1_path.png"
       />
       
       <ActionButton
@@ -154,7 +176,8 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
         disabled={isExporting}
         type={isExporting ? 'disabled' : 'secondary'}
         title={isExporting ? 'Exporting PNG...' : 'Download PNG'}
-        emoji={isExporting ? '⏳' : '⬇️'}
+        emoji={isExporting ? '⏳' : undefined}
+        imageSrc={isExporting ? undefined : '/assets/ui/arrow-solid-line-end_path.png'}
       />
 
       <Separator />
@@ -163,7 +186,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
         onClick={onEraserToggle}
         type={selectedIcon?.name === 'eraser' ? 'danger' : 'inactive'}
         title={getEraserTitle()}
-        emoji="🧹"
+        imageSrc="/assets/ui/eye-slash_path.png"
       />
       
       <ActionButton
@@ -171,7 +194,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
         disabled={!hasUndoHistory}
         type={hasUndoHistory ? 'primary' : 'disabled'}
         title={hasUndoHistory ? 'Undo last action' : 'No actions to undo'}
-        emoji="↩️"
+        imageSrc="/assets/ui/history_path.png"
       />
 
       <Separator />
@@ -180,7 +203,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
         onClick={onClearGrid}
         type="danger"
         title="Clear entire grid"
-        emoji="🗑️"
+        imageSrc="/assets/ui/trash-1_path.png"
       />
     </div>
   );

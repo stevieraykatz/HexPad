@@ -426,20 +426,21 @@ const HexGridApp: React.FC = () => {
     }
   }, [hexColors, setHexColors]);
 
-  // Handle hex hover for region detection
+  // Handle hex hover for region detection - REGIONING UI DISABLED
   const handleHexHover = useCallback((row: number | null, col: number | null) => {
+    // REGIONING UI DISABLED: Keep detection logic but don't update UI state
     if (row === null || col === null) {
-      setHoveredRegion(null);
+      // setHoveredRegion(null); // Disabled
       return;
     }
     
     const hexCoord = `${row}-${col}`;
-    const regionId = getRegionForHex(hexCoord);
+    const regionId = getRegionForHex(hexCoord); // Keep detection logic intact
     
     // Only update if the region actually changed to prevent constant re-renders
-    if (regionId !== hoveredRegion) {
-      setHoveredRegion(regionId);
-    }
+    // if (regionId !== hoveredRegion) {
+    //   setHoveredRegion(regionId); // Disabled
+    // }
   }, [getRegionForHex, setHoveredRegion, hoveredRegion]);
 
   return (

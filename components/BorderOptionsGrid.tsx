@@ -42,13 +42,6 @@ const BorderOptionsGrid: React.FC<BorderOptionsGridProps> = ({
           border: `1px solid ${UI_CONFIG.COLORS.BORDER_COLOR_LIGHT}`
         }} />
         </div>
-        <div style={{
-            fontSize: UI_CONFIG.FONT_SIZE.MEDIUM,
-            color: UI_CONFIG.COLORS.TEXT_SECONDARY,
-            fontWeight: UI_CONFIG.FONT_WEIGHT.MEDIUM
-          }}>
-            Border Preview
-        </div>
       <div style={{
         background: UI_CONFIG.COLORS.OVERLAY_BACKGROUND,
         backdropFilter: UI_CONFIG.BLUR.LIGHT,

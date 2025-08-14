@@ -142,14 +142,10 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
       
       {activeTab === 'borders' && (
         <>
-          {/* Region Border Controls */}
-          {regionStats && hoveredRegion !== undefined && getRegionData && (
+          {/* Region Border Controls - REGIONING UI DISABLED */}
+          {false && (
             <div className={isMobile ? 'mobile-section' : ''} style={sectionWrapperStyle}>
-              <RegionBorderControls
-                regionStats={regionStats}
-                hoveredRegion={hoveredRegion}
-                getRegionData={getRegionData}
-              />
+              {/* RegionBorderControls component disabled for production */}
             </div>
           )}
           

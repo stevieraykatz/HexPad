@@ -96,8 +96,11 @@ export const usePinchZoomPan = ({
 
   const bind = useGesture(
     {
-      onPinch: ({ scale, origin, first, last }) => {
+      onPinch: ({ movement, origin, first, last }) => {
         if (disabled) return;
+        
+        // In @use-gesture v10+, scale information is in movement[0] 
+        const scale = movement[0];
         
         if (first) {
           onGestureStart?.();

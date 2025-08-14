@@ -330,10 +330,10 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   const getHexagonStyle = useCallback((row: number, col: number): HexStyle | undefined => {
     const userTexture = getHexColor && getHexColor(row, col);
     
-    // Check if this hex is part of the hovered region for highlighting (only in borders tab)
+    // REGIONING UI DISABLED: Keep detection logic but disable highlighting
     const hexCoord = `${row}-${col}`;
     const hexRegionId = getRegionForHex && getRegionForHex(hexCoord);
-    const isHoveredRegion = activeTab === 'borders' && hoveredRegion && hexRegionId === hoveredRegion;
+    const isHoveredRegion = false; // Disabled: activeTab === 'borders' && hoveredRegion && hexRegionId === hoveredRegion;
     
     if (userTexture) {
       if (userTexture === DEFAULT_COLORS.SELECTED) {
@@ -735,7 +735,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     handlePaintAtPosition(touch.clientX, touch.clientY);
   }, [isDragging, handlePaintAtPosition, isGesturing]);
 
-  const handleTouchEnd = useCallback((event: TouchEvent): void => {
+  const handleTouchEnd = useCallback((): void => {
     // Only handle single touch end events
     if (isGesturing) return;
     
@@ -1046,10 +1046,10 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
 
   // Separate effect for region highlighting to avoid constant re-renders during mouse movement
   useEffect(() => {
-    // Only trigger re-render for region highlighting if we're in borders mode
-    if (activeTab === 'borders' && glRef.current && colorProgramRef.current && textureProgramRef.current) {
-      renderGrid();
-    }
+    // REGIONING UI DISABLED: Skip region highlighting re-renders
+    // if (activeTab === 'borders' && glRef.current && colorProgramRef.current && textureProgramRef.current) {
+    //   renderGrid();
+    // }
   }, [hoveredRegion, activeTab, renderGrid]);
 
   useEffect(() => {
@@ -1313,8 +1313,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       {/* Tile Manipulation Button Regions Overlay */}
       {ButtonOverlay}
 
-      {/* Region Border Button Overlay */}
-      {regionButtonState && activeTab === 'borders' && (
+      {/* Region Border Button Overlay - REGIONING UI DISABLED */}
+      {false && regionButtonState && activeTab === 'borders' && (
         <div style={{
           position: 'absolute',
           top: 0,
@@ -1325,7 +1325,10 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
           zIndex: 5
         }}>
           {(() => {
-            const hex = regionButtonState.position;
+            const buttonState = regionButtonState;
+            if (!buttonState?.position) return null;
+            
+            const hex = buttonState!.position;
             const hexRadius = throttledRadius;
             
             // Button dimensions - make it larger and more visible
@@ -1338,7 +1341,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
 
             return (
               <div
-                onClick={() => handleRegionBorderApplication(regionButtonState.regionId)}
+                onClick={() => handleRegionBorderApplication(buttonState!.regionId)}
                 style={{
                   position: 'absolute',
                   left: buttonX,
