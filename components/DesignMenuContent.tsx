@@ -2,7 +2,7 @@ import React from 'react';
 import PaintOptionsGrid from './PaintOptionsGrid';
 import IconOptionsGrid from './IconOptionsGrid';
 import BorderOptionsGrid from './BorderOptionsGrid';
-import RegionBorderControls from './RegionBorderControls';
+// import RegionBorderControls from './RegionBorderControls'; // Unused - regioning disabled
 import GridSizeControls from './GridSizeControls';
 import BackgroundColorSelector from './BackgroundColorSelector';
 import { UI_CONFIG } from './config';
@@ -83,13 +83,18 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
   onHeightChange,
   onBackgroundColorChange,
   onNumberingModeChange,
-  // Region props
-  regionStats,
-  hoveredRegion,
-  getRegionData,
+  // Region props - REGIONING DISABLED
+  regionStats: _regionStats,
+  hoveredRegion: _hoveredRegion,
+  getRegionData: _getRegionData,
   // Mobile layout
   isMobile = false
 }) => {
+  // Mark regioning props as explicitly unused
+  void _regionStats;
+  void _hoveredRegion;
+  void _getRegionData;
+
   const sectionTitleStyle = {
     color: UI_CONFIG.COLORS.TEXT_SECONDARY,
     fontSize: UI_CONFIG.FONT_SIZE.LARGE,

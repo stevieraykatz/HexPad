@@ -140,7 +140,7 @@ const HexGridApp: React.FC = () => {
     regionStats,
     getRegionData,
     hoveredRegion,
-    setHoveredRegion,
+    setHoveredRegion: _setHoveredRegion, // Unused - regioning disabled
     getRegionForHex
   } = useGridState({
     selectedColor,
@@ -152,6 +152,9 @@ const HexGridApp: React.FC = () => {
     activeTab,
     onPaintStart: handlePaintStart
   });
+
+  // Mark regioning setter as explicitly unused
+  void _setHoveredRegion;
 
   const { loadFromLocalStorage, clearAutosave } = useAutoSave({
     encodingMap,
@@ -428,20 +431,20 @@ const HexGridApp: React.FC = () => {
 
   // Handle hex hover for region detection - REGIONING UI DISABLED
   const handleHexHover = useCallback((row: number | null, col: number | null) => {
-    // REGIONING UI DISABLED: Keep detection logic but don't update UI state
+    // REGIONING UI DISABLED: All region detection and UI updates disabled
     if (row === null || col === null) {
       // setHoveredRegion(null); // Disabled
       return;
     }
     
-    const hexCoord = `${row}-${col}`;
-    const regionId = getRegionForHex(hexCoord); // Keep detection logic intact
+    // const hexCoord = `${row}-${col}`;
+    // const regionId = getRegionForHex(hexCoord); // Keep detection logic intact but unused
     
     // Only update if the region actually changed to prevent constant re-renders
     // if (regionId !== hoveredRegion) {
     //   setHoveredRegion(regionId); // Disabled
     // }
-  }, [getRegionForHex, setHoveredRegion, hoveredRegion]);
+  }, []); // No dependencies needed since all functionality is disabled
 
   return (
     <div 

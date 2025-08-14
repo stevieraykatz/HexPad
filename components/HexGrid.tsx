@@ -216,7 +216,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       getHexIcon,
       numberingMode
     });
-  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, getHexBackgroundColor, borders, getHexIcon, numberingMode]);
+  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, getHexBackgroundColor, borders, getHexIcon, numberingMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useImperativeHandle(ref, () => ({
     exportAsPNG
@@ -331,8 +331,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     const userTexture = getHexColor && getHexColor(row, col);
     
     // REGIONING UI DISABLED: Keep detection logic but disable highlighting
-    const hexCoord = `${row}-${col}`;
-    const hexRegionId = getRegionForHex && getRegionForHex(hexCoord);
+    // const hexCoord = `${row}-${col}`; // Unused since regioning disabled
+    // const hexRegionId = getRegionForHex && getRegionForHex(hexCoord); // Unused since highlighting disabled
     const isHoveredRegion = false; // Disabled: activeTab === 'borders' && hoveredRegion && hexRegionId === hoveredRegion;
     
     if (userTexture) {
