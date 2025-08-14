@@ -251,11 +251,31 @@ canvas {
   }
 }
 
+/* Swipable bar animation */
+@keyframes swipeHint {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-1px);
+    opacity: 1;
+  }
+}
+
+.swipe-indicator {
+  animation: swipeHint 3s ease-in-out infinite;
+}
+
 /* Accessibility: Respect user's motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  
+  .swipe-indicator {
+    animation: none !important;
   }
 } 

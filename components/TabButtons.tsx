@@ -87,11 +87,13 @@ const TabButtons: React.FC<TabButtonsProps> = ({
       position: 'fixed',
       ...(isMobile ? {
         // Mobile: Position for bottom menu
-        bottom: menuOpen ? '60vh' : '80px', // Above bottom menu when open, above action bar when closed
+        // CONSTRAINT: Bottom edge sits on top edge of swipe bar (60vh + 24px from bottom)
+        bottom: menuOpen ? 'calc(60vh + 24px)' : '80px', // Above swipe bar when open, above action bar when closed
         left: '50%',
         transform: 'translateX(-50%)',
         flexDirection: 'row',
         gap: UI_CONFIG.SPACING.LARGE,
+        transition: `bottom ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`, // Smooth slide animation
       } : {
         // Desktop: Position for side menu
         top: `calc(${UI_CONFIG.SPACING.XLARGE} + 60px)`, // Below the menu toggle

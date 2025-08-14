@@ -10,6 +10,7 @@ import MenuToggleButton from './MenuToggleButton';
 import TabButtons from './TabButtons';
 import ActionMenu from './ActionMenu';
 import DesignMenuContent from './DesignMenuContent';
+import SwipableBar from './SwipableBar';
 import { 
   createEncodingMap,
   decodeBase64ToGrid,
@@ -479,7 +480,7 @@ const HexGridApp: React.FC = () => {
         style={{
           position: 'fixed',
           ...(isMobile ? {
-            // Mobile: Bottom menu
+            // Mobile: Bottom menu - BASE ELEMENT (starts at bottom)
             bottom: 0,
             left: 0,
             right: 0,
@@ -539,8 +540,34 @@ const HexGridApp: React.FC = () => {
           hoveredRegion={hoveredRegion}
           getRegionData={getRegionData}
           isMobile={isMobile}
+          menuOpen={menuOpen}
         />
       </div>
+
+      {/* Swipable Bar - Slides with menu on mobile */}
+      {/* CONSTRAINT: Bottom edge sits on top edge of design menu (60vh from bottom) */}
+      {isMobile && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '60vh', // Bottom edge of swipe bar = top edge of menu
+            left: 0,
+            right: 0,
+            width: '100%',
+            height: '24px', // Swipe bar height
+            zIndex: UI_CONFIG.Z_INDEX.MENU + 1, // Above menu
+            transform: `translateY(${menuOpen ? '0' : 'calc(100% + 60vh)'})`, // Slide off-screen when closed
+            transition: `transform ${UI_CONFIG.TRANSITION_DURATION} ${UI_CONFIG.TRANSITION_EASING}`,
+          }}
+        >
+          <SwipableBar 
+            isMobile={isMobile} 
+            menuOpen={menuOpen} 
+            onSwipeUp={handleSwipeUp}
+            onSwipeDown={handleSwipeDown}
+          />
+        </div>
+      )}
       
       {/* Main Grid Area */}
       <div style={{
