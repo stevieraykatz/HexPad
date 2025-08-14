@@ -670,9 +670,10 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
   const optimalCanvasSize = calculateOptimalExportSize(gridWidth, gridHeight, scale, numberingMode);
 
   // Calculate base export size without numbering
+  // Note: optimalCanvasSize already includes scaling, so we don't multiply by scale again
   const baseExportSize = {
-    width: optimalCanvasSize.width * scale,
-    height: optimalCanvasSize.height * scale
+    width: optimalCanvasSize.width,
+    height: optimalCanvasSize.height
   };
 
   // Calculate extra space needed for edge numbering
