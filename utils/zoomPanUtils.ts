@@ -4,6 +4,7 @@
  * Helper functions for zoom level calculations, pan limits, and zoom-to-cursor behavior.
  */
 
+import { OrientationMode } from '@/components/GridSizeControls';
 import { GRID_CONFIG, HEX_GEOMETRY } from '../components/config';
 import type { CanvasSize, PanOffset } from './hexagonUtils';
 
@@ -42,15 +43,16 @@ export const calculatePanLimits = (
   hexRadius: number,
   gridWidth: number,
   gridHeight: number,
-  canvasSize: CanvasSize
+  canvasSize: CanvasSize,
+  orientationMode: OrientationMode
 ): PanLimits => {
-  const hexWidth = HEX_GEOMETRY.getHexWidth(hexRadius);
-  const hexHeight = HEX_GEOMETRY.getHexHeight(hexRadius);
-  const horizontalSpacing = HEX_GEOMETRY.getHorizontalSpacing(hexRadius);
-  const verticalSpacing = HEX_GEOMETRY.getVerticalSpacing(hexRadius);
+  const hexWidth = HEX_GEOMETRY.getHexWidth(hexRadius, orientationMode);
+  const hexHeight = HEX_GEOMETRY.getHexHeight(hexRadius, orientationMode);
+  const horizontalSpacing = HEX_GEOMETRY.getHorizontalSpacing(hexRadius, orientationMode);
+  const verticalSpacing = HEX_GEOMETRY.getVerticalSpacing(hexRadius, orientationMode);
   
   const totalGridWidth = (gridWidth - 1) * horizontalSpacing + hexWidth;
-  const totalGridHeight = gridHeight * verticalSpacing;
+  const totalGridHeight = gridHeight * verticalSpacing - hexHeight;
   
   // Calculate how much the grid exceeds the container size
   const excessWidth = Math.max(0, totalGridWidth - canvasSize.width);
@@ -73,9 +75,10 @@ export const constrainPanOffset = (
   hexRadius: number,
   gridWidth: number,
   gridHeight: number,
-  canvasSize: CanvasSize
+  canvasSize: CanvasSize,
+  orientationMode: OrientationMode
 ): PanOffset => {
-  const { minPanX, maxPanX, minPanY, maxPanY } = calculatePanLimits(hexRadius, gridWidth, gridHeight, canvasSize);
+  const { minPanX, maxPanX, minPanY, maxPanY } = calculatePanLimits(hexRadius, gridWidth, gridHeight, canvasSize, orientationMode);
   return {
     x: Math.max(minPanX, Math.min(maxPanX, offset.x)),
     y: Math.max(minPanY, Math.min(maxPanY, offset.y))
@@ -94,7 +97,8 @@ export const calculateZoomToPoint = (
   currentPanOffset: PanOffset,
   currentHexRadius: number,
   gridWidth: number,
-  gridHeight: number
+  gridHeight: number,
+  orientationMode: OrientationMode
 ): { newZoom: number; newPanOffset: PanOffset } => {
   const { minZoom, maxZoom } = calculateZoomLimits(gridWidth);
   
@@ -127,7 +131,8 @@ export const calculateZoomToPoint = (
     projectedRadius, 
     gridWidth, 
     gridHeight, 
-    canvasSize
+    canvasSize,
+    orientationMode
   );
   
   return { newZoom: clampedZoom, newPanOffset: constrainedOffset };

@@ -2,6 +2,7 @@ import { useCallback, useRef, useEffect } from 'react';
 import { calculateZoomLimits, constrainPanOffset } from '../utils/zoomPanUtils';
 import { GRID_CONFIG } from '../components/config/gridConfig';
 import type { CanvasSize, PanOffset } from '../utils/hexagonUtils';
+import { OrientationMode } from '@/components/GridSizeControls';
 
 interface UsePinchZoomPanOptions {
   canvasSize: CanvasSize;
@@ -15,6 +16,7 @@ interface UsePinchZoomPanOptions {
   onGestureStart?: () => void;
   onGestureEnd?: () => void;
   disabled?: boolean;
+  orientationMode: OrientationMode;
 }
 
 interface TouchState {
@@ -36,7 +38,8 @@ export const usePinchZoomPan = ({
   onPanChange,
   onGestureStart,
   onGestureEnd,
-  disabled = false
+  disabled = false,
+  orientationMode
 }: UsePinchZoomPanOptions) => {
   
   const containerRef = useRef<HTMLElement | null>(null);
@@ -96,7 +99,8 @@ export const usePinchZoomPan = ({
       projectedRadius,
       gridWidth,
       gridHeight,
-      canvasSize
+      canvasSize,
+      orientationMode
     );
     
     onZoomChange(newZoom, constrainedOffset);
@@ -188,7 +192,8 @@ export const usePinchZoomPan = ({
           projectedRadius,
           gridWidth,
           gridHeight,
-          canvasSize
+          canvasSize,
+          orientationMode
         );
         
         onZoomChange(newZoom, constrainedOffset);
@@ -207,7 +212,8 @@ export const usePinchZoomPan = ({
           currentHexRadius,
           gridWidth,
           gridHeight,
-          canvasSize
+          canvasSize,
+          orientationMode
         );
         
         onPanChange(constrainedOffset);

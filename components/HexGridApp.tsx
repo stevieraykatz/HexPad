@@ -3,7 +3,7 @@ import HexGrid, { HexGridRef } from './HexGrid';
 import { UI_CONFIG, PAINT_OPTIONS, BACKGROUND_COLORS, ICON_OPTIONS, getManilaColor } from './config';
 import type { BackgroundColor, IconItem, HexTexture } from './config';
 import { loadTerrainManifest, getTerrainInfo } from './config/assetLoader';
-import type { NumberingMode } from './GridSizeControls';
+import type { NumberingMode, OrientationMode } from './GridSizeControls';
 
 import TopCornerLinks from './TopCornerLinks';
 import MenuToggleButton from './MenuToggleButton';
@@ -48,6 +48,7 @@ const HexGridApp: React.FC = () => {
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [selectedBackgroundColor, setSelectedBackgroundColor] = useState<BackgroundColor>(BACKGROUND_COLORS[0]);
   const [numberingMode, setNumberingMode] = useState<NumberingMode>('off');
+  const [orientationMode, setOrientationMode] = useState<OrientationMode>('flat-top');
   const hexGridRef = useRef<HexGridRef>(null);
   const appContainerRef = useRef<HTMLDivElement>(null);
   
@@ -150,6 +151,7 @@ const HexGridApp: React.FC = () => {
     selectedIconColor,
     selectedBorderColor,
     selectedBackgroundColor: selectedBackgroundShaderColor,
+    orientationMode,
     activeTab,
     onPaintStart: handlePaintStart
   });
@@ -517,11 +519,13 @@ const HexGridApp: React.FC = () => {
           gridHeight={gridHeight}
           selectedBackgroundColor={selectedBackgroundColor}
           numberingMode={numberingMode}
+          orientationMode={orientationMode}
           selectedTexture={selectedTexture}
           onWidthChange={setGridWidth}
           onHeightChange={setGridHeight}
           onBackgroundColorChange={setSelectedBackgroundColor}
           onNumberingModeChange={setNumberingMode}
+          onOrientationModeChange={setOrientationMode}
           onTextureSelect={handleTextureSelect}
           selectedIcon={selectedIcon}
           selectedIconColor={selectedIconColor}
@@ -582,6 +586,7 @@ const HexGridApp: React.FC = () => {
           gridWidth={gridWidth} 
           gridHeight={gridHeight}
           numberingMode={numberingMode}
+          orientationMode={orientationMode}
           onHexClick={eyeDropperMode ? handleEyeDropperClick : (
             (backgroundPaintingMode && selectedIcon?.name !== 'eraser') || 
             (!selectedTexture && selectedIcon?.name !== 'eraser' && activeTab === 'paint') 

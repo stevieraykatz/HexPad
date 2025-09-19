@@ -2,23 +2,28 @@ import React from 'react';
 import { GRID_CONFIG, UI_CONFIG } from './config';
 
 export type NumberingMode = 'off' | 'edge' | 'in-hex';
+export type OrientationMode = 'flat-top' | 'pointy-top';
 
 interface GridSizeControlsProps {
   gridWidth: number;
   gridHeight: number;
   numberingMode: NumberingMode;
+  orientationMode: OrientationMode;
   onWidthChange: (width: number) => void;
   onHeightChange: (height: number) => void;
   onNumberingModeChange: (mode: NumberingMode) => void;
+  onOrientationModeChange: (mode: OrientationMode) => void;
 }
 
 const GridSizeControls: React.FC<GridSizeControlsProps> = ({
   gridWidth,
   gridHeight,
   numberingMode,
+  orientationMode,
   onWidthChange,
   onHeightChange,
-  onNumberingModeChange
+  onNumberingModeChange,
+  onOrientationModeChange
 }) => {
   const sliderStyle = {
     width: UI_CONFIG.APP_LAYOUT.FULL_WIDTH_PERCENTAGE,
@@ -90,6 +95,28 @@ const GridSizeControls: React.FC<GridSizeControlsProps> = ({
           <option value="off">Off</option>
           <option value="edge">Edge Numbering</option>
           <option value="in-hex">In-Hex Numbering</option>
+        </select>
+        <div style={{
+          fontSize: UI_CONFIG.FONT_SIZE.SMALL,
+          color: UI_CONFIG.COLORS.TEXT_MUTED,
+          marginTop: UI_CONFIG.SPACING.SMALL,
+          lineHeight: '1.4'
+        }}>
+        </div>
+      </div>
+
+      
+      <div>
+        <label style={labelStyle}>
+          Hexagon Orientation
+        </label>
+        <select
+          value={orientationMode}
+          onChange={(e) => onOrientationModeChange(e.target.value as OrientationMode)}
+          style={selectStyle}
+        >
+          <option value="flat-top">Flat Top</option>
+          <option value="pointy-top">Pointy Top</option>
         </select>
         <div style={{
           fontSize: UI_CONFIG.FONT_SIZE.SMALL,

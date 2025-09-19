@@ -4,6 +4,7 @@
  * Helper functions for hexagon vertex generation, position calculations, and grid layout.
  */
 
+import { OrientationMode } from '@/components/GridSizeControls';
 import { GRID_CONFIG, HEX_GEOMETRY } from '../components/config';
 
 // Type definitions
@@ -36,11 +37,13 @@ export const createHexagonVertices = (
   centerX: number, 
   centerY: number, 
   radius: number, 
+  orientationMode: OrientationMode,
   includeTexCoords: boolean = false
 ): HexVertices => {
   const vertices: number[] = [];
   const texCoords: number[] = [];
   const angleStep = (Math.PI * 2) / GRID_CONFIG.HEX_TRIANGLES_COUNT;
+  const pointyTopHexAngleOffset = orientationMode === 'pointy-top' ? 29.85 : 0;
   
   // Create triangles for the hexagon (6 triangles from center)
   for (let i = 0; i < GRID_CONFIG.HEX_TRIANGLES_COUNT; i++) {
@@ -49,7 +52,7 @@ export const createHexagonVertices = (
     if (includeTexCoords) texCoords.push(0.5, 0.5);
     
     // First vertex of triangle
-    const angle1 = i * angleStep;
+    const angle1 = i * angleStep + pointyTopHexAngleOffset;
     const x1 = centerX + Math.cos(angle1) * radius;
     const y1 = centerY + Math.sin(angle1) * radius;
     vertices.push(x1, y1);
@@ -58,7 +61,7 @@ export const createHexagonVertices = (
     }
     
     // Second vertex of triangle
-    const angle2 = ((i + 1) % GRID_CONFIG.HEX_TRIANGLES_COUNT) * angleStep;
+    const angle2 = ((i + 1) % GRID_CONFIG.HEX_TRIANGLES_COUNT) * angleStep + pointyTopHexAngleOffset;
     const x2 = centerX + Math.cos(angle2) * radius;
     const y2 = centerY + Math.sin(angle2) * radius;
     vertices.push(x2, y2);
@@ -77,16 +80,21 @@ export const calculateHexRadius = (
   canvasSize: CanvasSize,
   gridWidth: number,
   gridHeight: number,
-  zoomLevel: number
+  zoomLevel: number,
+  orientationMode: OrientationMode
 ): number => {
   const availableWidth = canvasSize.width * GRID_CONFIG.CANVAS_MARGIN_FACTOR;
   const availableHeight = canvasSize.height * GRID_CONFIG.CANVAS_MARGIN_FACTOR;
   
   // Calculate radius from width constraint
-  const radiusFromWidth = availableWidth / (2 * (GRID_CONFIG.HEX_HORIZONTAL_SPACING_RATIO * gridWidth + GRID_CONFIG.HEX_GRID_WIDTH_CALCULATION_OFFSET));
+  const radiusFromWidth = orientationMode === "pointy-top" ?
+    (availableWidth / (HEX_GEOMETRY.SQRT_3 * gridWidth)) :
+    (availableWidth / (2 * (GRID_CONFIG.HEX_HORIZONTAL_SPACING_RATIO * gridWidth + GRID_CONFIG.HEX_GRID_WIDTH_CALCULATION_OFFSET)));
   
   // Calculate radius from height constraint
-  const radiusFromHeight = availableHeight / (HEX_GEOMETRY.SQRT_3 * gridHeight);
+  const radiusFromHeight = orientationMode === "pointy-top" ?
+    (availableHeight / (2 * (GRID_CONFIG.POINTY_TOP_HEX_HORIZONTAL_SPACING_RATIO * gridHeight + GRID_CONFIG.HEX_GRID_WIDTH_CALCULATION_OFFSET))) :
+    (availableHeight / (HEX_GEOMETRY.SQRT_3 * gridHeight));
   
   // Use the larger of the minimum and the calculated size to prevent distortion
   let baseRadius = Math.max(GRID_CONFIG.MIN_HEX_RADIUS, Math.min(radiusFromWidth, radiusFromHeight));
@@ -109,15 +117,16 @@ export const calculateHexPositions = (
   gridWidth: number,
   gridHeight: number,
   canvasSize: CanvasSize,
-  panOffset: PanOffset
+  panOffset: PanOffset,
+  orientationMode: OrientationMode
 ): HexPosition[] => {
   const positions: HexPosition[] = [];
-  const hexWidth = HEX_GEOMETRY.getHexWidth(hexRadius);
-  const hexHeight = HEX_GEOMETRY.getHexHeight(hexRadius);
-  
+  const hexWidth = HEX_GEOMETRY.getHexWidth(hexRadius, orientationMode);
+  const hexHeight = HEX_GEOMETRY.getHexHeight(hexRadius, orientationMode);
+    
   // For touching hexagons, use proper geometric spacing
-  const horizontalSpacing = HEX_GEOMETRY.getHorizontalSpacing(hexRadius);
-  const verticalSpacing = HEX_GEOMETRY.getVerticalSpacing(hexRadius);
+  const horizontalSpacing = HEX_GEOMETRY.getHorizontalSpacing(hexRadius, orientationMode);
+  const verticalSpacing = HEX_GEOMETRY.getVerticalSpacing(hexRadius, orientationMode);
 
   // Calculate the visual bounds of the entire grid
   const totalGridWidth = (gridWidth - 1) * horizontalSpacing + hexWidth;
@@ -195,13 +204,14 @@ export const calculateExportHexPositions = (
   gridWidth: number,
   gridHeight: number,
   exportSize: CanvasSize,
-  scale: number
+  scale: number,
+  orientationMode: OrientationMode
 ): HexPosition[] => {
   const exportHexPositions: HexPosition[] = [];
-  const hexWidth = HEX_GEOMETRY.getHexWidth(exportHexRadius);
-  const hexHeight = HEX_GEOMETRY.getHexHeight(exportHexRadius);
-  const horizontalSpacing = HEX_GEOMETRY.getHorizontalSpacing(exportHexRadius);
-  const verticalSpacing = HEX_GEOMETRY.getVerticalSpacing(exportHexRadius);
+  const hexWidth = HEX_GEOMETRY.getHexWidth(exportHexRadius, orientationMode);
+  const hexHeight = HEX_GEOMETRY.getHexHeight(exportHexRadius, orientationMode);
+  const horizontalSpacing = HEX_GEOMETRY.getHorizontalSpacing(exportHexRadius, orientationMode);
+  const verticalSpacing = HEX_GEOMETRY.getVerticalSpacing(exportHexRadius, orientationMode);
 
   const totalGridWidth = (gridWidth - 1) * horizontalSpacing + hexWidth;
   

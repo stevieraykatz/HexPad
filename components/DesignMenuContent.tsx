@@ -7,7 +7,7 @@ import GridSizeControls from './GridSizeControls';
 import BackgroundColorSelector from './BackgroundColorSelector';
 import { UI_CONFIG } from './config';
 import type { BackgroundColor, TextureItem, HexTexture, IconItem } from './config';
-import type { NumberingMode } from './GridSizeControls';
+import type { NumberingMode, OrientationMode } from './GridSizeControls';
 
 interface DesignMenuContentProps {
   activeTab: 'paint' | 'icons' | 'borders' | 'settings';
@@ -34,12 +34,14 @@ interface DesignMenuContentProps {
   gridHeight: number;
   selectedBackgroundColor: BackgroundColor;
   numberingMode: NumberingMode;
+  orientationMode: OrientationMode;
   onWidthChange: (width: number) => void;
   onHeightChange: (height: number) => void;
   onBackgroundColorChange: (color: BackgroundColor) => void;
   // Mobile layout
   isMobile?: boolean; // Optional mobile detection for layout adjustments
   onNumberingModeChange: (mode: NumberingMode) => void;
+  onOrientationModeChange: (mode: OrientationMode) => void;
   // Region props
   regionStats?: {
     totalRegions: number;
@@ -79,10 +81,12 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
   gridHeight,
   selectedBackgroundColor,
   numberingMode,
+  orientationMode,
   onWidthChange,
   onHeightChange,
   onBackgroundColorChange,
   onNumberingModeChange,
+  onOrientationModeChange,
   // Region props - REGIONING DISABLED
   regionStats: _regionStats,
   hoveredRegion: _hoveredRegion,
@@ -177,9 +181,11 @@ const DesignMenuContent: React.FC<DesignMenuContentProps> = ({
             gridWidth={gridWidth}
             gridHeight={gridHeight}
             numberingMode={numberingMode}
+            orientationMode={orientationMode}
             onWidthChange={onWidthChange}
             onHeightChange={onHeightChange}
             onNumberingModeChange={onNumberingModeChange}
+            onOrientationModeChange={onOrientationModeChange}
           />
           </div>
           <div className={isMobile ? 'mobile-section' : ''}>
