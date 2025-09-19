@@ -6,6 +6,7 @@ import { useRegionState } from './useRegionState';
 import { useRegionBorders } from './useRegionBorders';
 import type { RegionMap } from '../utils/regionUtils';
 import { getRandomTerrainVariant, getTerrainInfo } from '../components/config/assetLoader';
+import { OrientationMode } from '@/components/GridSizeControls';
 
 // Type definitions for hex colors and textures
 type HexColor = string;
@@ -39,6 +40,7 @@ interface UseGridStateProps {
   selectedBackgroundColor: string;
   activeTab: 'paint' | 'icons' | 'borders' | 'settings';
   onPaintStart?: () => void; // Optional callback for when painting starts
+  orientationMode: OrientationMode;
   enableRegions?: boolean; // Enable region tracking (default: true)
   enableRegionBorders?: boolean; // Enable region border functionality (default: true)
 }
@@ -111,6 +113,7 @@ export function useGridState({
   selectedBackgroundColor,
   activeTab,
   onPaintStart,
+  orientationMode,
   enableRegions = true,
   enableRegionBorders = true
 }: UseGridStateProps): UseGridStateReturn {
@@ -149,6 +152,7 @@ export function useGridState({
     hexColors,
     gridWidth,
     gridHeight,
+    orientationMode,
     enabled: enableRegionBorders && enableRegions
   });
   

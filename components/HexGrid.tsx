@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, f
 import { GRID_CONFIG, DEFAULT_COLORS } from './config';
 import type { RGB, IconItem } from './config';
 import type { ColoredIcon } from './config/iconsConfig';
-import type { NumberingMode } from './GridSizeControls';
+import type { NumberingMode, OrientationMode } from './GridSizeControls';
 import HexButton, { isPointInHexButton } from './HexButton';
 
 import { initializeWebGLContext, createShaderPrograms, loadTexture } from '../utils/webglUtils';
@@ -76,6 +76,7 @@ interface HexGridProps {
   selectedIcon?: IconItem | null;
   selectedTexture?: HexTexture | null;
   numberingMode?: NumberingMode;
+  orientationMode?: OrientationMode;
   onCanvasInteraction?: () => void; // Callback for when user interacts with canvas
   // Tile manipulation props
   menuOpen?: boolean;
@@ -112,6 +113,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
   selectedIcon = null,
   selectedTexture = null,
   numberingMode = 'off',
+  orientationMode = 'flat-top',
   onCanvasInteraction,
   // Tile manipulation props
   menuOpen = false,
@@ -214,9 +216,10 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       getHexBackgroundColor,
       borders,
       getHexIcon,
-      numberingMode
+      numberingMode,
+      orientationMode
     });
-  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, getHexBackgroundColor, borders, getHexIcon, numberingMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [canvasSize, gridWidth, gridHeight, backgroundColor, getHexColor, getHexBackgroundColor, borders, getHexIcon, numberingMode, orientationMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useImperativeHandle(ref, () => ({
     exportAsPNG
@@ -413,7 +416,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       panOffset,
       currentHexRadius,
       gridWidth,
-      gridHeight
+      gridHeight,
+      orientationMode
     );
     
     setZoomLevel(result.newZoom);
@@ -454,7 +458,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     onPanChange: handlePanChange,
     onGestureStart: handleGestureStart,
     onGestureEnd: handleGestureEnd,
-    disabled: !isTouchDevice || menuOpen // Disable gestures when menu is open
+    disabled: !isTouchDevice || menuOpen, // Disable gestures when menu is open
+    orientationMode
   });
 
   const paintHexIfNew = useCallback((hex: HexPosition | null): void => {
@@ -487,8 +492,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     canvas.width = canvasSize.width;
     canvas.height = canvasSize.height;
 
-    const hexRadius = calculateHexRadius(canvasSize, gridWidth, gridHeight, zoomLevel);
-    const hexPositions = calculateHexPositions(hexRadius, gridWidth, gridHeight, canvasSize, panOffset);
+    const hexRadius = calculateHexRadius(canvasSize, gridWidth, gridHeight, zoomLevel, orientationMode);
+    const hexPositions = calculateHexPositions(hexRadius, gridWidth, gridHeight, canvasSize, panOffset, orientationMode);
     
     hexRadiusRef.current = hexRadius;
     hexPositionsRef.current = hexPositions;
@@ -518,7 +523,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         const backgroundRgb = hexToRgb(backgroundColorHex);
         if (backgroundRgb) {
           const backgroundStyle = { type: 'color' as const, rgb: backgroundRgb };
-          renderColorHexagon(gl, colorProgram, pos, backgroundStyle, hexRadius, canvas);
+          renderColorHexagon(gl, colorProgram, pos, backgroundStyle, hexRadius, canvas, orientationMode);
         }
       }
       
@@ -527,9 +532,9 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
       
       if (style) {
         if (style.type === 'color' && style.rgb) {
-          renderColorHexagon(gl, colorProgram, pos, style, hexRadius, canvas);
+          renderColorHexagon(gl, colorProgram, pos, style, hexRadius, canvas, orientationMode);
         } else if (style.type === 'texture' && style.path && style.name) {
-          renderTextureHexagon(gl, textureProgram, pos, style, hexRadius, canvas);
+          renderTextureHexagon(gl, textureProgram, pos, style, hexRadius, canvas, orientationMode);
         }
       }
     });
@@ -621,7 +626,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         currentHexRadius,
         gridWidth,
         gridHeight,
-        canvasSize
+        canvasSize,
+        orientationMode
       );
       
       setPanOffset(constrainedOffset);
@@ -764,7 +770,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     pos: HexPosition,
     style: HexStyle,
     hexRadius: number,
-    canvas: HTMLCanvasElement
+    canvas: HTMLCanvasElement,
+    orientationMode: OrientationMode
   ): void => {
     if (!style.rgb) return;
 
@@ -777,7 +784,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         
         gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
         
-    const { vertices } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO);
+    const { vertices } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, orientationMode);
         
         const positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -799,7 +806,8 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
     pos: HexPosition,
     style: HexStyle,
     hexRadius: number,
-    canvas: HTMLCanvasElement
+    canvas: HTMLCanvasElement,
+    orientationMode: OrientationMode
   ): void => {
         const textures = texturesRef.current;
         
@@ -837,7 +845,7 @@ const HexGrid = forwardRef<HexGridRef, HexGridProps>(({
         const flipValue = style.flipped ? 1.0 : 0.0;
         gl.uniform1f(flippedUniformLocation, flipValue);
         
-    const { vertices, texCoords } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, true);
+    const { vertices, texCoords } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, orientationMode, true);
         
         const positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);

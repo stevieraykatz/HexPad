@@ -6,7 +6,7 @@
 
 import { GRID_CONFIG, HEX_GEOMETRY } from '../components/config';
 import type { ColoredIcon } from '../components/config/iconsConfig';
-import type { NumberingMode } from '../components/GridSizeControls';
+import type { NumberingMode, OrientationMode } from '../components/GridSizeControls';
 import { initializeWebGLContext, createShaderPrograms, loadTexture } from './webglUtils';
 import { createHexagonVertices, calculateExportHexPositions } from './hexagonUtils';
 import type { CanvasSize, HexPosition } from './hexagonUtils';
@@ -50,6 +50,7 @@ export interface ExportOptions {
   borders?: Record<string, BorderEdge>;
   getHexIcon?: (row: number, col: number) => ColoredIcon | undefined;
   numberingMode?: NumberingMode;
+  orientationMode: OrientationMode;
 }
 
 /**
@@ -60,15 +61,17 @@ export const calculateOptimalExportSize = (
   gridWidth: number,
   gridHeight: number,
   scale: number,
+  orientationMode: OrientationMode,
   numberingMode?: NumberingMode
 ): CanvasSize => {
   // Calculate the theoretical grid dimensions
   const hexRadius = GRID_CONFIG.MIN_HEX_RADIUS * scale * 2; // Use a reasonable base size
-  const hexWidth = HEX_GEOMETRY.getHexWidth(hexRadius);
-  const hexHeight = HEX_GEOMETRY.getHexHeight(hexRadius);
-  const horizontalSpacing = HEX_GEOMETRY.getHorizontalSpacing(hexRadius);
-  const verticalSpacing = HEX_GEOMETRY.getVerticalSpacing(hexRadius);
-  
+
+  const hexWidth = HEX_GEOMETRY.getHexWidth(hexRadius, orientationMode);
+  const hexHeight = HEX_GEOMETRY.getHexHeight(hexRadius, orientationMode);
+  const horizontalSpacing = HEX_GEOMETRY.getHorizontalSpacing(hexRadius, orientationMode);
+  const verticalSpacing = HEX_GEOMETRY.getVerticalSpacing(hexRadius, orientationMode);
+
   // Calculate total grid dimensions
   const totalGridWidth = (gridWidth - 1) * horizontalSpacing + hexWidth;
   
@@ -119,10 +122,11 @@ export const calculateExportHexRadius = (
   exportSize: CanvasSize,
   gridWidth: number,
   gridHeight: number,
-  scale: number
+  scale: number,
+  orientationMode: OrientationMode
 ): number => {
   const baseHexRadiusFromWidth = (exportSize.width * GRID_CONFIG.CANVAS_MARGIN_FACTOR) / 
-    (2 * (GRID_CONFIG.HEX_HORIZONTAL_SPACING_RATIO * gridWidth + GRID_CONFIG.HEX_GRID_WIDTH_CALCULATION_OFFSET));
+    (2 * ((orientationMode === 'pointy-top' ? GRID_CONFIG.POINTY_TOP_HEX_HORIZONTAL_SPACING_RATIO : GRID_CONFIG.HEX_HORIZONTAL_SPACING_RATIO) * gridWidth + GRID_CONFIG.HEX_GRID_WIDTH_CALCULATION_OFFSET));
   const baseHexRadiusFromHeight = (exportSize.height * GRID_CONFIG.CANVAS_MARGIN_FACTOR) / 
     (HEX_GEOMETRY.SQRT_3 * gridHeight);
   
@@ -138,7 +142,8 @@ export const renderColorHexagon = (
   pos: HexPosition,
   style: HexStyle,
   hexRadius: number,
-  canvasSize: CanvasSize
+  canvasSize: CanvasSize,
+  orientationMode: OrientationMode
 ): void => {
   if (!style.rgb) return;
 
@@ -151,7 +156,7 @@ export const renderColorHexagon = (
   
   gl.uniform2f(resolutionUniformLocation, canvasSize.width, canvasSize.height);
   
-  const { vertices } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO);
+  const { vertices } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, orientationMode);
   
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -177,7 +182,8 @@ export const renderTextureHexagon = (
   style: HexStyle,
   hexRadius: number,
   canvasSize: CanvasSize,
-  texture: WebGLTexture
+  texture: WebGLTexture,
+  orientationMode: OrientationMode
 ): void => {
   gl.useProgram(textureProgram);
   
@@ -199,7 +205,7 @@ export const renderTextureHexagon = (
   // Set flip uniform (1.0 for flipped, 0.0 for normal)
   gl.uniform1f(flippedUniformLocation, style.flipped ? 1.0 : 0.0);
   
-  const { vertices, texCoords } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, true);
+  const { vertices, texCoords } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, orientationMode, true);
   
   // Position buffer
   const positionBuffer = gl.createBuffer();
@@ -235,7 +241,8 @@ export const renderFallbackHexagon = (
   colorProgram: WebGLProgram,
   pos: HexPosition,
   hexRadius: number,
-  canvasSize: CanvasSize
+  canvasSize: CanvasSize,
+  orientationMode: OrientationMode
 ): void => {
   gl.useProgram(colorProgram);
   
@@ -246,7 +253,7 @@ export const renderFallbackHexagon = (
   
   gl.uniform2f(resolutionUniformLocation, canvasSize.width, canvasSize.height);
   
-  const { vertices } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO);
+  const { vertices } = createHexagonVertices(0, 0, hexRadius * GRID_CONFIG.HEX_VISUAL_SIZE_RATIO, orientationMode);
   
   const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -662,12 +669,12 @@ const hexToRgb = (hex: string): RGB => {
  * Export hex grid as PNG with high quality
  */
 export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
-  const { filename, scale, gridWidth, gridHeight, canvasSize, backgroundColor, getHexagonStyle, getHexBackgroundColor, borders, getHexIcon, numberingMode } = options;
+  const { filename, scale, gridWidth, gridHeight, canvasSize, backgroundColor, getHexagonStyle, getHexBackgroundColor, borders, getHexIcon, numberingMode, orientationMode } = options;
   
 
 
   // Calculate optimal export size based on grid dimensions (ignoring viewport size)
-  const optimalCanvasSize = calculateOptimalExportSize(gridWidth, gridHeight, scale, numberingMode);
+  const optimalCanvasSize = calculateOptimalExportSize(gridWidth, gridHeight, scale, orientationMode, numberingMode);
 
   // Calculate base export size without numbering
   // Note: optimalCanvasSize already includes scaling, so we don't multiply by scale again
@@ -681,7 +688,7 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
   
   if (numberingMode === 'edge') {
     // Pre-calculate hex radius based on the base size (without numbering padding)
-    const tempHexRadius = calculateExportHexRadius(baseExportSize, gridWidth, gridHeight, scale);
+    const tempHexRadius = calculateExportHexRadius(baseExportSize, gridWidth, gridHeight, scale, orientationMode);
     
     // Calculate space needed for numbering
     const columnOffset = tempHexRadius * 0.4;
@@ -720,8 +727,8 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
     if (!colorProgram || !textureProgram) return;
 
     // Calculate hex radius and positions based on base size (without numbering padding)
-    const exportHexRadius = calculateExportHexRadius(baseExportSize, gridWidth, gridHeight, scale);
-    const baseHexPositions = calculateExportHexPositions(exportHexRadius, gridWidth, gridHeight, baseExportSize, scale);
+    const exportHexRadius = calculateExportHexRadius(baseExportSize, gridWidth, gridHeight, scale, orientationMode);
+    const baseHexPositions = calculateExportHexPositions(exportHexRadius, gridWidth, gridHeight, baseExportSize, scale, orientationMode);
     
     // Offset hex positions to account for numbering padding
     const exportHexPositions = baseHexPositions.map(pos => ({
@@ -785,7 +792,7 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
             type: 'color',
             rgb: backgroundRgb
           };
-          renderColorHexagon(exportGL, colorProgram, pos, backgroundStyle, exportHexRadius, exportSize);
+          renderColorHexagon(exportGL, colorProgram, pos, backgroundStyle, exportHexRadius, exportSize, orientationMode);
         }
       }
       
@@ -794,14 +801,14 @@ export const exportAsPNG = async (options: ExportOptions): Promise<void> => {
       
       if (style) {
         if (style.type === 'color' && style.rgb) {
-          renderColorHexagon(exportGL, colorProgram, pos, style, exportHexRadius, exportSize);
+          renderColorHexagon(exportGL, colorProgram, pos, style, exportHexRadius, exportSize, orientationMode);
         } else if (style.type === 'texture' && style.path && style.name) {
           const texture = exportTextures.get(style.name);
           if (texture) {
-            renderTextureHexagon(exportGL, textureProgram, pos, style, exportHexRadius, exportSize, texture);
+            renderTextureHexagon(exportGL, textureProgram, pos, style, exportHexRadius, exportSize, texture, orientationMode);
           } else {
             // Fallback to colored rendering if texture failed to load
-            renderFallbackHexagon(exportGL, colorProgram, pos, exportHexRadius, exportSize);
+            renderFallbackHexagon(exportGL, colorProgram, pos, exportHexRadius, exportSize, orientationMode);
           }
         }
       }

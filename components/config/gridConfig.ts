@@ -11,6 +11,8 @@
  * - Canvas margins: CANVAS_MARGIN_FACTOR controls how much border space around the grid (0.95 = 5% margin)
  */
 
+import { OrientationMode } from "../GridSizeControls";
+
 export interface GridConfig {
   // Default grid dimensions
   readonly DEFAULT_WIDTH: number;
@@ -24,6 +26,7 @@ export interface GridConfig {
   readonly HEX_HORIZONTAL_SPACING_RATIO: number; // Distance between hex centers horizontally (as ratio of hex width)
   readonly HEX_ROW_VERTICAL_OFFSET: number; // Vertical offset for alternating columns (as ratio of hex height)
   readonly HEX_VISUAL_SIZE_RATIO: number; // Visual size of hexagons relative to their radius (0.9 = 90% size, creates spacing)
+  readonly POINTY_TOP_HEX_HORIZONTAL_SPACING_RATIO: number; // Distance between hex centers horizontally (as ratio of hex width) for vertical hexagon layout
   
   // Canvas sizing
   readonly CANVAS_MARGIN_FACTOR: number; // Leave 5% margin around the grid
@@ -85,6 +88,7 @@ export const GRID_CONFIG: GridConfig = {
   
   // Hex geometry constants
   HEX_HORIZONTAL_SPACING_RATIO: 0.75, // Distance between hex centers horizontally (as ratio of hex width)
+  POINTY_TOP_HEX_HORIZONTAL_SPACING_RATIO: 0.5, // Distance between hex centers horizontally (as ratio of hex width) for pointy-top hexagon layout
   HEX_ROW_VERTICAL_OFFSET: 0.5, // Vertical offset for alternating columns (as ratio of hex height)
   HEX_VISUAL_SIZE_RATIO: 0.95, // Visual size of hexagons relative to their radius (0.95 = 95% size, higher value creates less spacing)
   
@@ -146,30 +150,34 @@ export interface HexGeometry {
   readonly SQRT_3: number; // Square root of 3 for hex height calculations
   
   // Calculate hex width from radius
-  getHexWidth: (radius: number) => number;
+  getHexWidth: (radius: number, orientationMode: OrientationMode) => number;
   
   // Calculate hex height from radius  
-  getHexHeight: (radius: number) => number;
+  getHexHeight: (radius: number, orientationMode: OrientationMode) => number;
   
   // Calculate horizontal spacing between hex centers
-  getHorizontalSpacing: (radius: number) => number;
+  getHorizontalSpacing: (radius: number, orientationMode: OrientationMode) => number;
   
   // Calculate vertical spacing between hex centers
-  getVerticalSpacing: (radius: number) => number;
+  getVerticalSpacing: (radius: number, orientationMode: OrientationMode) => number;
 }
 
 export const HEX_GEOMETRY: HexGeometry = {
   SQRT_3: Math.sqrt(3), // Square root of 3 for hex height calculations
   
   // Calculate hex width from radius
-  getHexWidth: (radius: number): number => radius * 2,
+  getHexWidth: (radius: number, orientationMode: OrientationMode): number => orientationMode === 'pointy-top' ? (radius * 1.75) : (radius * 2),
   
-  // Calculate hex height from radius  
-  getHexHeight: (radius: number): number => radius * HEX_GEOMETRY.SQRT_3,
+  // Calculate hex height from radius
+  getHexHeight: (radius: number, orientationMode: OrientationMode): number => orientationMode === 'pointy-top' ? (radius * 2.5) : (radius * HEX_GEOMETRY.SQRT_3),
   
   // Calculate horizontal spacing between hex centers
-  getHorizontalSpacing: (radius: number): number => HEX_GEOMETRY.getHexWidth(radius) * GRID_CONFIG.HEX_HORIZONTAL_SPACING_RATIO,
+  getHorizontalSpacing: (radius: number, orientationMode: OrientationMode): number => orientationMode === 'pointy-top' ? 
+    (HEX_GEOMETRY.getHexWidth(radius, orientationMode) * GRID_CONFIG.POINTY_TOP_HEX_HORIZONTAL_SPACING_RATIO) :
+    (HEX_GEOMETRY.getHexWidth(radius, orientationMode) * GRID_CONFIG.HEX_HORIZONTAL_SPACING_RATIO),
   
   // Calculate vertical spacing between hex centers
-  getVerticalSpacing: (radius: number): number => HEX_GEOMETRY.getHexHeight(radius),
+  getVerticalSpacing: (radius: number, orientationMode: OrientationMode): number => orientationMode === 'pointy-top' ?
+    (HEX_GEOMETRY.getHexHeight(radius, orientationMode) * 1.2) :
+    (HEX_GEOMETRY.getHexHeight(radius, orientationMode)),
 }; 
